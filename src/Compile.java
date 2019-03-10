@@ -6,7 +6,7 @@ public class Compile {
         try {
             InputStream istream = new FileInputStream("program.txt");
 
-            System.out.println("target asm code");
+            // System.out.println("target asm code");
         } catch (final IOException e) {
             System.err.println(e);
             return;
