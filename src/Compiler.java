@@ -1,7 +1,7 @@
 
 import java.io.*;
 
-public class Compile {
+public class Compiler {
     public static void main(String[] args) throws IOException {
         try {
             InputStream istream = new FileInputStream("program.txt");
