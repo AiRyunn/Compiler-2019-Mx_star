@@ -228,7 +228,7 @@ fragment LowercaseLetter: 'a' ..'z';
 fragment UppercaseLetter: 'A' ..'Z';
 fragment Letter: LowercaseLetter | UppercaseLetter;
 
-fragment IdentifierStartChar: Letter;
+fragment IdentifierStartChar: Letter | Underline;
 fragment IdentifierChar: Letter | Digit | Underline;
 
 fragment Underline: '_';
