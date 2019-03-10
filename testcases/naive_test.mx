@@ -1,0 +1,59 @@
+// comments
+
+MyClass myclassbb;
+bool abc = true;
+
+/*
+multi
+line
+comments
+
+*/
+
+int main() {
+ print("123");
+ MyClass myclassaa;
+ 
+ 
+ int integer = -123456;
+ string str = "hello world";
+ int[] array = null;
+ 
+ if (array == null) {
+   integer++;
+   int a = --integer;
+   int b = a + a * a + a / (a + a % a);
+   if (a + 1 != (b & 4)) {
+      a = a << 7 | 2;
+   }
+   MyClass xxx = new MyClass(345);
+   xxx.member1 = (xxx.member1 * + (-7));
+ }
+ int c = str.size();
+ 
+ print(toString(max(c + 4, max(c - 1) * max(myclassaa.member1))) + myclassaa.member2);
+ while (true) {
+ for (;;) {
+ for (int i = 1; i <= 100; i++) {
+ int j;
+ for (j = 999; ; j--) {
+ if (max(j, 5) < 7) {continue;}
+ println("what the fuck???");
+ if (j < 0) break;
+ }
+ }
+ }
+ }
+ println("naive".length()); return -max(5, 7);
+}
+
+class MyClass {
+int member1;
+string member2;
+MyClass() {member1=sss;}
+}
+
+void max(int a, int b) {
+if (a > b) return   a;else{return b;}
+return -1;
+}
