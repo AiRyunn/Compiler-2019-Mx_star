@@ -1,5 +1,9 @@
 grammar Mx_star;
 
+@header {
+    package Mx_star.AST;
+}
+
 program:
 	(variableDeclaration | classDefinition | functionDefinition)+ EOF;
 

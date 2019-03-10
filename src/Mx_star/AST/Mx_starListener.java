@@ -1,4 +1,7 @@
 // Generated from Mx_star.g4 by ANTLR 4.7.1
+
+    package Mx_star.AST;
+
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**

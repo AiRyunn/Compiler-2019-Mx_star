@@ -1,4 +1,5 @@
 bin/
 
 *.class
-program.txt
+source.mx
+target.asm
