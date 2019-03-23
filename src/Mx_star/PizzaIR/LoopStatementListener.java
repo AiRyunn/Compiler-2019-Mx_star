@@ -31,7 +31,7 @@ public class LoopStatementListener extends Mx_starBaseListener {
         if (ctx.forCondition().forCondition2() != null) {
             ObjectListener objLser = new ObjectListener();
             ctx.forCondition().forCondition2().object().enterRule(objLser);
-            if (objLser.type != "bool") {
+            if (!objLser.type.equals("bool")) {
                 assert false;
             }
         }

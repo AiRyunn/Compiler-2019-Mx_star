@@ -52,7 +52,6 @@ class Type implements Cloneable {
             assert false;
         }
         if (hasMethod(method)) {
-            // TODO
             assert false;
         }
         memMethod.put(method, func);
@@ -64,10 +63,6 @@ class Type implements Cloneable {
 
     String getMethod(String member) {
         return memMethod.get(member);
-    }
-
-    String getFunc(String method) {
-        return memMethod.get(method);
     }
 
     @Override
@@ -117,55 +112,6 @@ class TypeList {
     }
 }
 
-class Instruction {
-    String name;
-    String type;
-    String method;
-    List<String> params;
-
-    Instruction(String name, String type, String method, ArrayList<String> params) {
-        this.name = name;
-        this.type = type;
-        this.method = method;
-        this.params = params;
-    }
-
-    public static Instruction byValue(String name, String type, String value) {
-        if (type.equals("void")) {
-            assert false;
-        }
-        ArrayList<String> list = new ArrayList<String>();
-        list.add(value);
-        return new Instruction(name, type, "%value", list);
-    }
-
-    public static Instruction byMethod(String name, String type, String method, ArrayList<String> params) {
-        return new Instruction(name, type, "method", params);
-    }
-}
-
-class Instructions {
-    List<Instruction> insts;
-
-    Instructions() {
-        insts = new ArrayList<Instruction>();
-    }
-
-    public void concat(Instructions inst2) {
-        if (inst2.insts.size() > 0) {
-            insts.addAll(inst2.insts);
-        }
-    }
-
-    public void add(Instruction obj) {
-        insts.add(obj);
-    }
-
-    public JsonElement toJson() {
-        return new Gson().toJsonTree(insts, ArrayList.class);
-    }
-}
-
 class Variable {
     int id;
     String name;
@@ -189,7 +135,6 @@ class VarList {
     }
 
     String getType(int id) {
-        // int id = Integer.parseInt(name.substring(1, name.length()));
         return list.get(id).type;
     }
 
@@ -203,10 +148,6 @@ class ParamsInstance {
 
     void add(String name, String type) {
         params.add(new Pair<String, String>(name, type));
-    }
-
-    int count() {
-        return params.size();
     }
 }
 
@@ -271,10 +212,6 @@ class FuncList {
         return funcList.get(addr);
     }
 
-    String getRtype(String addr) {
-        return funcList.get(addr).rtype;
-    }
-
     JsonElement toJson() {
         return new Gson().toJsonTree(funcList, HashMap.class);
     }
@@ -292,7 +229,6 @@ class Block {
     Block(int position, BlockType type) {
         this.position = position;
         this.type = type;
-
     }
 
     Block(int position, BlockType type, String name, String rtype) {
@@ -414,13 +350,13 @@ class Domain {
         block.remove(block.size() - 1);
     }
 
-    void enterScope(int position) {
+    void enterCondition(int position) {
         Logging.debug("enterCondition");
         depth++;
         block.add(new Block(position, BlockType.SCOPE));
     }
 
-    void exitScope() {
+    void exitCondition() {
         Logging.debug("exitCondition");
         while (!varStack.isEmpty() && varStack.lastElement().second.equals(depth)) {
             varStack.pop();
@@ -489,4 +425,86 @@ class Domain {
         }
         return true;
     }
+}
+
+enum InstructionType {
+    ASSIGNMENT, CALL, RETURN, CONDITIONJUMP,
+}
+
+class Instruction {
+    InstructionType type;
+    Integer dst, src;
+    Vector<Integer> params;
+    String label1, label2;
+
+    Instruction(InstructionType type) {
+        this.type = type;
+    }
+
+    static Instruction newAssignment(int dst, int src) {
+        Instruction inst = new Instruction(InstructionType.ASSIGNMENT);
+        inst.dst = dst;
+        inst.src = src;
+        return inst;
+    }
+
+    static Instruction newCall(int dst, Vector<Integer> params) {
+        Instruction inst = new Instruction(InstructionType.CALL);
+        inst.dst = dst;
+        inst.params = params;
+        return inst;
+    }
+
+    static Instruction newReturn() {
+        return new Instruction(InstructionType.RETURN);
+    }
+
+    static Instruction newReturn(int src) {
+        Instruction inst = new Instruction(InstructionType.RETURN);
+        inst.src = src;
+        return inst;
+    }
+
+    static Instruction newConditionJump(int src, String label1, String label2) {
+        Instruction inst = new Instruction(InstructionType.CONDITIONJUMP);
+        inst.src = src;
+        inst.label1 = label1;
+        inst.label2 = label2;
+        return inst;
+    }
+
+    @Override
+    public String toString() {
+        String result = "";
+        switch (type) {
+        case ASSIGNMENT:
+            result = "$" + dst + " = " + "$" + src;
+            break;
+        case CALL:
+            result = "$" + dst + " =";
+            for (Integer param : params) {
+                result += " $" + param;
+            }
+            break;
+        case RETURN:
+            result = "return";
+            if (src != null) {
+                result += " $" + src;
+            }
+            break;
+        case CONDITIONJUMP:
+            result = "if $" + src + " jump #" + label1 + " else jump #" + label2;
+            break;
+        }
+        return result;
+    }
+}
+
+class Scope {
+    String label;
+    Vector<Instruction> insts = new Vector<Instruction>();
+}
+
+class Section {
+    Vector<Scope> secs = new Vector<Scope>();
 }

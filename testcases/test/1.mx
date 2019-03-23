@@ -1,17 +1,22 @@
 int id;
 
 class Test {
-	bool id(bool id) {
-		return id == false;
+	bool id(bool id_) {
+		return id_ == false;
 	}
 	
-	Test(string id) {
+	Test() { }
+	
+	void test(string id) {
 		id = "i am string";
-		if (this.id((id != null) || (id == null))) {
+		if (this.id((this != null) || (null == this))) {
 			bool id = this.id(true);
-			for (int id = 0; this.id(id > 0); id++) {
-				if (this.id(id | id)) {
-					break;
+			{
+				int id;
+				for (id = 0; this.id(id > 0); id++) {
+					if (this.id((id | id) <= 0)) {
+						break;
+					}
 				}
 			}
 			id = false;
@@ -20,11 +25,11 @@ class Test {
 			if (this.id(id > "hello")) {
 				return;
 			}
-			Test id = new Test("id");
+			Test id = new Test();
 			if (id.id(id.id(id.id(false)))) {
 				int id = 233;
 				{
-					Test test = new Test(id > 0);
+					Test test = new Test();
 					if (test.id(id > 0)) {
 						id--;
 					}
@@ -32,16 +37,38 @@ class Test {
 				}
 				return;
 			}
-			id = new Test("hello");
+			id = new Test();
 		}
 		id = "string";
 	}
 }
 
+Test[] func(Test[][] t) {
+	return t[0];
+}
+
 int main() {
-	Test test = new Test("test string");
+	Test test = new Test();
+	test.test("hello world");
 	if (test.id(id > 0)) {
-		return id;
+		Test[][] test = new Test[10][10];
+		if (func(test)[1] != null) {
+			test[1] = func(test)[0];
+		}
+		return --id;
 	}
 	return 0;
+}
+
+A a = new A();
+B b = a.method();
+
+class A {
+	B b;
+	B method() { }
+}
+
+class B {
+	A a;
+	A method() { }
 }

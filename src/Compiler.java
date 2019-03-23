@@ -6,7 +6,7 @@ import Mx_star.PizzaIR.*;
 import NASM.*;
 import logging.*;
 
-public class Compiler {
+public abstract class Compiler {
     public static void main(String[] args) throws Exception {
         Logging.info("compiling...");
 
@@ -52,11 +52,11 @@ public class Compiler {
 
             PizzaIR ir = PizzaIR.fromAST(ast);
 
-            System.exit(0);
-
             System.out.println(ir.toString());
 
-            Logging.info("optimize");
+            System.exit(0);
+
+            Logging.info("optimization");
 
             ir.optimize();
 
@@ -66,9 +66,6 @@ public class Compiler {
 
             ostream.write(nasm.toString().getBytes());
             ostream.close();
-
-            // ParseTreeWalker walker = new ParseTreeWalker(); Evaluator eval = new
-            // Evaluator();
 
             // // System.out.println("LISP:"); //
             // System.out.println(ast.toStringTree(parser)); walker.walk(eval, tree);
