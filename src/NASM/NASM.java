@@ -1,4 +1,4 @@
-package Mx_star.NASM;
+package NASM;
 
 public class NASM {
     public String toString() {

@@ -1,0 +1,2 @@
+int a=func(123);
+int func(string a) {return 3;}

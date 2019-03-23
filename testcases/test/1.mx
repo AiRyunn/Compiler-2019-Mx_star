@@ -1,0 +1,47 @@
+int id;
+
+class Test {
+	bool id(bool id) {
+		return id == false;
+	}
+	
+	Test(string id) {
+		id = "i am string";
+		if (this.id((id != null) || (id == null))) {
+			bool id = this.id(true);
+			for (int id = 0; this.id(id > 0); id++) {
+				if (this.id(id | id)) {
+					break;
+				}
+			}
+			id = false;
+		}
+		if (id == "i am string") {
+			if (this.id(id > "hello")) {
+				return;
+			}
+			Test id = new Test("id");
+			if (id.id(id.id(id.id(false)))) {
+				int id = 233;
+				{
+					Test test = new Test(id > 0);
+					if (test.id(id > 0)) {
+						id--;
+					}
+					--id;
+				}
+				return;
+			}
+			id = new Test("hello");
+		}
+		id = "string";
+	}
+}
+
+int main() {
+	Test test = new Test("test string");
+	if (test.id(id > 0)) {
+		return id;
+	}
+	return 0;
+}

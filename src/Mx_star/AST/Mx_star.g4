@@ -4,119 +4,128 @@ grammar Mx_star;
     package Mx_star.AST;
 }
 
-program:
-	(variableDeclaration | classDefinition | functionDefinition)+ EOF;
+program: programSection+ EOF;
 
-////////// Variables Declaration //////////
-
-variableDeclaration: declarationStatement;
+programSection:
+	emptyStatement					# ProgramEmptyStatement
+	| variableDeclarationStatement	# ProgramVariableDeclarationStatement
+	| variableDefinitionStatement	# ProgramVariableDefinitionStatement
+	| classDefinitionStatement		# ProgramClassDefinitionStatement
+	| functionDefinitionStatement	# ProgramFunctionDefinitionStatement;
 
 ////////// Classes //////////
 
-classDefinition: Class Identifier '{' classMembers? '}';
+classDefinitionStatement: Class Identifier '{' classMember* '}';
 
-classMembers:
-	(memberVariable | constructionFunction | memberFunction)+;
+classMember:
+	variableDeclarationStatement	# ClassVariableDeclarationStatement
+	| constructionFunctionStatement	# ClassConstructionFunctionStatement
+	| functionDefinitionStatement	# ClassFunctionDefinitionStatement;
 
-memberVariable: type Identifier ';';
-constructionFunction: Identifier '(' ')' '{' statements? '}';
-memberFunction:
-	type Identifier '(' paramListDefinition? ')' '{' statements? '}';
+constructionFunctionStatement:
+	Identifier '(' paramListDefinition ')' '{' statements? '}';
 
 ////////// Functions //////////
 
-functionDefinition:
-	type Identifier '(' paramListDefinition? ')' '{' statements? '}';
+functionDefinitionStatement:
+	type Identifier '(' paramListDefinition ')' '{' statements? '}';
 
-paramListDefinition:
-	type Identifier
-	| type Identifier ',' paramListDefinition;
+paramListDefinition: (
+		variableDeclaration (',' variableDeclaration)*
+	)?;
 
-paramList: object | object ',' paramList;
+paramList: (object ( ',' object)*)?;
 
-////////// Statements //////////
+/****************************** Statements ******************************/
 
 statement:
-	emptyStatement
-	| assignmentStatement
-	| expressionStatement
-	| declarationStatement
-	| loopStatement
-	| conditionStatement
-	| jumpStatement
-	| compoundStatement;
+	emptyStatement					# StmtEmptyStatement
+	| variableDeclarationStatement	# StmtVariableDeclarationStatement
+	| variableDefinitionStatement	# StmtVariableDefinitionStatement
+	| variableAssignmentStatement	# StmtVariableAssignmentStatement
+	| objectStatement				# StmtObjectStatement
+	| loopStatement					# StmtLoopStatement
+	| conditionStatement			# StmtConditionStatement
+	| jumpStatement					# StmtJumpStatement
+	| compoundStatement				# StmtCompoundStatement;
 
 statements: statement+;
 
-// Empty Statement
 emptyStatement: ';';
+variableDeclarationStatement: variableDeclaration ';';
+variableDefinitionStatement: variableDefinition ';';
+variableAssignmentStatement: variableAssignment ';';
+objectStatement: object ';';
 
-// Assignment Statement
-assignmentStatement: object '=' expression ';';
-
-// Expression Statement
-expressionStatement: expression ';';
-
-// Definition Statement
-declarationStatement:
-	type Identifier ';'
-	| type Identifier '=' expression ';';
-
-// Loop Statement
 loopStatement:
-	While '(' expression ')' statement
-	| For '(' forCondition ')' statement;
-forCondition: forCondition1? ';' expression? ';' forCondition3?;
-forCondition1: type? Identifier '=' expression | expression;
-forCondition3: Identifier '=' expression | expression;
+	While '(' object ')' statement			# WhileLoop
+	| For '(' forCondition ')' statement	# ForLoop;
+forCondition:
+	forCondition1? ';' forCondition2? ';' forCondition3?;
+forCondition1:
+	variableDeclaration		# ForCdt1VariableDeclaration
+	| variableDefinition	# ForCdt1VariableDefinition
+	| variableAssignment	# ForCdt1VariableAssignment
+	| object				# ForCdt1Object;
+forCondition2: object;
+forCondition3:
+	variableAssignment	# ForCdt3VariableAssignment
+	| object			# ForCdt3Object;
 
-// Condition Statement
 conditionStatement:
-	If '(' expression ')' statement (Else statement)?;
+	If '(' object ')' statement (Else statement)?;
 
-// Jump Statement
-jumpStatement: (Return expression | Break | Continue) ';';
+jumpStatement:
+	Return object? ';'	# JumpReturn
+	| Break ';'			# JumpBreak
+	| Continue ';'		# JumpContinue;
 
-// Compound Statement
-compoundStatement: '{' statements '}';
+compoundStatement: '{' statements? '}';
 
-////////// Expressions //////////
+////////// Assignments //////////
 
-expression: object;
+variableDeclaration: type Identifier;
+
+variableDefinition: type Identifier '=' object;
+
+variableAssignment: lvalue '=' object;
+
+////////// Objects //////////
+
+lvalue:
+	Identifier				# IdentifierLvalue
+	| This '.' Identifier	# MemberLvalue
+	| lvalue '.' Identifier	# MemberLvalue
+	| lvalue '[' object ']'	# SubscriptLvalue;
 
 object:
-	Identifier
-	| Constant
-	| '(' object ')'
-	| object '.' object
-	| This '.' object
-	| object '(' paramList? ')' // _call
-	| object '[' object ']' // _subscript
-	| object op = (
-		'++' // _postfix_increment
-		| '--' // _postfix_increment
-	)
-	| op = ('++' | '--') Identifier
-	| op = '~' object
-	| op = '!' object
-	| op = ('+' | '-') object
-	| op = New newObject // TODO
-	| object op = ('*' | '/' | '%') object
-	| object op = ('+' | '-') object
-	| object op = ('<<' | '>>') object
-	| object op = ('<' | '>' | '<=' | '>=') object
-	| object op = ('==' | '!=') object
-	| object op = '&' object
-	| object op = '^' object
-	| object op = '|' object
-	| object op = '&&' object
-	| object op = '||' object;
-
-newObject: type ('[' object ']')* ('[' ']')* | type '(' ')';
-
-////////// Data Type //////////
+	This												# ThisObject
+	| Identifier										# IdentifierObject
+	| constant											# ConstantObject
+	| lvalue											# LvalueObject
+	| object '.' Identifier								# MemberObject
+	| '(' object ')'									# BracketObject
+	| object '(' paramList ')'							# FunctionReturnObject
+	| object '[' object ']'								# SubscriptObject
+	| lvalue op = ('++' | '--')							# UnaryOperatorObject
+	| <assoc = right> op = ('++' | '--') lvalue			# UnaryOperatorObject
+	| <assoc = right> op = '~' object					# UnaryOperatorObject
+	| <assoc = right> op = '!' object					# UnaryOperatorObject
+	| <assoc = right> op = ('+' | '-') object			# UnaryOperatorObject
+	| op = New type (('[' object? ']')+ | ('(' ')')?)	# NewObject
+	| object op = ('*' | '/' | '%') object				# BinaryOperatorObject
+	| object op = ('+' | '-') object					# BinaryOperatorObject
+	| object op = ('<<' | '>>') object					# BinaryOperatorObject
+	| object op = ('<' | '>' | '<=' | '>=') object		# BinaryOperatorObject
+	| object op = ('==' | '!=') object					# BinaryOperatorObject
+	| object op = '&' object							# BinaryOperatorObject
+	| object op = '^' object							# BinaryOperatorObject
+	| object op = '|' object							# BinaryOperatorObject
+	| object op = '&&' object							# BinaryOperatorObject
+	| object op = '||' object							# BinaryOperatorObject;
 
 type: simpleType | compositeType;
+////////// Data Type //////////
 
 simpleType: fundamentalType | customType;
 compositeType: simpleType ('[' ']')+;
@@ -124,11 +133,16 @@ compositeType: simpleType ('[' ']')+;
 fundamentalType: Int | Bool | Void | String;
 customType: Identifier;
 
+constant:
+	Null				# Null
+	| LogicalConstant	# LogicalConstant
+	| IntegerConstant	# IntegerConstant
+	| StringLiteral		# StringLiteral;
+
 /****************************** Tokens ******************************/
 
-////////// Keywords //////////
-
 New: 'new';
+////////// Keywords //////////
 
 Bool: 'bool';
 Int: 'int';
@@ -149,17 +163,11 @@ Continue: 'continue';
 
 ////////// Literals //////////
 
-Constant:
-	Null
-	| LogicalConstant
-	| IntegerConstant
-	| StringLiteral;
-
 Null: 'null';
 
+LogicalConstant: True | False;
 True: 'true';
 False: 'false';
-LogicalConstant: True | False;
 
 IntegerConstant: DecimalConstant;
 
@@ -188,8 +196,8 @@ LogicalAnd: '&&';
 LogicalOr: '||';
 
 // Bitwise Operators
-ShiftLeft: '<<';
-ShiftRight: '>>';
+SHL: '<<';
+SHR: '>>';
 BitInversion: '~';
 BitAnd: '&';
 BitOr: '|';
@@ -236,13 +244,13 @@ fragment IdentifierStartChar: Letter | Underline;
 fragment IdentifierChar: Letter | Digit | Underline;
 
 fragment Underline: '_';
-fragment PrintableCharacter: '!' .. '~';
+fragment PrintableCharacter: '!' .. '[' | ']' ..'~';
 fragment EscapeCharacter: '\\n' | '\\\\' | '\\"';
 fragment Character:
 	PrintableCharacter
 	| Whitespace
 	| EscapeCharacter;
-fragment CharacterSequence: Character+;
+fragment CharacterSequence: Character+?;
 
 /****************************** Whitespace and Comments ******************************/
 

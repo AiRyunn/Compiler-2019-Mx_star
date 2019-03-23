@@ -1,0 +1,6 @@
+class A{}
+
+A func() {return new A();}
+
+A a = func();
+A b=a;

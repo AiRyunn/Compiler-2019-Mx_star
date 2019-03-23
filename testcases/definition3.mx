@@ -1,0 +1,15 @@
+A a;
+
+B b = a.func();
+
+class A {
+	B func() {
+		return new B();
+	}
+}
+
+class B { }
+
+int main() {
+	return 0;
+}

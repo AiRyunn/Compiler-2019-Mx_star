@@ -1,0 +1,14 @@
+int a;
+string[][] bbb;
+int y = 7;
+string sss = "sdf";
+
+int b = func();
+
+
+int func(){return 3;}
+
+int[][] ccc = func2("123");
+int[][] func2(string sss){
+return new int[10][10];
+}

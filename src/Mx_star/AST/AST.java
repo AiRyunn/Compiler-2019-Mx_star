@@ -2,9 +2,7 @@ package Mx_star.AST;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-
 import org.antlr.v4.runtime.misc.*;
-
 import java.io.*;
 
 class ThrowingErrorListener extends BaseErrorListener {
@@ -19,7 +17,7 @@ class ThrowingErrorListener extends BaseErrorListener {
 }
 
 public class AST {
-    public static ParseTree fromStream(InputStream istream) throws IOException {
+    public static ParseTree fromStream(InputStream istream) throws Exception {
         CharStream input = CharStreams.fromStream(istream);
 
         Mx_starLexer lexer = new Mx_starLexer(input);
@@ -27,8 +25,13 @@ public class AST {
         Mx_starParser parser = new Mx_starParser(tokens);
         parser.removeErrorListeners();
         parser.addErrorListener(ThrowingErrorListener.INSTANCE);
-        ParseTree tree = parser.program();
 
-        return tree;
+        try {
+            ParseTree tree = parser.program();
+
+            return tree;
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 }

@@ -1,5 +1,7 @@
 bin/
+autotest/
 
 *.class
 source.mx
 target.asm
+*.sqlite

@@ -1,0 +1,2 @@
+int ff(int a,int b){return a;}
+int gg(int[] b, string[] s){return 123;}

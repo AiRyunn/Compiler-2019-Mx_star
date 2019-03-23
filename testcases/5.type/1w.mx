@@ -1,0 +1,2 @@
+int a=func();
+void func() {return 3;}
