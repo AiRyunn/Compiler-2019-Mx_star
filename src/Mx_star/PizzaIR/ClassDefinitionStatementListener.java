@@ -11,7 +11,7 @@ class ClassDefinitionStatementListener extends Mx_starBaseListener {
         switch (PizzaIR.state) {
         case TYPE_DECLARATION:
             PizzaIR.typeList.addType(new Type(PizzaIR.dom.getClassTrace()));
-            // TODO: 在这里添加 class 嵌套
+            // TODO
             break;
         case MEMBER_DECLARATION:
         case TRANSLATION:
