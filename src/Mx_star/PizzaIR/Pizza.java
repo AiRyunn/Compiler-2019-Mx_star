@@ -52,7 +52,7 @@ class Type implements Cloneable {
             assert false;
         }
         if (hasMethod(method)) {
-            // 重载相关
+            // TODO
             assert false;
         }
         memMethod.put(method, func);
