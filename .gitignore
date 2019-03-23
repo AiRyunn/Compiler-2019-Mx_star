@@ -1,6 +1,6 @@
 bin/
 autotest/
-vscode/
+.vscode/
 
 *.class
 source.mx
