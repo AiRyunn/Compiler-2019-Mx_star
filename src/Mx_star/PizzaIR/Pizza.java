@@ -12,8 +12,6 @@ class Type implements Cloneable {
     Map<String, String> memVar;
     Map<String, String> memMethod;
 
-    // 对 params 求 hash 以实现重载
-
     Type(String name) {
         this.name = name;
         memVar = new HashMap<String, String>();
