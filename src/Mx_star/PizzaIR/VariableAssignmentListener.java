@@ -5,10 +5,10 @@ import Mx_star.AST.*;
 class VariableAssignmentListener extends Mx_starBaseListener {
     @Override
     public void enterVariableAssignment(Mx_starParser.VariableAssignmentContext ctx) {
-        var objLser = new ObjectListener();
+        ObjectListener objLser = new ObjectListener();
         ctx.object().enterRule(objLser);
 
-        var lvalueLser = new LvalueListener();
+        LvalueListener lvalueLser = new LvalueListener();
         ctx.lvalue().enterRule(lvalueLser);
 
         // String name = lvalueLser.name;

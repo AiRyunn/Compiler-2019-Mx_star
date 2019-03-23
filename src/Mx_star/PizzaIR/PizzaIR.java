@@ -25,7 +25,7 @@ public class PizzaIR {
         ParseTreeWalker walker = new ParseTreeWalker();
         ProgramListener listener = new ProgramListener();
 
-        var ir = new PizzaIR();
+        PizzaIR ir = new PizzaIR();
 
         Logging.info("register built-in types and functions");
 
@@ -207,7 +207,7 @@ public class PizzaIR {
             assert false;
         }
         counter++;
-        var variable = new Variable(counter, name, type, dom.getAddr());
+        Variable variable = new Variable(counter, name, type, dom.getAddr());
         varList.add(variable);
         dom.addVar(variable);
     }

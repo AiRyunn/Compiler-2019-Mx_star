@@ -1,6 +1,9 @@
 package Mx_star.PizzaIR;
 
+import org.antlr.v4.runtime.tree.ParseTree;
+
 import Mx_star.AST.*;
+import Mx_star.AST.Mx_starParser.ConstantContext;
 
 public class ObjectListener extends Mx_starBaseListener {
     String type;
@@ -58,7 +61,7 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterConstantObject(Mx_starParser.ConstantObjectContext ctx) {
-        var constant = ctx.constant();
+        ConstantContext constant = ctx.constant();
         if (constant instanceof Mx_starParser.NullContext) {
             type = "null";
         } else if (constant instanceof Mx_starParser.LogicalConstantContext) {
@@ -74,7 +77,7 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterLvalueObject(Mx_starParser.LvalueObjectContext ctx) {
-        var lser = new LvalueListener();
+        LvalueListener lser = new LvalueListener();
         ctx.lvalue().enterRule(lser);
         type = lser.type;
     }
@@ -90,7 +93,7 @@ public class ObjectListener extends Mx_starBaseListener {
         // identifier_typename = PizzaIR.dom.getClassTrace();
         // }
 
-        var lser = new ObjectListener();
+        ObjectListener lser = new ObjectListener();
         ctx.object().enterRule(lser);
 
         Type identifier_type = PizzaIR.typeList.getType(lser.type);
@@ -112,14 +115,14 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterBracketObject(Mx_starParser.BracketObjectContext ctx) {
-        var lser = new ObjectListener();
+        ObjectListener lser = new ObjectListener();
         ctx.object().enterRule(lser);
         type = lser.type;
     }
 
     @Override
     public void enterFunctionReturnObject(Mx_starParser.FunctionReturnObjectContext ctx) {
-        var lser = new ObjectListener();
+        ObjectListener lser = new ObjectListener();
         ctx.object().enterRule(lser);
 
         if (!lser.type.equals("__func__") && !lser.type.equals("__method__")) {
@@ -133,14 +136,14 @@ public class ObjectListener extends Mx_starBaseListener {
 
         Func func = PizzaIR.funcList.getFunc(addr);
 
-        var paramLser = new ParamListListener();
+        ParamListListener paramLser = new ParamListListener();
         ctx.paramList().enterRule(paramLser);
 
-        var params = new Params();
+        Params params = new Params();
         if (lser.type.equals("__method__")) {
             params.add(func.params.params.get(0));
         }
-        for (var param : paramLser.params.params) {
+        for (String param : paramLser.params.params) {
             params.add(param);
         }
 
@@ -153,7 +156,7 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterSubscriptObject(Mx_starParser.SubscriptObjectContext ctx) {
-        var obj = new ObjectListener();
+        ObjectListener obj = new ObjectListener();
         ctx.object(0).enterRule(obj);
 
         type = obj.type;
@@ -161,7 +164,7 @@ public class ObjectListener extends Mx_starBaseListener {
             assert (false);
         }
 
-        var sub = new ObjectListener();
+        ObjectListener sub = new ObjectListener();
         ctx.object(1).enterRule(sub);
         if (!sub.type.equals("int")) {
             assert (false);
@@ -200,11 +203,11 @@ public class ObjectListener extends Mx_starBaseListener {
         String objType = "";
 
         if (ctx.lvalue() != null) {
-            var lser = new LvalueListener();
+            LvalueListener lser = new LvalueListener();
             ctx.lvalue().enterRule(lser);
             objType = lser.type;
         } else {
-            var lser = new ObjectListener();
+            ObjectListener lser = new ObjectListener();
             ctx.object().enterRule(lser);
             objType = lser.type;
         }
@@ -231,7 +234,7 @@ public class ObjectListener extends Mx_starBaseListener {
         int cntSquareBracket = 0;
         int counter = 0;
 
-        for (var ch : ctx.children) {
+        for (ParseTree ch : ctx.children) {
             if (ch.getText().equals("[")) {
                 cntSquareBracket++;
                 counter++;
@@ -240,7 +243,7 @@ public class ObjectListener extends Mx_starBaseListener {
                 if (counter > 0) {
                     assert false;
                 }
-                var lser = new ObjectListener();
+                ObjectListener lser = new ObjectListener();
                 ((Mx_starParser.ObjectContext) ch).enterRule(lser);
                 if (!lser.type.equals("int")) {
                     assert false;
@@ -260,11 +263,11 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
-        var lser0 = new ObjectListener();
+        ObjectListener lser0 = new ObjectListener();
         ctx.object(0).enterRule(lser0);
         String type0 = lser0.type;
 
-        var lser1 = new ObjectListener();
+        ObjectListener lser1 = new ObjectListener();
         ctx.object(1).enterRule(lser1);
         String type1 = lser1.type;
 

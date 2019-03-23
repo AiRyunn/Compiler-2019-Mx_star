@@ -7,14 +7,14 @@ public class LoopStatementListener extends Mx_starBaseListener {
     public void enterWhileLoop(Mx_starParser.WhileLoopContext ctx) {
         PizzaIR.dom.enterLoop(-1);
 
-        var objLser = new ObjectListener();
+        ObjectListener objLser = new ObjectListener();
         ctx.object().enterRule(objLser);
 
         if (!objLser.type.equals("bool")) {
             assert false;
         }
 
-        var stmtLser = new StatementListener();
+        StatementListener stmtLser = new StatementListener();
         ctx.statement().enterRule(stmtLser);
 
         PizzaIR.dom.exitLoop();
@@ -25,11 +25,11 @@ public class LoopStatementListener extends Mx_starBaseListener {
         PizzaIR.dom.enterLoop(-1);
 
         if (ctx.forCondition().forCondition1() != null) {
-            var cdt1Lser = new ForCondition1Listener();
+            ForCondition1Listener cdt1Lser = new ForCondition1Listener();
             ctx.forCondition().forCondition1().enterRule(cdt1Lser);
         }
         if (ctx.forCondition().forCondition2() != null) {
-            var objLser = new ObjectListener();
+            ObjectListener objLser = new ObjectListener();
             ctx.forCondition().forCondition2().object().enterRule(objLser);
             if (objLser.type != "bool") {
                 assert false;
@@ -37,11 +37,11 @@ public class LoopStatementListener extends Mx_starBaseListener {
         }
 
         if (ctx.forCondition().forCondition3() != null) {
-            var cdt3Lser = new ForCondition3Listener();
+            ForCondition3Listener cdt3Lser = new ForCondition3Listener();
             ctx.forCondition().forCondition3().enterRule(cdt3Lser);
         }
 
-        var stmtLser = new StatementListener();
+        StatementListener stmtLser = new StatementListener();
         ctx.statement().enterRule(stmtLser);
 
         PizzaIR.dom.exitLoop();

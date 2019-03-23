@@ -26,7 +26,7 @@ public class LvalueListener extends Mx_starBaseListener {
             }
             identifier_typename = PizzaIR.dom.getClassTrace();
         } else {
-            var lser = new LvalueListener();
+            LvalueListener lser = new LvalueListener();
             ctx.lvalue().enterRule(lser);
 
             identifier_typename = lser.type;
@@ -45,7 +45,7 @@ public class LvalueListener extends Mx_starBaseListener {
 
     @Override
     public void enterSubscriptLvalue(Mx_starParser.SubscriptLvalueContext ctx) {
-        var lvalueLser = new LvalueListener();
+        LvalueListener lvalueLser = new LvalueListener();
         ctx.lvalue().enterRule(lvalueLser);
 
         name = lvalueLser.name;
@@ -54,7 +54,7 @@ public class LvalueListener extends Mx_starBaseListener {
             assert false;
         }
 
-        var objLser = new ObjectListener();
+        ObjectListener objLser = new ObjectListener();
         ctx.object().enterRule(objLser);
         if (!objLser.type.equals("int")) {
             assert false;

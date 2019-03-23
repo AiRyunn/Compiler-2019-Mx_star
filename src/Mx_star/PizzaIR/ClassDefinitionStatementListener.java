@@ -1,6 +1,7 @@
 package Mx_star.PizzaIR;
 
 import Mx_star.AST.*;
+import Mx_star.AST.Mx_starParser.ClassMemberContext;
 
 class ClassDefinitionStatementListener extends Mx_starBaseListener {
     @Override
@@ -15,8 +16,8 @@ class ClassDefinitionStatementListener extends Mx_starBaseListener {
             break;
         case MEMBER_DECLARATION:
         case TRANSLATION:
-            for (var member : ctx.classMember()) {
-                var lser = new ClassMemberListener();
+            for (ClassMemberContext member : ctx.classMember()) {
+                ClassMemberListener lser = new ClassMemberListener();
                 member.enterRule(lser);
             }
             break;

@@ -2,6 +2,7 @@ package Mx_star.PizzaIR;
 
 import Mx_star.AST.*;
 import logging.*;
+import utils.Pair;
 
 class FunctionDefinitionStatementListener extends Mx_starBaseListener {
     String name, rtype;
@@ -19,7 +20,7 @@ class FunctionDefinitionStatementListener extends Mx_starBaseListener {
 
         PizzaIR.dom.enterFunc(trace, name, rtype);
 
-        var lser = new ParamListDefinitionListener();
+        ParamListDefinitionListener lser = new ParamListDefinitionListener();
         ctx.paramListDefinition().enterRule(lser);
 
         if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
@@ -40,12 +41,12 @@ class FunctionDefinitionStatementListener extends Mx_starBaseListener {
                 assert false;
             }
         } else {
-            for (var param : lser.params.params) {
+            for (Pair<String, String> param : lser.params.params) {
                 PizzaIR.allocateVariable(param.first, param.second);
             }
 
             if (ctx.statements() != null) {
-                var stmtLser = new StatementsListener();
+                StatementsListener stmtLser = new StatementsListener();
                 ctx.statements().enterRule(stmtLser);
             }
         }

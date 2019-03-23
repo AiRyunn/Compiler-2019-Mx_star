@@ -6,7 +6,7 @@ public class ClassMemberListener extends Mx_starBaseListener {
 
     @Override
     public void enterClassVariableDeclarationStatement(Mx_starParser.ClassVariableDeclarationStatementContext ctx) {
-        var lser = new VariableDeclarationListener();
+        VariableDeclarationListener lser = new VariableDeclarationListener();
         ctx.variableDeclarationStatement().variableDeclaration().enterRule(lser);
         String name = lser.name, type = lser.type;
 
@@ -21,7 +21,7 @@ public class ClassMemberListener extends Mx_starBaseListener {
 
     @Override
     public void enterClassConstructionFunctionStatement(Mx_starParser.ClassConstructionFunctionStatementContext ctx) {
-        var lser = new ConstructionFunctionStatementListener();
+        ConstructionFunctionStatementListener lser = new ConstructionFunctionStatementListener();
         ctx.constructionFunctionStatement().enterRule(lser);
 
         if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
@@ -41,7 +41,7 @@ public class ClassMemberListener extends Mx_starBaseListener {
 
     @Override
     public void enterClassFunctionDefinitionStatement(Mx_starParser.ClassFunctionDefinitionStatementContext ctx) {
-        var lser = new FunctionDefinitionStatementListener();
+        FunctionDefinitionStatementListener lser = new FunctionDefinitionStatementListener();
         ctx.functionDefinitionStatement().enterRule(lser);
 
         if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {

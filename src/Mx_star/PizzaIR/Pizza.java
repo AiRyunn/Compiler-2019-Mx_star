@@ -134,7 +134,7 @@ class Instruction {
         if (type.equals("void")) {
             assert false;
         }
-        var list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<String>();
         list.add(value);
         return new Instruction(name, type, "%value", list);
     }
@@ -320,8 +320,8 @@ class Domain {
     }
 
     boolean hasVar(String name) {
-        for (var it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
-            var pre = it.previous();
+        for (ListIterator<Pair<Variable, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Variable, Integer> pre = it.previous();
             if (pre.first.name.equals(name)) {
                 return true;
             }
@@ -330,8 +330,8 @@ class Domain {
     }
 
     Variable getVar(String name) {
-        for (var it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
-            var pre = it.previous();
+        for (ListIterator<Pair<Variable, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Variable, Integer> pre = it.previous();
             if (pre.first.name.equals(name)) {
                 return pre.first;
             }
@@ -340,8 +340,8 @@ class Domain {
     }
 
     String getVarType(String name) {
-        for (var it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
-            var pre = it.previous();
+        for (ListIterator<Pair<Variable, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Variable, Integer> pre = it.previous();
             if (pre.first.name.equals(name)) {
                 return pre.first.type;
             }
@@ -363,7 +363,7 @@ class Domain {
         }
 
         String result = "";
-        for (var it = classTrace.iterator(); it.hasNext();) {
+        for (Iterator<String> it = classTrace.iterator(); it.hasNext();) {
             result += it.next();
             if (it.hasNext()) {
                 result += ".";
@@ -445,7 +445,7 @@ class Domain {
     }
 
     boolean inLoop() {
-        for (var b : block) {
+        for (Block b : block) {
             if (b.type == BlockType.LOOP)
                 return true;
         }
@@ -453,7 +453,7 @@ class Domain {
     }
 
     boolean inFunc() {
-        for (var b : block) {
+        for (Block b : block) {
             if (b.type == BlockType.FUNC)
                 return true;
         }
@@ -461,7 +461,7 @@ class Domain {
     }
 
     String getRtype() {
-        for (var b : block) {
+        for (Block b : block) {
             if (b.type == BlockType.FUNC)
                 return b.rtype;
         }
@@ -470,7 +470,7 @@ class Domain {
     }
 
     String getCurrentFunc() {
-        for (var b : block) {
+        for (Block b : block) {
             if (b.type == BlockType.FUNC)
                 return b.name;
         }
@@ -478,8 +478,8 @@ class Domain {
     }
 
     boolean canAllocate(String name) {
-        for (var it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
-            var pre = it.previous();
+        for (ListIterator<Pair<Variable, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Variable, Integer> pre = it.previous();
             if (pre.second < depth) {
                 break;
             }

@@ -7,7 +7,7 @@ class VariableDefinitionListener extends Mx_starBaseListener {
 
     @Override
     public void enterVariableDefinition(Mx_starParser.VariableDefinitionContext ctx) {
-        var lser = new ObjectListener();
+        ObjectListener lser = new ObjectListener();
         ctx.object().enterRule(lser);
 
         name = ctx.Identifier().getText();

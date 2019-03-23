@@ -10,7 +10,7 @@ public class ParamListListener extends Mx_starBaseListener {
         params = new Params();
 
         ctx.object().forEach(member -> {
-            var lser = new ObjectListener();
+            ObjectListener lser = new ObjectListener();
             member.enterRule(lser);
             String type = lser.type;
             params.add(type);

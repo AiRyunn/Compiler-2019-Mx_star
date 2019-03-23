@@ -1,6 +1,8 @@
 package Mx_star.PizzaIR;
 
 import Mx_star.AST.*;
+import Mx_star.AST.Mx_starParser.ProgramSectionContext;
+
 import com.google.gson.*;
 
 public class ProgramListener extends Mx_starBaseListener {
@@ -10,8 +12,8 @@ public class ProgramListener extends Mx_starBaseListener {
     public void enterProgram(Mx_starParser.ProgramContext ctx) {
         data = new JsonObject();
 
-        for (var programSection : ctx.programSection()) {
-            var lser = new ProgramSectionListener();
+        for (ProgramSectionContext programSection : ctx.programSection()) {
+            ProgramSectionListener lser = new ProgramSectionListener();
             programSection.enterRule(lser);
         }
 

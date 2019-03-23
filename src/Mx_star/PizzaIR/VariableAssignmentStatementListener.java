@@ -5,7 +5,7 @@ import Mx_star.AST.*;
 public class VariableAssignmentStatementListener extends Mx_starBaseListener {
     @Override
     public void enterVariableAssignmentStatement(Mx_starParser.VariableAssignmentStatementContext ctx) {
-        var lser = new VariableAssignmentListener();
+        VariableAssignmentListener lser = new VariableAssignmentListener();
         ctx.variableAssignment().enterRule(lser);
     }
 }

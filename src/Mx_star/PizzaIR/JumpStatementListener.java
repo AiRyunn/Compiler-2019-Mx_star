@@ -10,7 +10,7 @@ public class JumpStatementListener extends Mx_starBaseListener {
         }
 
         if (ctx.object() != null) {
-            var lser = new ObjectListener();
+            ObjectListener lser = new ObjectListener();
             ctx.object().enterRule(lser);
             String objType = lser.type;
 

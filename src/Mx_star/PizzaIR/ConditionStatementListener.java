@@ -5,7 +5,7 @@ import Mx_star.AST.*;
 public class ConditionStatementListener extends Mx_starBaseListener {
     @Override
     public void enterConditionStatement(Mx_starParser.ConditionStatementContext ctx) {
-        var objLser = new ObjectListener();
+        ObjectListener objLser = new ObjectListener();
         ctx.object().enterRule(objLser);
 
         if (!objLser.type.equals("bool")) {
@@ -15,7 +15,7 @@ public class ConditionStatementListener extends Mx_starBaseListener {
         ctx.statement().forEach(ch -> {
             PizzaIR.dom.enterScope(-1);
 
-            var lser = new StatementListener();
+            StatementListener lser = new StatementListener();
             ch.enterRule(lser);
 
             PizzaIR.dom.exitScope();

@@ -8,7 +8,7 @@ public class CompoundStatementListener extends Mx_starBaseListener {
         if (ctx.statements() != null) {
             PizzaIR.dom.enterScope(-1);
 
-            var lser = new StatementsListener();
+            StatementsListener lser = new StatementsListener();
             ctx.statements().enterRule(lser);
 
             PizzaIR.dom.exitScope();
