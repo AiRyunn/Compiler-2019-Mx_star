@@ -31,9 +31,6 @@ public class Compiler {
 
             PizzaIR ir = PizzaIRBuilder.fromParser(parser);
 
-            // System.out.println(ir.toString());
-            // System.out.println(ir.getCode());
-
             System.exit(0);
 
             LOGGER.info("optimization");
