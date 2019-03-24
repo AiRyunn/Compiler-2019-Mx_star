@@ -7,14 +7,14 @@ public class ForCondition1Listener extends Mx_starBaseListener {
     public void enterForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
         VariableDeclarationListener lser = new VariableDeclarationListener();
         ctx.variableDeclaration().enterRule(lser);
-        PizzaIRBuilder.allocateVariable(lser.name, lser.type);
+        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
     }
 
     @Override
     public void enterForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
         VariableDefinitionListener lser = new VariableDefinitionListener();
         ctx.variableDefinition().enterRule(lser);
-        PizzaIRBuilder.allocateVariable(lser.name, lser.type);
+        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
     }
 
     @Override

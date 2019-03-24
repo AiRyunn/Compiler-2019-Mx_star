@@ -13,15 +13,15 @@ public class ConditionStatementListener extends Mx_starBaseListener {
         }
 
         ctx.statement().forEach(ch -> {
-            PizzaIRBuilder.dom.enterCondition(-1);
-            PizzaIRBuilder.code.packScope();
+            PizzaIRVisitor.dom.enterCondition(-1);
+            PizzaIRVisitor.code.packScope();
 
             StatementListener lser = new StatementListener();
             ch.enterRule(lser);
 
-            PizzaIRBuilder.dom.exitCondition();
+            PizzaIRVisitor.dom.exitCondition();
         });
 
-        PizzaIRBuilder.code.packScope();
+        PizzaIRVisitor.code.packScope();
     }
 }

@@ -10,9 +10,9 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
     @Override
     public void enterConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
         name = ctx.Identifier().getText();
-        String trace = PizzaIRBuilder.dom.getClassTrace();
+        String trace = PizzaIRVisitor.dom.getClassTrace();
 
-        PizzaIRBuilder.dom.enterFunc(trace, name, "void");
+        PizzaIRVisitor.dom.enterFunc(trace, name, "void");
 
         Logging.debug("enter construction function: " + name);
 
@@ -21,19 +21,19 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
 
         if (PizzaIRVisitor.state == VisitState.MEMBER_DECLARATION) {
             Func func = new Func(trace, name, "void");
-            if (!PizzaIRBuilder.dom.isGlobal()) {
+            if (!PizzaIRVisitor.dom.isGlobal()) {
                 func.addParam(trace);
             }
             lser.params.params.forEach(param -> func.addParam(param.second));
 
-            if (PizzaIRBuilder.funcList.addFunc(func) == false) {
+            if (PizzaIRVisitor.funcList.addFunc(func) == false) {
                 assert false;
             }
         } else {
-            PizzaIRBuilder.code.newSection(PizzaIRBuilder.dom.getAddr());
+            PizzaIRVisitor.code.newSection(PizzaIRVisitor.dom.getAddr());
 
             for (Pair<String, String> param : lser.params.params) {
-                PizzaIRBuilder.allocateVariable(param.first, param.second);
+                PizzaIRVisitor.allocateVariable(param.first, param.second);
             }
 
             if (ctx.statements() != null) {
@@ -41,11 +41,11 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
                 ctx.statements().enterRule(stmtLser);
             }
 
-            PizzaIRBuilder.code.packScope();
-            PizzaIRBuilder.code.packSection();
+            PizzaIRVisitor.code.packScope();
+            PizzaIRVisitor.code.packSection();
         }
 
         Logging.debug("exit construction function: " + name);
-        PizzaIRBuilder.dom.exitFunc();
+        PizzaIRVisitor.dom.exitFunc();
     }
 }
