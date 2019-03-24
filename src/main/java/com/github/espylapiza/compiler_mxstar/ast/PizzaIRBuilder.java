@@ -2,9 +2,9 @@ package com.github.espylapiza.compiler_mxstar.ast;
 
 import java.util.logging.Logger;
 
+import com.google.gson.JsonObject;
+
 import org.antlr.v4.runtime.tree.*;
-import com.github.espylapiza.compiler_mxstar.nasm.*;
-import com.google.gson.*;
 
 public class PizzaIRBuilder {
     private final static Logger LOGGER = Logger.getLogger(PizzaIRBuilder.class.getName());
@@ -19,9 +19,12 @@ public class PizzaIRBuilder {
         LOGGER.info("build IR");
         parser.accept(visitor);
 
-        PizzaIR ir = new PizzaIR(visitor.data);
+        LOGGER.info("save data");
+        JsonObject data = new JsonObject();
+        data.add("Type", visitor.typeList.toJson());
+        data.add("Func", visitor.funcList.toJson());
+        data.add("Var", visitor.varList.toJson());
 
-        return ir;
+        return new PizzaIR(data);
     }
-
 }
