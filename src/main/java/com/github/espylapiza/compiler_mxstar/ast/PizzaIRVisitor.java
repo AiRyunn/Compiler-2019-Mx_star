@@ -1,5 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.ast;
 
+import java.util.*;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starBaseVisitor;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.*;
@@ -16,15 +17,15 @@ enum VisitState {
 public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     JsonObject data;
 
-    public static VisitState state;
+    public VisitState state;
 
     public static Domain dom = new Domain();
 
     public static TypeList typeList = new TypeList();
-    public static VarList varList = new VarList();
+    public VarList varList = new VarList();
     public static FuncList funcList = new FuncList();
 
-    public static int counter = 0;
+    public int counter = 0;
 
     public static Code code = new Code();
 
@@ -95,6 +96,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         case SEMANTIC_ANALYSIS:
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
             break;
+        case TRANSLATION_ENTRANCE:
+        case TRANSLATION:
         }
 
         dom.exitClass();
@@ -208,51 +211,51 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String name = ctx.Identifier().getText();
         String rtype = ctx.type().getText();
         FunctionNode result = new FunctionNode(name, rtype);
-        String trace = PizzaIRVisitor.dom.getClassTrace();
+        String trace = dom.getClassTrace();
 
-        if (!rtype.equals("void") && !PizzaIRVisitor.typeList.hasType(rtype)) {
+        if (!rtype.equals("void") && !typeList.hasType(rtype)) {
             assert false;
         }
         Logging.debug("enter function: " + name);
 
-        PizzaIRVisitor.dom.enterFunc(trace, name, rtype);
+        dom.enterFunc(trace, name, rtype);
 
         ParamListInstance lser = (ParamListInstance) visit(ctx.paramListDefinition());
 
-        if (PizzaIRVisitor.state == VisitState.MEMBER_DECLARATION) {
+        if (state == VisitState.MEMBER_DECLARATION) {
             String owner;
-            if (!PizzaIRVisitor.dom.isGlobal()) {
+            if (!dom.isGlobal()) {
                 owner = trace;
             } else {
                 owner = null;
             }
 
             Func func = new Func(owner, name, rtype);
-            if (!PizzaIRVisitor.dom.isGlobal()) {
+            if (!dom.isGlobal()) {
                 func.addParam(trace);
             }
             lser.params.params.forEach(param -> func.addParam(param.second));
 
-            if (PizzaIRVisitor.funcList.addFunc(func) == false) {
+            if (funcList.addFunc(func) == false) {
                 assert false;
             }
         } else {
-            PizzaIRVisitor.code.newSection(PizzaIRVisitor.dom.getAddr());
+            code.newSection(dom.getAddr());
 
             for (Pair<String, String> param : lser.params.params) {
-                PizzaIRVisitor.allocateVariable(param.first, param.second);
+                allocateVariable(param.first, param.second);
             }
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            PizzaIRVisitor.code.packScope();
-            PizzaIRVisitor.code.packSection();
+            code.packScope();
+            code.packSection();
         }
 
         Logging.debug("exit function: " + name);
-        PizzaIRVisitor.dom.exitFunc();
+        dom.exitFunc();
         return result;
     }
 
@@ -295,24 +298,24 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     @Override
     public Node visitVariableDeclarationStatement(Mx_starParser.VariableDeclarationStatementContext ctx) {
         VariableNode lser = (VariableNode) visit(ctx.variableDeclaration());
-        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
+        allocateVariable(lser.name, lser.type);
         return null;
     }
 
     @Override
     public Node visitVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
         VariableNode lser = (VariableNode) visit(ctx.variableDefinition());
-        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
+        allocateVariable(lser.name, lser.type);
         return null;
     }
 
     public Node visitCompoundStatement(Mx_starParser.CompoundStatementContext ctx) {
         if (ctx.statements() != null) {
-            PizzaIRVisitor.dom.enterCondition(-1);
+            dom.enterCondition(-1);
 
             visit(ctx.statements());
 
-            PizzaIRVisitor.dom.exitCondition();
+            dom.exitCondition();
         }
         return null;
     }
@@ -378,7 +381,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitJumpReturn(Mx_starParser.JumpReturnContext ctx) {
-        if (!PizzaIRVisitor.dom.inFunc()) {
+        if (!dom.inFunc()) {
             assert false;
         }
 
@@ -386,21 +389,21 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             ObjectNode lser = (ObjectNode) visit(ctx.object());
             String objType = lser.type;
 
-            String rtype = PizzaIRVisitor.dom.getRtype();
+            String rtype = dom.getRtype();
             if (objType.equals("null")) {
-                if (rtype.endsWith("[]") || !PizzaIRVisitor.typeList.getType(rtype).isBuiltin()) {
+                if (rtype.endsWith("[]") || !typeList.getType(rtype).isBuiltin()) {
                     // return null
                 } else {
                     assert false;
                 }
-            } else if (!objType.equals(PizzaIRVisitor.dom.getRtype())) {
+            } else if (!objType.equals(dom.getRtype())) {
                 assert false;
             } else {
 
             }
 
         } else {
-            if (!PizzaIRVisitor.dom.getRtype().equals("void")) {
+            if (!dom.getRtype().equals("void")) {
                 assert false;
             }
         }
@@ -409,7 +412,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitJumpBreak(Mx_starParser.JumpBreakContext ctx) {
-        if (!PizzaIRVisitor.dom.inLoop()) {
+        if (!dom.inLoop()) {
             assert false;
         }
         return null;
@@ -417,7 +420,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitJumpContinue(Mx_starParser.JumpContinueContext ctx) {
-        if (!PizzaIRVisitor.dom.inLoop()) {
+        if (!dom.inLoop()) {
             assert false;
         }
         return null;
@@ -425,7 +428,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
-        PizzaIRVisitor.dom.enterLoop(-1);
+        dom.enterLoop(-1);
 
         ObjectNode objLser = (ObjectNode) visit(ctx.object());
 
@@ -435,13 +438,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         visit(ctx.statement());
 
-        PizzaIRVisitor.dom.exitLoop();
+        dom.exitLoop();
         return null;
     }
 
     @Override
     public Node visitForLoop(Mx_starParser.ForLoopContext ctx) {
-        PizzaIRVisitor.dom.enterLoop(-1);
+        dom.enterLoop(-1);
 
         if (ctx.forCondition().forCondition1() != null) {
             visit(ctx.forCondition().forCondition1());
@@ -459,21 +462,21 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         visit(ctx.statement());
 
-        PizzaIRVisitor.dom.exitLoop();
+        dom.exitLoop();
         return null;
     }
 
     @Override
     public Node visitForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
         VariableNode lser = (VariableNode) visit(ctx.variableDeclaration());
-        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
+        allocateVariable(lser.name, lser.type);
         return null;
     }
 
     @Override
     public Node visitForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
         VariableNode lser = (VariableNode) visit(ctx.variableDefinition());
-        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
+        allocateVariable(lser.name, lser.type);
         return null;
     }
 
@@ -510,15 +513,15 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         }
 
         ctx.statement().forEach(ch -> {
-            PizzaIRVisitor.dom.enterCondition(-1);
-            PizzaIRVisitor.code.packScope();
+            dom.enterCondition(-1);
+            code.packScope();
 
             visit(ch);
 
-            PizzaIRVisitor.dom.exitCondition();
+            dom.exitCondition();
         });
 
-        PizzaIRVisitor.code.packScope();
+        code.packScope();
         return null;
     }
 
@@ -529,11 +532,11 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String name = ctx.Identifier().getText();
         String type = ctx.type().getText();
 
-        if (!PizzaIRVisitor.typeList.hasType(type)) {
+        if (!typeList.hasType(type)) {
             assert false;
         }
 
-        if ((type.endsWith("[]") || !PizzaIRVisitor.typeList.getType(type).isBuiltin()) && lser.type.equals("null")) {
+        if ((type.endsWith("[]") || !typeList.getType(type).isBuiltin()) && lser.type.equals("null")) {
 
         } else {
             if (!type.equals(lser.type)) {
@@ -552,8 +555,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         // String name = lvalueLser.name;
         String type = lvalueLser.type;
 
-        if ((type.endsWith("[]") || !PizzaIRVisitor.typeList.getType(type).isBuiltin())
-                && objLser.type.equals("null")) {
+        if ((type.endsWith("[]") || !typeList.getType(type).isBuiltin()) && objLser.type.equals("null")) {
 
         } else {
             if (!type.equals(objLser.type)) {
@@ -567,8 +569,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     public Node visitIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
         String name = ctx.Identifier().getText(), type = "";
 
-        if (PizzaIRVisitor.dom.hasVar(name)) {
-            type = PizzaIRVisitor.dom.getVarType(name);
+        if (dom.hasVar(name)) {
+            type = dom.getVarType(name);
         } else {
             assert false;
         }
@@ -580,10 +582,10 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String identifier_typename;
 
         if (ctx.This() != null) {
-            if (PizzaIRVisitor.dom.isGlobal()) {
+            if (dom.isGlobal()) {
                 assert false;
             }
-            identifier_typename = PizzaIRVisitor.dom.getClassTrace();
+            identifier_typename = dom.getClassTrace();
         } else {
             VariableNode lser = (VariableNode) visit(ctx.lvalue());
 
@@ -592,7 +594,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         String name = ctx.Identifier().getText(), type = "";
 
-        Type identifier_type = PizzaIRVisitor.typeList.getType(identifier_typename);
+        Type identifier_type = typeList.getType(identifier_typename);
 
         if (identifier_type.hasMember(name)) {
             type = identifier_type.getVarType(name);
@@ -625,7 +627,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String name = ctx.Identifier().getText();
         String type = ctx.type().getText();
 
-        if (!PizzaIRVisitor.typeList.hasType(type)) {
+        if (!typeList.hasType(type)) {
             assert false;
         }
         return new VariableNode(name, type);
@@ -633,10 +635,10 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitThisObject(Mx_starParser.ThisObjectContext ctx) {
-        if (PizzaIRVisitor.dom.isGlobal()) {
+        if (dom.isGlobal()) {
             assert false;
         }
-        String type = PizzaIRVisitor.dom.getClassTrace();
+        String type = dom.getClassTrace();
         return new ObjectNode(null, type, null);
     }
 
@@ -644,21 +646,21 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     public Node visitIdentifierObject(Mx_starParser.IdentifierObjectContext ctx) {
         String name = ctx.Identifier().getText(), type = null;
 
-        Variable variable = PizzaIRVisitor.dom.getVar(name);
+        Variable variable = dom.getVar(name);
 
         String owner = "";
         if (variable != null && variable.owner != null) {
             owner = variable.owner;
         }
 
-        if (variable != null && owner.equals(PizzaIRVisitor.dom.getAddr())) {
+        if (variable != null && owner.equals(dom.getAddr())) {
             // local variable
             type = variable.type;
             return new ObjectNode(name, type, null);
         }
-        if (!PizzaIRVisitor.dom.isGlobal()) {
-            String trace = PizzaIRVisitor.dom.getClassTrace();
-            if (PizzaIRVisitor.funcList.getFunc(trace + "." + name) != null) {
+        if (!dom.isGlobal()) {
+            String trace = dom.getClassTrace();
+            if (funcList.getFunc(trace + "." + name) != null) {
                 // method
                 String true_owner = trace;
                 type = "__method__";
@@ -672,7 +674,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             return new ObjectNode(name, type, null);
         }
 
-        Func func = PizzaIRVisitor.funcList.getFunc(name);
+        Func func = funcList.getFunc(name);
         if (func != null) {
             // global function
             type = "__func__";
@@ -713,15 +715,15 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String member = ctx.Identifier().getText();
 
         // if (ctx.This() != null) {
-        // if (PizzaIRVisitor.dom.isGlobal()) {
+        // if (dom.isGlobal()) {
         // assert false;
         // }
-        // identifier_typename = PizzaIRVisitor.dom.getClassTrace();
+        // identifier_typename = dom.getClassTrace();
         // }
 
         ObjectNode lser = (ObjectNode) visit(ctx.object());
 
-        Type identifier_type = PizzaIRVisitor.typeList.getType(lser.type);
+        Type identifier_type = typeList.getType(lser.type);
 
         if (identifier_type.hasMember(member)) {
             type = identifier_type.getVarType(member);
@@ -759,7 +761,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             addr = lser.owner + "." + addr;
         }
 
-        Func func = PizzaIRVisitor.funcList.getFunc(addr);
+        Func func = funcList.getFunc(addr);
 
         ParamList paramLser = (ParamList) visit(ctx.paramList());
 
@@ -835,13 +837,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             objType = lser.type;
         }
 
-        String fname = PizzaIRVisitor.typeList.getType(objType).getMethod(method);
+        String fname = typeList.getType(objType).getMethod(method);
 
         if (fname == null) {
             assert false;
         }
 
-        Func func = PizzaIRVisitor.funcList.getFunc(fname);
+        Func func = funcList.getFunc(fname);
 
         Params params = new Params();
         params.add(objType);
@@ -876,7 +878,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         }
         String type = ctx.type().getText();
 
-        if (!PizzaIRVisitor.typeList.hasType(type)) {
+        if (!typeList.hasType(type)) {
             assert false;
         }
 
@@ -936,8 +938,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             method = "__eq__";
             if (type0.equals("null") || type1.equals("null")) {
                 if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && PizzaIRVisitor.typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && PizzaIRVisitor.typeList.getType(type1).isBuiltin()) {
+                    if (type0 != "null" && typeList.getType(type0).isBuiltin()
+                            || type1 != "null" && typeList.getType(type1).isBuiltin()) {
                         assert false;
                     }
                 }
@@ -949,8 +951,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             method = "__ne__";
             if (type0.equals("null") || type1.equals("null")) {
                 if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && PizzaIRVisitor.typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && PizzaIRVisitor.typeList.getType(type1).isBuiltin()) {
+                    if (type0 != "null" && typeList.getType(type0).isBuiltin()
+                            || type1 != "null" && typeList.getType(type1).isBuiltin()) {
                         assert false;
                     }
                 }
@@ -977,13 +979,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             assert false;
         }
 
-        String fname = PizzaIRVisitor.typeList.getType(lser0.type).getMethod(method);
+        String fname = typeList.getType(lser0.type).getMethod(method);
 
         if (fname == null) {
             assert false;
         }
 
-        Func func = PizzaIRVisitor.funcList.getFunc(fname);
+        Func func = funcList.getFunc(fname);
 
         Params params = new Params();
         params.add(lser0.type);
@@ -996,7 +998,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         return new ObjectNode(name, type, owner);
     }
 
-    static void allocateVariable(String name, String type) {
+    void allocateVariable(String name, String type) {
         if (!dom.canAllocate(name)) {
             assert false;
         }
@@ -1004,5 +1006,126 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         Variable variable = new Variable(counter, name, type, dom.getAddr());
         varList.add(variable);
         dom.addVar(variable);
+    }
+
+    void registerBuiltinType() {
+        Type t_bool = new Type("bool", true);
+        Arrays.asList("__lgcand__", "__lgcor__", "__eq__", "__ne__").forEach(method -> {
+            String addr = t_bool.name + "." + method;
+            t_bool.addMethod(method, addr);
+            Func func = new Func(t_bool.name, method, t_bool.name);
+            func.addParam(t_bool.name);
+            func.addParam(t_bool.name);
+            funcList.addFunc(func);
+        });
+        Arrays.asList("__lgcnot__").forEach(method -> {
+            String addr = t_bool.name + "." + method;
+            t_bool.addMethod(method, addr);
+            Func func = new Func(t_bool.name, method, t_bool.name);
+            func.addParam(t_bool.name);
+            funcList.addFunc(func);
+        });
+        typeList.addType(t_bool);
+
+        Type t_int = new Type("int", true);
+        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__", "__bitand__",
+                "__bitxor__", "__bitor__").forEach(method -> {
+                    String addr = t_int.name + "." + method;
+                    t_int.addMethod(method, addr);
+                    Func func = new Func(t_int.name, method, t_int.name);
+                    func.addParam(t_int.name);
+                    func.addParam(t_int.name);
+                    funcList.addFunc(func);
+                });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
+            String addr = t_int.name + "." + method;
+            t_int.addMethod(method, addr);
+            Func func = new Func(t_int.name, method, "bool");
+            func.addParam(t_int.name);
+            func.addParam(t_int.name);
+            funcList.addFunc(func);
+        });
+        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__", "__postdec__")
+                .forEach(method -> {
+                    String addr = t_int.name + "." + method;
+                    t_int.addMethod(method, addr);
+                    Func func = new Func(t_int.name, method, t_int.name);
+                    func.addParam(t_int.name);
+                    funcList.addFunc(func);
+                });
+        typeList.addType(t_int);
+
+        Type t_string = new Type("string", true);
+        Arrays.asList("__add__").forEach(method -> {
+            String addr = t_string.name + "." + method;
+            t_string.addMethod(method, addr);
+            Func func = new Func(t_string.name, method, t_string.name);
+            func.addParam(t_string.name);
+            func.addParam(t_string.name);
+            funcList.addFunc(func);
+        });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
+            String addr = t_string.name + "." + method;
+            t_string.addMethod(method, addr);
+            Func func = new Func(t_string.name, method, "bool");
+            func.addParam(t_string.name);
+            func.addParam(t_string.name);
+            funcList.addFunc(func);
+        });
+        Arrays.asList("length", "parseInt").forEach(method -> {
+            String addr = t_string.name + "." + method;
+            t_string.addMethod(method, addr);
+            Func func = new Func(t_string.name, method, "int");
+            func.addParam("string");
+            funcList.addFunc(func);
+        });
+        Arrays.asList("ord").forEach(method -> {
+            String addr = t_string.name + "." + method;
+            t_string.addMethod(method, addr);
+            Func func = new Func(t_string.name, method, "int");
+            func.addParam("string");
+            func.addParam("int");
+            funcList.addFunc(func);
+        });
+        Arrays.asList("substring").forEach(method -> {
+            String addr = t_string.name + "." + method;
+            t_string.addMethod(method, addr);
+            Func func = new Func(t_string.name, method, "string");
+            func.addParam("string");
+            func.addParam("int");
+            func.addParam("int");
+            funcList.addFunc(func);
+        });
+        typeList.addType(t_string);
+
+        Type t_array = new Type("__array__", true);
+        Arrays.asList("size").forEach(method -> {
+            String addr = t_array.name + "." + method;
+            t_array.addMethod(method, addr);
+            Func func = new Func(t_array.name, method, "int");
+            func.addParam("__array__");
+            funcList.addFunc(func);
+        });
+        typeList.addType(t_array);
+    }
+
+    void registerBuiltinFunc() {
+        Func print = new Func(null, "print", "void");
+        print.addParam("string");
+        funcList.addFunc(print);
+
+        Func println = new Func(null, "println", "void");
+        println.addParam("string");
+        funcList.addFunc(println);
+
+        Func getInt = new Func(null, "getInt", "int");
+        funcList.addFunc(getInt);
+
+        Func getString = new Func(null, "getString", "string");
+        funcList.addFunc(getString);
+
+        Func toString = new Func(null, "toString", "string");
+        toString.addParam("int");
+        funcList.addFunc(toString);
     }
 }
