@@ -16,3 +16,11 @@ class Function extends Node {
         this.rtype = type;
     }
 }
+
+class ParamListDefinition extends Node {
+    ParamsInstance params;
+
+    ParamListDefinition(ParamsInstance params) {
+        this.params = params;
+    }
+}
