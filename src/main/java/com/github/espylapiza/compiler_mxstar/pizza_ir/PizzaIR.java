@@ -1,4 +1,4 @@
-package com.github.espylapiza.compiler_mxstar.ast;
+package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import com.github.espylapiza.compiler_mxstar.nasm.*;
 import com.google.gson.*;

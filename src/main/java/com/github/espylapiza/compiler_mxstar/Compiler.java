@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import org.antlr.v4.runtime.tree.*;
 import com.github.espylapiza.compiler_mxstar.parser.*;
-import com.github.espylapiza.compiler_mxstar.ast.*;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.*;
 import com.github.espylapiza.compiler_mxstar.nasm.*;
 
 public class Compiler {
