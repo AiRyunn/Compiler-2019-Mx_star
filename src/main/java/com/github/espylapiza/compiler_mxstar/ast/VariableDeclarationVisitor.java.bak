@@ -1,0 +1,15 @@
+package com.github.espylapiza.compiler_mxstar.ast;
+
+import com.github.espylapiza.compiler_mxstar.parser.*;
+
+public class VariableDeclarationVisitor extends Mx_starBaseVisitor {
+    @Override
+    public VariableDeclaration visitVariableDeclaration(Mx_starParser.VariableDeclarationContext ctx) {
+        VariableDeclaration result = new VariableDeclaration(ctx.Identifier().getText(), ctx.type().getText());
+
+        if (!PizzaIRBuilder.typeList.hasType(result.type)) {
+            assert false;
+        }
+        return result;
+    }
+}
