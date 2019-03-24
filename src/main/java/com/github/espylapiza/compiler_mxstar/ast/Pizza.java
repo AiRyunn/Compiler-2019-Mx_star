@@ -1,8 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.ast;
 
 import java.util.*;
+import java.util.logging.Logger;
+
 import com.google.gson.*;
-import com.github.espylapiza.compiler_mxstar.logging.*;
 
 import com.github.espylapiza.compiler_mxstar.utils.Pair;
 
@@ -240,6 +241,8 @@ class Block {
 }
 
 class Domain {
+    private final static Logger LOGGER = Logger.getLogger(Domain.class.getName());
+
     List<String> classTrace = new ArrayList<String>();
     List<Block> block = new ArrayList<Block>();
 
@@ -251,7 +254,7 @@ class Domain {
     }
 
     void addVar(Variable variable) {
-        Logging.debug("allocate variable: " + variable.type + " " + variable.name);
+        LOGGER.fine("allocate variable: " + variable.type + " " + variable.name);
         varStack.add(new Pair<Variable, Integer>(variable, depth));
     }
 
@@ -342,7 +345,7 @@ class Domain {
 
     void exitFunc() {
         while (!varStack.isEmpty() && varStack.lastElement().second.equals(depth)) {
-            Logging.debug(
+            LOGGER.fine(
                     "remove variable: " + varStack.lastElement().first.type + " " + varStack.lastElement().first.name);
             varStack.pop();
         }
@@ -351,13 +354,13 @@ class Domain {
     }
 
     void enterCondition(int position) {
-        Logging.debug("enterCondition");
+        LOGGER.fine("enterCondition");
         depth++;
         block.add(new Block(position, BlockType.SCOPE));
     }
 
     void exitCondition() {
-        Logging.debug("exitCondition");
+        LOGGER.fine("exitCondition");
         while (!varStack.isEmpty() && varStack.lastElement().second.equals(depth)) {
             varStack.pop();
         }
@@ -366,13 +369,13 @@ class Domain {
     }
 
     void enterLoop(int position) {
-        Logging.debug("enterLoop");
+        LOGGER.fine("enterLoop");
         depth++;
         block.add(new Block(position, BlockType.LOOP));
     }
 
     void exitLoop() {
-        Logging.debug("exitLoop");
+        LOGGER.fine("exitLoop");
         while (!varStack.isEmpty() && varStack.lastElement().second.equals(depth)) {
             varStack.pop();
         }
@@ -562,6 +565,8 @@ class Section {
 }
 
 class Code {
+    private final static Logger LOGGER = Logger.getLogger(Code.class.getName());
+
     Vector<Section> secs = new Vector<Section>();
     Section section;
 
@@ -570,18 +575,18 @@ class Code {
     }
 
     void newSection(String addr) {
-        Logging.debug("newSection: " + addr);
+        LOGGER.fine("newSection: " + addr);
         section = new Section(addr);
     }
 
     void packSection() {
-        Logging.debug("packSection");
+        LOGGER.fine("packSection");
         secs.add(section);
         section = null;
     }
 
     void packScope() {
-        Logging.debug("packScope");
+        LOGGER.fine("packScope");
         section.packScope();
     }
 

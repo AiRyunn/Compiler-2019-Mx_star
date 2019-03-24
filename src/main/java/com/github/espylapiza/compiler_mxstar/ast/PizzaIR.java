@@ -18,7 +18,7 @@ public class PizzaIR {
     }
 
     public String getCode() {
-        return PizzaIRVisitor.code.toString();
+        return null;
     }
 
     public NASM toNASM() {
