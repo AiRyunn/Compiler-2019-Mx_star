@@ -7,10 +7,6 @@ import org.antlr.v4.runtime.tree.*;
 import com.github.espylapiza.compiler_mxstar.nasm.*;
 import com.google.gson.*;
 
-enum ListenState {
-    TYPE_DECLARATION, MEMBER_DECLARATION, SEMANTIC_ANALYSIS
-}
-
 public class PizzaIRBuilder {
     private final static Logger LOGGER = Logger.getLogger(PizzaIRBuilder.class.getName());
 
