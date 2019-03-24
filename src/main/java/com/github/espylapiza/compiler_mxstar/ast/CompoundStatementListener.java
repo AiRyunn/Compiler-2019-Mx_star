@@ -6,12 +6,12 @@ public class CompoundStatementListener extends Mx_starBaseListener {
     @Override
     public void enterCompoundStatement(Mx_starParser.CompoundStatementContext ctx) {
         if (ctx.statements() != null) {
-            PizzaIRBuilder.dom.enterCondition(-1);
+            PizzaIRVisitor.dom.enterCondition(-1);
 
             StatementsListener lser = new StatementsListener();
             ctx.statements().enterRule(lser);
 
-            PizzaIRBuilder.dom.exitCondition();
+            PizzaIRVisitor.dom.exitCondition();
         }
     }
 }

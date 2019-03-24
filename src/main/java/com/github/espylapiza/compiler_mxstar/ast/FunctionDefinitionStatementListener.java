@@ -11,40 +11,40 @@ class FunctionDefinitionStatementListener extends Mx_starBaseListener {
     public void enterFunctionDefinitionStatement(Mx_starParser.FunctionDefinitionStatementContext ctx) {
         name = ctx.Identifier().getText();
         rtype = ctx.type().getText();
-        String trace = PizzaIRBuilder.dom.getClassTrace();
+        String trace = PizzaIRVisitor.dom.getClassTrace();
 
-        if (!rtype.equals("void") && !PizzaIRBuilder.typeList.hasType(rtype)) {
+        if (!rtype.equals("void") && !PizzaIRVisitor.typeList.hasType(rtype)) {
             assert false;
         }
         Logging.debug("enter function: " + name);
 
-        PizzaIRBuilder.dom.enterFunc(trace, name, rtype);
+        PizzaIRVisitor.dom.enterFunc(trace, name, rtype);
 
         ParamListDefinitionListener lser = new ParamListDefinitionListener();
         ctx.paramListDefinition().enterRule(lser);
 
         if (PizzaIRVisitor.state == VisitState.MEMBER_DECLARATION) {
             String owner;
-            if (!PizzaIRBuilder.dom.isGlobal()) {
+            if (!PizzaIRVisitor.dom.isGlobal()) {
                 owner = trace;
             } else {
                 owner = null;
             }
 
             Func func = new Func(owner, name, rtype);
-            if (!PizzaIRBuilder.dom.isGlobal()) {
+            if (!PizzaIRVisitor.dom.isGlobal()) {
                 func.addParam(trace);
             }
             lser.params.params.forEach(param -> func.addParam(param.second));
 
-            if (PizzaIRBuilder.funcList.addFunc(func) == false) {
+            if (PizzaIRVisitor.funcList.addFunc(func) == false) {
                 assert false;
             }
         } else {
-            PizzaIRBuilder.code.newSection(PizzaIRBuilder.dom.getAddr());
+            PizzaIRVisitor.code.newSection(PizzaIRVisitor.dom.getAddr());
 
             for (Pair<String, String> param : lser.params.params) {
-                PizzaIRBuilder.allocateVariable(param.first, param.second);
+                PizzaIRVisitor.allocateVariable(param.first, param.second);
             }
 
             if (ctx.statements() != null) {
@@ -52,11 +52,11 @@ class FunctionDefinitionStatementListener extends Mx_starBaseListener {
                 ctx.statements().enterRule(stmtLser);
             }
 
-            PizzaIRBuilder.code.packScope();
-            PizzaIRBuilder.code.packSection();
+            PizzaIRVisitor.code.packScope();
+            PizzaIRVisitor.code.packSection();
         }
 
         Logging.debug("exit function: " + name);
-        PizzaIRBuilder.dom.exitFunc();
+        PizzaIRVisitor.dom.exitFunc();
     }
 }

@@ -14,6 +14,16 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     public static VisitState state;
 
+    public static Domain dom = new Domain();
+
+    public static TypeList typeList = new TypeList();
+    public static VarList varList = new VarList();
+    public static FuncList funcList = new FuncList();
+
+    public static int counter = 0;
+
+    public static Code code = new Code();
+
     @Override
     public Node visitProgram(Mx_starParser.ProgramContext ctx) {
         data = new JsonObject();
@@ -24,7 +34,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         state = VisitState.MEMBER_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        Func mainFunc = PizzaIRBuilder.funcList.getFunc("main");
+        Func mainFunc = funcList.getFunc("main");
         if (mainFunc == null || !mainFunc.rtype.equals("int") || mainFunc.params.count() != 0) {
             assert false;
         }
@@ -32,9 +42,9 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        data.add("Type", PizzaIRBuilder.typeList.toJson());
-        data.add("Func", PizzaIRBuilder.funcList.toJson());
-        data.add("Var", PizzaIRBuilder.varList.toJson());
+        data.add("Type", PizzaIRVisitor.typeList.toJson());
+        data.add("Func", funcList.toJson());
+        data.add("Var", varList.toJson());
 
         return null;
     }
@@ -50,7 +60,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         variableDeclaration.enterRule(lser);
 
         String name = lser.name, type = lser.type;
-        PizzaIRBuilder.allocateVariable(name, type);
+        PizzaIRVisitor.allocateVariable(name, type);
         return null;
     }
 
@@ -65,7 +75,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         variableDefinition.enterRule(lser);
 
         String name = lser.name, type = lser.type;
-        PizzaIRBuilder.allocateVariable(name, type);
+        PizzaIRVisitor.allocateVariable(name, type);
         return null;
     }
 
@@ -73,11 +83,11 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     public Node visitProgramClassDefinitionStatement(Mx_starParser.ProgramClassDefinitionStatementContext ctx) {
         String classname = ctx.classDefinitionStatement().Identifier().getText();
 
-        PizzaIRBuilder.dom.enterClass(classname);
+        PizzaIRVisitor.dom.enterClass(classname);
 
         switch (state) {
         case TYPE_DECLARATION:
-            PizzaIRBuilder.typeList.addType(new Type(PizzaIRBuilder.dom.getClassTrace()));
+            PizzaIRVisitor.typeList.addType(new Type(PizzaIRVisitor.dom.getClassTrace()));
             break;
         case MEMBER_DECLARATION:
         case SEMANTIC_ANALYSIS:
@@ -85,7 +95,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             break;
         }
 
-        PizzaIRBuilder.dom.exitClass();
+        PizzaIRVisitor.dom.exitClass();
 
         return null;
     }
@@ -108,11 +118,11 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         String name = lser.name, type = lser.type;
 
         if (state == VisitState.MEMBER_DECLARATION) {
-            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
+            Type t = PizzaIRVisitor.typeList.getType(PizzaIRVisitor.dom.getClassTrace());
 
             t.addMember(name, type);
         } else {
-            PizzaIRBuilder.allocateVariable(name, type);
+            PizzaIRVisitor.allocateVariable(name, type);
         }
         return null;
     }
@@ -125,13 +135,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
 
-            if (!PizzaIRBuilder.dom.getLastClass().equals(name)) {
+            if (!PizzaIRVisitor.dom.getLastClass().equals(name)) {
                 assert false;
             }
 
-            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
+            Type t = PizzaIRVisitor.typeList.getType(PizzaIRVisitor.dom.getClassTrace());
 
-            t.addMethod(name, PizzaIRBuilder.dom.getClassTrace() + "." + name);
+            t.addMethod(name, PizzaIRVisitor.dom.getClassTrace() + "." + name);
         } else {
 
         }
@@ -145,12 +155,22 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
-            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
+            Type t = PizzaIRVisitor.typeList.getType(PizzaIRVisitor.dom.getClassTrace());
 
-            t.addMethod(name, PizzaIRBuilder.dom.getClassTrace() + "." + name);
+            t.addMethod(name, PizzaIRVisitor.dom.getClassTrace() + "." + name);
         } else {
 
         }
         return null;
+    }
+
+    static void allocateVariable(String name, String type) {
+        if (!PizzaIRVisitor.dom.canAllocate(name)) {
+            assert false;
+        }
+        PizzaIRVisitor.counter++;
+        Variable variable = new Variable(PizzaIRVisitor.counter, name, type, PizzaIRVisitor.dom.getAddr());
+        PizzaIRVisitor.varList.add(variable);
+        PizzaIRVisitor.dom.addVar(variable);
     }
 }

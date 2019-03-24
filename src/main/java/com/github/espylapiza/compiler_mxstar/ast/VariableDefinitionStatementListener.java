@@ -7,6 +7,6 @@ public class VariableDefinitionStatementListener extends Mx_starBaseListener {
     public void enterVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
         VariableDefinitionListener lser = new VariableDefinitionListener();
         ctx.variableDefinition().enterRule(lser);
-        PizzaIRBuilder.allocateVariable(lser.name, lser.type);
+        PizzaIRVisitor.allocateVariable(lser.name, lser.type);
     }
 }
