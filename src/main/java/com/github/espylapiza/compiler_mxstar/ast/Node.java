@@ -4,10 +4,6 @@ public abstract class Node {
 
 }
 
-class PizzaIR extends Node {
-
-}
-
 class ParamListInstance extends Node {
     ParamsInstance params;
 
