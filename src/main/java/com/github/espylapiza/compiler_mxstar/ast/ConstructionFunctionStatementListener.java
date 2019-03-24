@@ -19,7 +19,7 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
         ParamListDefinitionListener lser = new ParamListDefinitionListener();
         ctx.paramListDefinition().enterRule(lser);
 
-        if (PizzaIRVisitor.state == ListenState.MEMBER_DECLARATION) {
+        if (PizzaIRVisitor.state == VisitState.MEMBER_DECLARATION) {
             Func func = new Func(trace, name, "void");
             if (!PizzaIRBuilder.dom.isGlobal()) {
                 func.addParam(trace);

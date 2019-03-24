@@ -12,16 +12,16 @@ enum VisitState {
 public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     JsonObject data;
 
-    public static ListenState state;
+    public static VisitState state;
 
     @Override
     public Node visitProgram(Mx_starParser.ProgramContext ctx) {
         data = new JsonObject();
 
-        state = ListenState.TYPE_DECLARATION;
+        state = VisitState.TYPE_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        state = ListenState.MEMBER_DECLARATION;
+        state = VisitState.MEMBER_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
         Func mainFunc = PizzaIRBuilder.funcList.getFunc("main");
@@ -29,7 +29,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             assert false;
         }
 
-        state = ListenState.SEMANTIC_ANALYSIS;
+        state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
         data.add("Type", PizzaIRBuilder.typeList.toJson());
@@ -41,7 +41,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramVariableDeclarationStatement(Mx_starParser.ProgramVariableDeclarationStatementContext ctx) {
-        if (state != ListenState.SEMANTIC_ANALYSIS) {
+        if (state != VisitState.SEMANTIC_ANALYSIS) {
             return null;
         }
 
@@ -56,7 +56,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramVariableDefinitionStatement(Mx_starParser.ProgramVariableDefinitionStatementContext ctx) {
-        if (state != ListenState.SEMANTIC_ANALYSIS) {
+        if (state != VisitState.SEMANTIC_ANALYSIS) {
             return null;
         }
 
@@ -92,7 +92,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramFunctionDefinitionStatement(Mx_starParser.ProgramFunctionDefinitionStatementContext ctx) {
-        if (state == ListenState.TYPE_DECLARATION) {
+        if (state == VisitState.TYPE_DECLARATION) {
             return null;
         }
 
@@ -107,7 +107,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         ctx.variableDeclarationStatement().variableDeclaration().enterRule(lser);
         String name = lser.name, type = lser.type;
 
-        if (state == ListenState.MEMBER_DECLARATION) {
+        if (state == VisitState.MEMBER_DECLARATION) {
             Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
             t.addMember(name, type);
@@ -122,7 +122,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         ConstructionFunctionStatementListener lser = new ConstructionFunctionStatementListener();
         ctx.constructionFunctionStatement().enterRule(lser);
 
-        if (state == ListenState.MEMBER_DECLARATION) {
+        if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
 
             if (!PizzaIRBuilder.dom.getLastClass().equals(name)) {
@@ -143,7 +143,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         FunctionDefinitionStatementListener lser = new FunctionDefinitionStatementListener();
         ctx.functionDefinitionStatement().enterRule(lser);
 
-        if (state == ListenState.MEMBER_DECLARATION) {
+        if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
             Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
