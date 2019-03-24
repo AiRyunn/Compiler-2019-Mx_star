@@ -5,7 +5,7 @@ import com.github.espylapiza.compiler_mxstar.parser.*;
 public class LoopStatementListener extends Mx_starBaseListener {
     @Override
     public void enterWhileLoop(Mx_starParser.WhileLoopContext ctx) {
-        PizzaIR.dom.enterLoop(-1);
+        PizzaIRBuilder.dom.enterLoop(-1);
 
         ObjectListener objLser = new ObjectListener();
         ctx.object().enterRule(objLser);
@@ -17,12 +17,12 @@ public class LoopStatementListener extends Mx_starBaseListener {
         StatementListener stmtLser = new StatementListener();
         ctx.statement().enterRule(stmtLser);
 
-        PizzaIR.dom.exitLoop();
+        PizzaIRBuilder.dom.exitLoop();
     }
 
     @Override
     public void enterForLoop(Mx_starParser.ForLoopContext ctx) {
-        PizzaIR.dom.enterLoop(-1);
+        PizzaIRBuilder.dom.enterLoop(-1);
 
         if (ctx.forCondition().forCondition1() != null) {
             ForCondition1Listener cdt1Lser = new ForCondition1Listener();
@@ -44,6 +44,6 @@ public class LoopStatementListener extends Mx_starBaseListener {
         StatementListener stmtLser = new StatementListener();
         ctx.statement().enterRule(stmtLser);
 
-        PizzaIR.dom.exitLoop();
+        PizzaIRBuilder.dom.exitLoop();
     }
 }

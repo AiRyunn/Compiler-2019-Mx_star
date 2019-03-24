@@ -14,7 +14,8 @@ class VariableAssignmentListener extends Mx_starBaseListener {
         // String name = lvalueLser.name;
         String type = lvalueLser.type;
 
-        if ((type.endsWith("[]") || !PizzaIR.typeList.getType(type).isBuiltin()) && objLser.type.equals("null")) {
+        if ((type.endsWith("[]") || !PizzaIRBuilder.typeList.getType(type).isBuiltin())
+                && objLser.type.equals("null")) {
 
         } else {
             if (!type.equals(objLser.type)) {

@@ -13,11 +13,11 @@ class VariableDefinitionListener extends Mx_starBaseListener {
         name = ctx.Identifier().getText();
         type = ctx.type().getText();
 
-        if (!PizzaIR.typeList.hasType(type)) {
+        if (!PizzaIRBuilder.typeList.hasType(type)) {
             assert false;
         }
 
-        if ((type.endsWith("[]") || !PizzaIR.typeList.getType(type).isBuiltin()) && lser.type.equals("null")) {
+        if ((type.endsWith("[]") || !PizzaIRBuilder.typeList.getType(type).isBuiltin()) && lser.type.equals("null")) {
 
         } else {
             if (!type.equals(lser.type)) {

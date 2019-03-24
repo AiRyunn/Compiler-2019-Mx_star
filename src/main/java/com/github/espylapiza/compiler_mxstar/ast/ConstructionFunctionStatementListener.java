@@ -10,30 +10,30 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
     @Override
     public void enterConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
         name = ctx.Identifier().getText();
-        String trace = PizzaIR.dom.getClassTrace();
+        String trace = PizzaIRBuilder.dom.getClassTrace();
 
-        PizzaIR.dom.enterFunc(trace, name, "void");
+        PizzaIRBuilder.dom.enterFunc(trace, name, "void");
 
         Logging.debug("enter construction function: " + name);
 
         ParamListDefinitionListener lser = new ParamListDefinitionListener();
         ctx.paramListDefinition().enterRule(lser);
 
-        if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
+        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
             Func func = new Func(trace, name, "void");
-            if (!PizzaIR.dom.isGlobal()) {
+            if (!PizzaIRBuilder.dom.isGlobal()) {
                 func.addParam(trace);
             }
             lser.params.params.forEach(param -> func.addParam(param.second));
 
-            if (PizzaIR.funcList.addFunc(func) == false) {
+            if (PizzaIRBuilder.funcList.addFunc(func) == false) {
                 assert false;
             }
         } else {
-            PizzaIR.code.newSection(PizzaIR.dom.getAddr());
+            PizzaIRBuilder.code.newSection(PizzaIRBuilder.dom.getAddr());
 
             for (Pair<String, String> param : lser.params.params) {
-                PizzaIR.allocateVariable(param.first, param.second);
+                PizzaIRBuilder.allocateVariable(param.first, param.second);
             }
 
             if (ctx.statements() != null) {
@@ -41,11 +41,11 @@ class ConstructionFunctionStatementListener extends Mx_starBaseListener {
                 ctx.statements().enterRule(stmtLser);
             }
 
-            PizzaIR.code.packScope();
-            PizzaIR.code.packSection();
+            PizzaIRBuilder.code.packScope();
+            PizzaIRBuilder.code.packSection();
         }
 
         Logging.debug("exit construction function: " + name);
-        PizzaIR.dom.exitFunc();
+        PizzaIRBuilder.dom.exitFunc();
     }
 }

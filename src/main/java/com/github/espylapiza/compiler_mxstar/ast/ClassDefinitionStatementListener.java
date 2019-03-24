@@ -7,11 +7,11 @@ class ClassDefinitionStatementListener extends Mx_starBaseListener {
     @Override
     public void enterClassDefinitionStatement(Mx_starParser.ClassDefinitionStatementContext ctx) {
         String classname = ctx.Identifier().getText();
-        PizzaIR.dom.enterClass(classname);
+        PizzaIRBuilder.dom.enterClass(classname);
 
-        switch (PizzaIR.state) {
+        switch (PizzaIRBuilder.state) {
         case TYPE_DECLARATION:
-            PizzaIR.typeList.addType(new Type(PizzaIR.dom.getClassTrace()));
+            PizzaIRBuilder.typeList.addType(new Type(PizzaIRBuilder.dom.getClassTrace()));
             // TODO
             break;
         case MEMBER_DECLARATION:
@@ -23,6 +23,6 @@ class ClassDefinitionStatementListener extends Mx_starBaseListener {
             break;
         }
 
-        PizzaIR.dom.exitClass();
+        PizzaIRBuilder.dom.exitClass();
     }
 }

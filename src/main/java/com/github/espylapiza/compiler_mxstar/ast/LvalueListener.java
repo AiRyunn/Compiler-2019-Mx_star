@@ -9,8 +9,8 @@ public class LvalueListener extends Mx_starBaseListener {
     public void enterIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
         name = ctx.Identifier().getText();
 
-        if (PizzaIR.dom.hasVar(name)) {
-            type = PizzaIR.dom.getVarType(name);
+        if (PizzaIRBuilder.dom.hasVar(name)) {
+            type = PizzaIRBuilder.dom.getVarType(name);
         } else {
             assert false;
         }
@@ -21,10 +21,10 @@ public class LvalueListener extends Mx_starBaseListener {
         String identifier_typename;
 
         if (ctx.This() != null) {
-            if (PizzaIR.dom.isGlobal()) {
+            if (PizzaIRBuilder.dom.isGlobal()) {
                 assert false;
             }
-            identifier_typename = PizzaIR.dom.getClassTrace();
+            identifier_typename = PizzaIRBuilder.dom.getClassTrace();
         } else {
             LvalueListener lser = new LvalueListener();
             ctx.lvalue().enterRule(lser);
@@ -34,7 +34,7 @@ public class LvalueListener extends Mx_starBaseListener {
 
         name = ctx.Identifier().getText();
 
-        Type identifier_type = PizzaIR.typeList.getType(identifier_typename);
+        Type identifier_type = PizzaIRBuilder.typeList.getType(identifier_typename);
 
         if (identifier_type.hasMember(name)) {
             type = identifier_type.getVarType(name);

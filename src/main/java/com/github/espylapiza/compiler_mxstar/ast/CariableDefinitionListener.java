@@ -10,7 +10,7 @@ class VariableDeclarationListener extends Mx_starBaseListener {
         name = ctx.Identifier().getText();
         type = ctx.type().getText();
 
-        if (!PizzaIR.typeList.hasType(type)) {
+        if (!PizzaIRBuilder.typeList.hasType(type)) {
             assert false;
         }
     }
