@@ -8,7 +8,7 @@ import com.github.espylapiza.compiler_mxstar.nasm.*;
 import com.google.gson.*;
 
 enum ListenState {
-    TYPE_DECLARATION, MEMBER_DECLARATION, TRANSLATION
+    TYPE_DECLARATION, MEMBER_DECLARATION, SEMANTIC_ANALYSIS
 }
 
 public class PizzaIRBuilder {
@@ -22,7 +22,6 @@ public class PizzaIRBuilder {
 
     public static Domain dom = new Domain();
     public static int counter = 0;
-    public static ListenState state;
 
     public static Code code = new Code();
 

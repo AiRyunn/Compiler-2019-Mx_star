@@ -23,7 +23,7 @@ class FunctionDefinitionStatementListener extends Mx_starBaseListener {
         ParamListDefinitionListener lser = new ParamListDefinitionListener();
         ctx.paramListDefinition().enterRule(lser);
 
-        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
+        if (PizzaIRVisitor.state == ListenState.MEMBER_DECLARATION) {
             String owner;
             if (!PizzaIRBuilder.dom.isGlobal()) {
                 owner = trace;

@@ -6,21 +6,22 @@ import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.*;
 import com.google.gson.JsonObject;
 
 enum VisitState {
-    TYPE_DECLARATION, MEMBER_DECLARATION, TRANSLATION
+    TYPE_DECLARATION, MEMBER_DECLARATION, SEMANTIC_ANALYSIS, TRANSLATION_ENTRANCE, TRANSLATION
 }
 
 public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     JsonObject data;
-    VisitState state;
+
+    public static ListenState state;
 
     @Override
-    public PizzaIR visitProgram(Mx_starParser.ProgramContext ctx) {
+    public Node visitProgram(Mx_starParser.ProgramContext ctx) {
         data = new JsonObject();
 
-        PizzaIRBuilder.state = ListenState.TYPE_DECLARATION;
+        state = ListenState.TYPE_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        PizzaIRBuilder.state = ListenState.MEMBER_DECLARATION;
+        state = ListenState.MEMBER_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
         Func mainFunc = PizzaIRBuilder.funcList.getFunc("main");
@@ -28,7 +29,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             assert false;
         }
 
-        PizzaIRBuilder.state = ListenState.TRANSLATION;
+        state = ListenState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
         data.add("Type", PizzaIRBuilder.typeList.toJson());
@@ -40,7 +41,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramVariableDeclarationStatement(Mx_starParser.ProgramVariableDeclarationStatementContext ctx) {
-        if (PizzaIRBuilder.state != ListenState.TRANSLATION) {
+        if (state != ListenState.SEMANTIC_ANALYSIS) {
             return null;
         }
 
@@ -55,7 +56,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramVariableDefinitionStatement(Mx_starParser.ProgramVariableDefinitionStatementContext ctx) {
-        if (PizzaIRBuilder.state != ListenState.TRANSLATION) {
+        if (state != ListenState.SEMANTIC_ANALYSIS) {
             return null;
         }
 
@@ -74,12 +75,12 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         PizzaIRBuilder.dom.enterClass(classname);
 
-        switch (PizzaIRBuilder.state) {
+        switch (state) {
         case TYPE_DECLARATION:
             PizzaIRBuilder.typeList.addType(new Type(PizzaIRBuilder.dom.getClassTrace()));
             break;
         case MEMBER_DECLARATION:
-        case TRANSLATION:
+        case SEMANTIC_ANALYSIS:
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
             break;
         }
@@ -91,7 +92,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitProgramFunctionDefinitionStatement(Mx_starParser.ProgramFunctionDefinitionStatementContext ctx) {
-        if (PizzaIRBuilder.state == ListenState.TYPE_DECLARATION) {
+        if (state == ListenState.TYPE_DECLARATION) {
             return null;
         }
 
@@ -106,7 +107,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         ctx.variableDeclarationStatement().variableDeclaration().enterRule(lser);
         String name = lser.name, type = lser.type;
 
-        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
+        if (state == ListenState.MEMBER_DECLARATION) {
             Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
             t.addMember(name, type);
@@ -121,7 +122,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         ConstructionFunctionStatementListener lser = new ConstructionFunctionStatementListener();
         ctx.constructionFunctionStatement().enterRule(lser);
 
-        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
+        if (state == ListenState.MEMBER_DECLARATION) {
             String name = lser.name;
 
             if (!PizzaIRBuilder.dom.getLastClass().equals(name)) {
@@ -142,7 +143,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         FunctionDefinitionStatementListener lser = new FunctionDefinitionStatementListener();
         ctx.functionDefinitionStatement().enterRule(lser);
 
-        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
+        if (state == ListenState.MEMBER_DECLARATION) {
             String name = lser.name;
             Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
