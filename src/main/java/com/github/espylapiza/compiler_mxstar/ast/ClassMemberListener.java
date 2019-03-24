@@ -10,12 +10,12 @@ public class ClassMemberListener extends Mx_starBaseListener {
         ctx.variableDeclarationStatement().variableDeclaration().enterRule(lser);
         String name = lser.name, type = lser.type;
 
-        if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
-            Type t = PizzaIR.typeList.getType(PizzaIR.dom.getClassTrace());
+        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
+            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
             t.addMember(name, type);
         } else {
-            PizzaIR.allocateVariable(name, type);
+            PizzaIRBuilder.allocateVariable(name, type);
         }
     }
 
@@ -24,16 +24,16 @@ public class ClassMemberListener extends Mx_starBaseListener {
         ConstructionFunctionStatementListener lser = new ConstructionFunctionStatementListener();
         ctx.constructionFunctionStatement().enterRule(lser);
 
-        if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
+        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
             String name = lser.name;
 
-            if (!PizzaIR.dom.getLastClass().equals(name)) {
+            if (!PizzaIRBuilder.dom.getLastClass().equals(name)) {
                 assert false;
             }
 
-            Type t = PizzaIR.typeList.getType(PizzaIR.dom.getClassTrace());
+            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
-            t.addMethod(name, PizzaIR.dom.getClassTrace() + "." + name);
+            t.addMethod(name, PizzaIRBuilder.dom.getClassTrace() + "." + name);
         } else {
 
         }
@@ -44,11 +44,11 @@ public class ClassMemberListener extends Mx_starBaseListener {
         FunctionDefinitionStatementListener lser = new FunctionDefinitionStatementListener();
         ctx.functionDefinitionStatement().enterRule(lser);
 
-        if (PizzaIR.state == ListenState.MEMBER_DECLARATION) {
+        if (PizzaIRBuilder.state == ListenState.MEMBER_DECLARATION) {
             String name = lser.name;
-            Type t = PizzaIR.typeList.getType(PizzaIR.dom.getClassTrace());
+            Type t = PizzaIRBuilder.typeList.getType(PizzaIRBuilder.dom.getClassTrace());
 
-            t.addMethod(name, PizzaIR.dom.getClassTrace() + "." + name);
+            t.addMethod(name, PizzaIRBuilder.dom.getClassTrace() + "." + name);
         } else {
 
         }

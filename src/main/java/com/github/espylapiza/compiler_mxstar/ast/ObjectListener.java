@@ -13,31 +13,31 @@ public class ObjectListener extends Mx_starBaseListener {
 
     @Override
     public void enterThisObject(Mx_starParser.ThisObjectContext ctx) {
-        if (PizzaIR.dom.isGlobal()) {
+        if (PizzaIRBuilder.dom.isGlobal()) {
             assert false;
         }
-        type = PizzaIR.dom.getClassTrace();
+        type = PizzaIRBuilder.dom.getClassTrace();
     }
 
     @Override
     public void enterIdentifierObject(Mx_starParser.IdentifierObjectContext ctx) {
         name = ctx.Identifier().getText();
 
-        Variable variable = PizzaIR.dom.getVar(name);
+        Variable variable = PizzaIRBuilder.dom.getVar(name);
 
         String owner = "";
         if (variable != null && variable.owner != null) {
             owner = variable.owner;
         }
 
-        if (variable != null && owner.equals(PizzaIR.dom.getAddr())) {
+        if (variable != null && owner.equals(PizzaIRBuilder.dom.getAddr())) {
             // local variable
             type = variable.type;
             return;
         }
-        if (!PizzaIR.dom.isGlobal()) {
-            String trace = PizzaIR.dom.getClassTrace();
-            if (PizzaIR.funcList.getFunc(trace + "." + name) != null) {
+        if (!PizzaIRBuilder.dom.isGlobal()) {
+            String trace = PizzaIRBuilder.dom.getClassTrace();
+            if (PizzaIRBuilder.funcList.getFunc(trace + "." + name) != null) {
                 // method
                 this.owner = trace;
                 type = "__method__";
@@ -51,7 +51,7 @@ public class ObjectListener extends Mx_starBaseListener {
             return;
         }
 
-        Func func = PizzaIR.funcList.getFunc(name);
+        Func func = PizzaIRBuilder.funcList.getFunc(name);
         if (func != null) {
             // global function
             type = "__func__";
@@ -88,16 +88,16 @@ public class ObjectListener extends Mx_starBaseListener {
         String member = ctx.Identifier().getText();
 
         // if (ctx.This() != null) {
-        // if (PizzaIR.dom.isGlobal()) {
+        // if (PizzaIRBuilder.dom.isGlobal()) {
         // assert false;
         // }
-        // identifier_typename = PizzaIR.dom.getClassTrace();
+        // identifier_typename = PizzaIRBuilder.dom.getClassTrace();
         // }
 
         ObjectListener lser = new ObjectListener();
         ctx.object().enterRule(lser);
 
-        Type identifier_type = PizzaIR.typeList.getType(lser.type);
+        Type identifier_type = PizzaIRBuilder.typeList.getType(lser.type);
 
         if (identifier_type.hasMember(member)) {
             type = identifier_type.getVarType(member);
@@ -135,7 +135,7 @@ public class ObjectListener extends Mx_starBaseListener {
             addr = lser.owner + "." + addr;
         }
 
-        Func func = PizzaIR.funcList.getFunc(addr);
+        Func func = PizzaIRBuilder.funcList.getFunc(addr);
 
         ParamListListener paramLser = new ParamListListener();
         ctx.paramList().enterRule(paramLser);
@@ -213,13 +213,13 @@ public class ObjectListener extends Mx_starBaseListener {
             objType = lser.type;
         }
 
-        String fname = PizzaIR.typeList.getType(objType).getMethod(method);
+        String fname = PizzaIRBuilder.typeList.getType(objType).getMethod(method);
 
         if (fname == null) {
             assert false;
         }
 
-        Func func = PizzaIR.funcList.getFunc(fname);
+        Func func = PizzaIRBuilder.funcList.getFunc(fname);
 
         Params params = new Params();
         params.add(objType);
@@ -253,7 +253,7 @@ public class ObjectListener extends Mx_starBaseListener {
         }
         type = ctx.type().getText();
 
-        if (!PizzaIR.typeList.hasType(type)) {
+        if (!PizzaIRBuilder.typeList.hasType(type)) {
             assert false;
         }
 
@@ -312,8 +312,8 @@ public class ObjectListener extends Mx_starBaseListener {
             method = "__eq__";
             if (type0.equals("null") || type1.equals("null")) {
                 if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && PizzaIR.typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && PizzaIR.typeList.getType(type1).isBuiltin()) {
+                    if (type0 != "null" && PizzaIRBuilder.typeList.getType(type0).isBuiltin()
+                            || type1 != "null" && PizzaIRBuilder.typeList.getType(type1).isBuiltin()) {
                         assert false;
                     }
                 }
@@ -325,8 +325,8 @@ public class ObjectListener extends Mx_starBaseListener {
             method = "__ne__";
             if (type0.equals("null") || type1.equals("null")) {
                 if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && PizzaIR.typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && PizzaIR.typeList.getType(type1).isBuiltin()) {
+                    if (type0 != "null" && PizzaIRBuilder.typeList.getType(type0).isBuiltin()
+                            || type1 != "null" && PizzaIRBuilder.typeList.getType(type1).isBuiltin()) {
                         assert false;
                     }
                 }
@@ -353,13 +353,13 @@ public class ObjectListener extends Mx_starBaseListener {
             assert false;
         }
 
-        String fname = PizzaIR.typeList.getType(lser0.type).getMethod(method);
+        String fname = PizzaIRBuilder.typeList.getType(lser0.type).getMethod(method);
 
         if (fname == null) {
             assert false;
         }
 
-        Func func = PizzaIR.funcList.getFunc(fname);
+        Func func = PizzaIRBuilder.funcList.getFunc(fname);
 
         Params params = new Params();
         params.add(lser0.type);

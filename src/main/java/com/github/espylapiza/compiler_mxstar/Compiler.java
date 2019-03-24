@@ -27,9 +27,9 @@ public class Compiler {
 
             istream.close();
 
-            LOGGER.info("PizzaIR");
+            LOGGER.info("PizzaIRBuilder");
 
-            PizzaIR ir = PizzaIR.fromParser(parser);
+            PizzaIRBuilder ir = PizzaIRBuilder.fromParser(parser);
 
             // System.out.println(ir.toString());
             // System.out.println(ir.getCode());

@@ -5,7 +5,7 @@ import com.github.espylapiza.compiler_mxstar.parser.*;
 public class JumpStatementListener extends Mx_starBaseListener {
     @Override
     public void enterJumpReturn(Mx_starParser.JumpReturnContext ctx) {
-        if (!PizzaIR.dom.inFunc()) {
+        if (!PizzaIRBuilder.dom.inFunc()) {
             assert false;
         }
 
@@ -14,21 +14,21 @@ public class JumpStatementListener extends Mx_starBaseListener {
             ctx.object().enterRule(lser);
             String objType = lser.type;
 
-            String rtype = PizzaIR.dom.getRtype();
+            String rtype = PizzaIRBuilder.dom.getRtype();
             if (objType.equals("null")) {
-                if (rtype.endsWith("[]") || !PizzaIR.typeList.getType(rtype).isBuiltin()) {
+                if (rtype.endsWith("[]") || !PizzaIRBuilder.typeList.getType(rtype).isBuiltin()) {
                     // return null
                 } else {
                     assert false;
                 }
-            } else if (!objType.equals(PizzaIR.dom.getRtype())) {
+            } else if (!objType.equals(PizzaIRBuilder.dom.getRtype())) {
                 assert false;
             } else {
 
             }
 
         } else {
-            if (!PizzaIR.dom.getRtype().equals("void")) {
+            if (!PizzaIRBuilder.dom.getRtype().equals("void")) {
                 assert false;
             }
         }
@@ -36,14 +36,14 @@ public class JumpStatementListener extends Mx_starBaseListener {
 
     @Override
     public void enterJumpBreak(Mx_starParser.JumpBreakContext ctx) {
-        if (!PizzaIR.dom.inLoop()) {
+        if (!PizzaIRBuilder.dom.inLoop()) {
             assert false;
         }
     }
 
     @Override
     public void enterJumpContinue(Mx_starParser.JumpContinueContext ctx) {
-        if (!PizzaIR.dom.inLoop()) {
+        if (!PizzaIRBuilder.dom.inLoop()) {
             assert false;
         }
     }
