@@ -108,9 +108,6 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             return null;
         }
 
-        // FunctionDefinitionStatementListener lser = new
-        // FunctionDefinitionStatementListener();
-        // ctx.functionDefinitionStatement().enterRule(lser);
         visit(ctx.functionDefinitionStatement());
         return null;
     }
@@ -134,9 +131,6 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     @Override
     public Node visitClassConstructionFunctionStatement(Mx_starParser.ClassConstructionFunctionStatementContext ctx) {
         Function lser = (Function) visit(ctx.constructionFunctionStatement());
-        // ConstructionFunctionStatementListener lser = new
-        // ConstructionFunctionStatementListener();
-        // ctx.constructionFunctionStatement().enterRule(lser);
 
         if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
@@ -157,9 +151,6 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     @Override
     public Node visitClassFunctionDefinitionStatement(Mx_starParser.ClassFunctionDefinitionStatementContext ctx) {
         Function lser = (Function) visit(ctx.functionDefinitionStatement());
-        // FunctionDefinitionStatementListener lser = new
-        // FunctionDefinitionStatementListener();
-        // ctx.functionDefinitionStatement().enterRule(lser);
 
         if (state == VisitState.MEMBER_DECLARATION) {
             String name = lser.name;
@@ -181,8 +172,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         Logging.debug("enter construction function: " + name);
 
-        ParamListDefinitionListener lser = new ParamListDefinitionListener();
-        ctx.paramListDefinition().enterRule(lser);
+        ParamListDefinition lser = (ParamListDefinition) visit(ctx.paramListDefinition());
 
         if (state == VisitState.MEMBER_DECLARATION) {
             Func func = new Func(trace, name, "void");
@@ -229,8 +219,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         PizzaIRVisitor.dom.enterFunc(trace, name, rtype);
 
-        ParamListDefinitionListener lser = new ParamListDefinitionListener();
-        ctx.paramListDefinition().enterRule(lser);
+        ParamListDefinition lser = (ParamListDefinition) visit(ctx.paramListDefinition());
 
         if (PizzaIRVisitor.state == VisitState.MEMBER_DECLARATION) {
             String owner;
@@ -267,6 +256,31 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
         Logging.debug("exit function: " + name);
         PizzaIRVisitor.dom.exitFunc();
+        return result;
+    }
+
+    @Override
+    public Node visitParamListDefinition(Mx_starParser.ParamListDefinitionContext ctx) {
+        ParamsInstance params = new ParamsInstance();
+        for (VariableDeclarationContext member : ctx.variableDeclaration()) {
+            VariableDeclaration lser = new VariableDeclaration();
+            member.enterRule(lser);
+            params.add(lser.name, lser.type);
+        }
+        return new ParamListDefinition(params);
+    }
+
+    @Override
+    public Node visitForCdt3VariableAssignment(Mx_starParser.ForCdt3VariableAssignmentContext ctx) {
+        VariableAssignmentListener lser = new VariableAssignmentListener();
+        ctx.variableAssignment().enterRule(lser);
+        return null;
+    }
+
+    @Override
+    public Node visitForCdt3Object(Mx_starParser.ForCdt3ObjectContext ctx) {
+        ObjectListener objLser = new ObjectListener();
+        ctx.object().enterRule(objLser);
         return null;
     }
 
