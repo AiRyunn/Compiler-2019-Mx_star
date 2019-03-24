@@ -4,6 +4,6 @@ public abstract class Node {
 
 }
 
-class Pizza2IR extends Node {
+class PizzaIR extends Node {
 
 }
