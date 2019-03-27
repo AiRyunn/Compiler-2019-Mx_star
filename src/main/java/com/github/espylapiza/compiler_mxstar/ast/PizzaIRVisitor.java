@@ -132,7 +132,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         if (state == VisitState.MEMBER_DECLARATION) {
             String name = node.name;
 
-            if (!dom.getLastClass().equals(name)) {
+            if (!dom.getCurrentClass().equals(name)) {
                 assert false;
             }
 

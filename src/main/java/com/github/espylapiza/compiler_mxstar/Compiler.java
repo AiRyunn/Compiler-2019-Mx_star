@@ -5,11 +5,7 @@ import java.util.logging.Logger;
 
 import org.antlr.v4.runtime.tree.*;
 import com.github.espylapiza.compiler_mxstar.parser.*;
-<<<<<<< HEAD
 import com.github.espylapiza.compiler_mxstar.pizza_ir.*;
-=======
-import com.github.espylapiza.compiler_mxstar.ast.*;
->>>>>>> df808cb5a18987fc8e84084048c03c0912218aad
 import com.github.espylapiza.compiler_mxstar.nasm.*;
 
 public class Compiler {
@@ -35,12 +31,8 @@ public class Compiler {
 
             PizzaIR ir = PizzaIRBuilder.fromParser(parser);
 
-<<<<<<< HEAD
-=======
-            // System.out.println(ir.toString());
-            // System.out.println(ir.getCode());
+            System.out.println(ir.toString());
 
->>>>>>> df808cb5a18987fc8e84084048c03c0912218aad
             System.exit(0);
 
             LOGGER.info("optimization");

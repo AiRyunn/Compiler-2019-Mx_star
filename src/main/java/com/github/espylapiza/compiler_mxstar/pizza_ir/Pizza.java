@@ -78,8 +78,22 @@ class Type implements Cloneable {
     }
 }
 
+class Variable {
+    int id;
+    String name;
+    String type;
+    String owner;
+
+    Variable(int id, String name, String type, String owner) {
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.owner = owner;
+    }
+}
+
 class TypeList {
-    HashMap<String, Type> types;
+    private HashMap<String, Type> types;
 
     TypeList() {
         types = new HashMap<String, Type>();
@@ -113,23 +127,8 @@ class TypeList {
     }
 }
 
-class Variable {
-    int id;
-    String name;
-    String type;
-    String owner;
-
-    Variable(int id, String name, String type, String owner) {
-        this.id = id;
-        this.name = name;
-        this.type = type;
-        this.owner = owner;
-    }
-}
-
 class VarList {
-    Vector<Variable> list = new Vector<Variable>();
-    Integer counter = 0;
+    private Vector<Variable> list = new Vector<Variable>();
 
     void add(Variable variable) {
         list.add(variable);
@@ -141,6 +140,30 @@ class VarList {
 
     JsonElement toJson() {
         return new Gson().toJsonTree(list, Vector.class);
+    }
+}
+
+class FuncList {
+    private Map<String, Func> funcList = new HashMap<String, Func>();
+
+    boolean addFunc(Func func) {
+        String addr = func.name;
+        if (func.owner != null) {
+            addr = func.owner + "." + addr;
+        }
+        if (funcList.containsKey(addr)) {
+            return false;
+        }
+        funcList.put(addr, func);
+        return true;
+    }
+
+    Func getFunc(String addr) {
+        return funcList.get(addr);
+    }
+
+    JsonElement toJson() {
+        return new Gson().toJsonTree(funcList, HashMap.class);
     }
 }
 
@@ -194,30 +217,6 @@ class Func {
     }
 }
 
-class FuncList {
-    Map<String, Func> funcList = new HashMap<String, Func>();
-
-    boolean addFunc(Func func) {
-        String addr = func.name;
-        if (func.owner != null) {
-            addr = func.owner + "." + addr;
-        }
-        if (funcList.containsKey(addr)) {
-            return false;
-        }
-        funcList.put(addr, func);
-        return true;
-    }
-
-    Func getFunc(String addr) {
-        return funcList.get(addr);
-    }
-
-    JsonElement toJson() {
-        return new Gson().toJsonTree(funcList, HashMap.class);
-    }
-}
-
 enum BlockType {
     CLASS, FUNC, SCOPE, LOOP
 }
@@ -243,11 +242,11 @@ class Block {
 class Domain {
     private final static Logger LOGGER = Logger.getLogger(Domain.class.getName());
 
-    List<String> classTrace = new ArrayList<String>();
-    List<Block> block = new ArrayList<Block>();
+    private List<String> classTrace = new ArrayList<String>();
+    private List<Block> block = new ArrayList<Block>();
 
-    Integer depth = 0;
-    Stack<Pair<Variable, Integer>> varStack = new Stack<Pair<Variable, Integer>>();
+    private Integer depth = 0;
+    private Stack<Pair<Variable, Integer>> varStack = new Stack<Pair<Variable, Integer>>();
 
     boolean isGlobal() {
         return classTrace.isEmpty();
@@ -289,15 +288,15 @@ class Domain {
         return null;
     }
 
-    String getLastClass() {
-        if (classTrace.isEmpty()) {
+    String getCurrentClass() {
+        if (isGlobal()) {
             return null;
         }
         return classTrace.get(classTrace.size() - 1);
     }
 
     String getClassTrace() {
-        if (classTrace.isEmpty()) {
+        if (isGlobal()) {
             return null;
         }
 
@@ -435,10 +434,10 @@ enum InstructionType {
 }
 
 class Instruction {
-    InstructionType type;
-    Integer dst, src;
-    Vector<Integer> params;
-    String label1, label2;
+    private InstructionType type;
+    private Integer dst, src;
+    private Vector<Integer> params;
+    private String label1, label2;
 
     Instruction(InstructionType type) {
         this.type = type;
@@ -504,8 +503,8 @@ class Instruction {
 }
 
 class Scope {
-    String label;
-    Vector<Instruction> insts = new Vector<Instruction>();
+    private String label;
+    private Vector<Instruction> insts = new Vector<Instruction>();
 
     Scope(String label) {
         this.label = label;
@@ -526,9 +525,9 @@ class Scope {
 }
 
 class Section {
-    Vector<Scope> scps = new Vector<Scope>();
-    Scope scope;
-    String addr;
+    private Vector<Scope> scps = new Vector<Scope>();
+    private Scope scope;
+    private String addr;
 
     Section(String addr) {
         scope = new Scope(addr + "_0");
@@ -567,27 +566,26 @@ class Section {
 class Code {
     private final static Logger LOGGER = Logger.getLogger(Code.class.getName());
 
-    Vector<Section> secs = new Vector<Section>();
-    Section section;
+    private Vector<Section> secs = new Vector<Section>();
+    private Stack<Section> secStack = new Stack<Section>();
 
     void addInstruction(Instruction inst) {
-        section.addInstruction(inst);
+        secStack.lastElement().addInstruction(inst);
     }
 
     void newSection(String addr) {
         LOGGER.fine("newSection: " + addr);
-        section = new Section(addr);
+        secStack.add(new Section(addr));
     }
 
     void packSection() {
         LOGGER.fine("packSection");
-        secs.add(section);
-        section = null;
+        secs.add(secStack.pop());
     }
 
     void packScope() {
         LOGGER.fine("packScope");
-        section.packScope();
+        secStack.lastElement().packScope();
     }
 
     @Override

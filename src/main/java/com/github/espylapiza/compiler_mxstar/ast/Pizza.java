@@ -289,7 +289,7 @@ class Domain {
         return null;
     }
 
-    String getLastClass() {
+    String getCurrentClass() {
         if (classTrace.isEmpty()) {
             return null;
         }

@@ -13,7 +13,7 @@ programSection:
 	| classDefinitionStatement		# ProgramClassDefinitionStatement
 	| functionDefinitionStatement	# ProgramFunctionDefinitionStatement;
 
-////////// Classes //////////
+////////// Class //////////
 
 classDefinitionStatement: Class Identifier '{' classMember* '}';
 
@@ -25,7 +25,7 @@ classMember:
 constructionFunctionStatement:
 	Identifier '(' paramListDefinition ')' '{' statements? '}';
 
-////////// Functions //////////
+////////// Function //////////
 
 functionDefinitionStatement:
 	type Identifier '(' paramListDefinition ')' '{' statements? '}';
