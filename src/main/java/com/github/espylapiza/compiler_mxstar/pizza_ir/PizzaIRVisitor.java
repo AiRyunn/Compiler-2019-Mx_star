@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starBaseVisitor;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.*;
-import com.github.espylapiza.compiler_mxstar.utils.Pair;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -43,8 +42,12 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             assert false;
         }
 
+        code.newSection("__init__");
+
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
+
+        code.packSection();
 
         return null;
     }
@@ -59,9 +62,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         case MEMBER_DECLARATION:
             break;
         case SEMANTIC_ANALYSIS:
-            VariableDeclarationContext variableDeclaration = ctx.variableDeclarationStatement().variableDeclaration();
-            VariableNode node = (VariableNode) visit(variableDeclaration);
-            allocateVariable(node.name, node.type);
+            visit(ctx.variableDeclarationStatement());
             break;
         default:
             break;
@@ -77,9 +78,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         case MEMBER_DECLARATION:
             break;
         case SEMANTIC_ANALYSIS:
-            VariableDefinitionContext variableDefinition = ctx.variableDefinitionStatement().variableDefinition();
-            VariableNode node = (VariableNode) visit(variableDefinition);
-            allocateVariable(node.name, node.type);
+            visit(ctx.variableDefinitionStatement());
             break;
         default:
             break;
@@ -124,16 +123,16 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitClassVariableDeclarationStatement(Mx_starParser.ClassVariableDeclarationStatementContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.variableDeclarationStatement().variableDeclaration());
-        String name = node.name, type = node.type;
 
         switch (state) {
         case MEMBER_DECLARATION:
+            String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier().getText();
+            String type = ctx.variableDeclarationStatement().variableDeclaration().type().getText();
             Type t = typeList.getType(dom.getClassTrace());
             t.addMember(name, type);
             break;
         case SEMANTIC_ANALYSIS:
-            allocateVariable(name, type);
+            visit(ctx.variableDeclarationStatement());
             break;
         default:
         }
@@ -203,9 +202,9 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         } else {
             code.newSection(dom.getAddr());
 
-            for (Pair<String, String> param : node.params.params) {
-                allocateVariable(param.first, param.second);
-            }
+            // for (Pair<String, String> param : node.params.params) {
+            //     allocateVariable(param.first, param.second);
+            // }
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
@@ -250,9 +249,9 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         } else {
             code.newSection(dom.getAddr());
 
-            for (Pair<String, String> param : node.params.params) {
-                allocateVariable(param.first, param.second);
-            }
+            // for (Pair<String, String> param : node.params.params) {
+            //     allocateVariable(param.first, param.second);
+            // }
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
@@ -447,15 +446,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.variableDeclaration());
-        allocateVariable(node.name, node.type);
+        visit(ctx.variableDeclaration());
         return null;
     }
 
     @Override
     public Node visitForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.variableDefinition());
-        allocateVariable(node.name, node.type);
+        visit(ctx.variableDefinition());
         return null;
     }
 
@@ -512,15 +509,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
 
     @Override
     public Node visitVariableDeclarationStatement(Mx_starParser.VariableDeclarationStatementContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.variableDeclaration());
-        allocateVariable(node.name, node.type);
+        visit(ctx.variableDeclaration());
         return null;
     }
 
     @Override
     public Node visitVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.variableDefinition());
-        allocateVariable(node.name, node.type);
+        visit(ctx.variableDefinition());
         return null;
     }
 
@@ -544,6 +539,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             return null;
         }
 
+        allocateVariable(name, type);
+
         return new VariableNode(name, type);
     }
 
@@ -551,8 +548,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     public Node visitVariableDefinition(Mx_starParser.VariableDefinitionContext ctx) {
         ObjectNode node = (ObjectNode) visit(ctx.object());
 
-        String name = ctx.Identifier().getText();
-        String type = ctx.type().getText();
+        String name = ctx.Identifier().getText(), type = ctx.type().getText();
 
         if (!typeList.hasType(type)) {
             assert false;
@@ -569,6 +565,13 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
                 assert false;
                 return null;
             }
+        }
+
+        allocateVariable(name, type);
+
+        if (node.type.equals("null")) {
+            // Instruction inst = Instruction.newAssignment();
+        } else {
         }
 
         return new VariableNode(name, type);
@@ -601,14 +604,31 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     public Node visitIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
         String name = ctx.Identifier().getText(), type = null;
 
-        if (!dom.hasVar(name)) {
-            assert false;
-            return null;
+        Variable variable = dom.getVar(name);
+
+        if (variable != null && variable.owner != null && variable.owner.equals(dom.getAddr())) {
+            // local variable
+            type = variable.type;
+            return new VariableNode(name, type);
         }
 
-        type = dom.getVarType(name);
+        if (!dom.isGlobal()) {
+            Type t = typeList.getType(dom.getClassTrace());
+            if (t.hasMember(name)) {
+                // member variable
+                type = t.getVarType(name);
+                return new VariableNode(name, type);
+            }
+        }
 
-        return new VariableNode(name, type);
+        if (variable != null) {
+            // global variable
+            type = variable.type;
+            return new VariableNode(name, type);
+        }
+
+        assert false;
+        return null;
     }
 
     @Override
@@ -686,9 +706,15 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         }
 
         if (!dom.isGlobal()) {
+            Type t = typeList.getType(dom.getClassTrace());
+            if (t.hasMember(name)) {
+                // member variable
+                type = t.getVarType(name);
+                return new ObjectNode(name, type, null);
+            }
             String trace = dom.getClassTrace();
             if (funcList.getFunc(trace + "." + name) != null) {
-                // method
+                // member method
                 String owner = trace;
                 type = "__method__";
                 return new ObjectNode(name, type, owner);
@@ -1051,7 +1077,9 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         counterVar++;
         Variable variable = new Variable(counterVar, name, type, dom.getAddr());
         varList.add(variable);
-        dom.addVar(variable);
+        if (dom.isGlobal() || dom.inFunc()) {
+            dom.addVar(variable);
+        }
     }
 
     void registerBuiltinType() {
