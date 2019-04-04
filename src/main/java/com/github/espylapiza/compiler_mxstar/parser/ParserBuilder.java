@@ -26,9 +26,7 @@ public class ParserBuilder {
         parser.addErrorListener(ThrowingErrorListener.INSTANCE);
 
         try {
-            ParseTree tree = parser.program();
-
-            return tree;
+            return parser.program();
         } catch (Exception e) {
             throw new Exception(e);
         }

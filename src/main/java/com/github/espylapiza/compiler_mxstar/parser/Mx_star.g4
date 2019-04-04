@@ -93,10 +93,10 @@ variableAssignment: lvalue '=' object;
 ////////// Objects //////////
 
 lvalue:
-	Identifier				# IdentifierLvalue
-	| This '.' Identifier	# MemberLvalue
-	| lvalue '.' Identifier	# MemberLvalue
-	| lvalue '[' object ']'	# SubscriptLvalue;
+	Identifier									# IdentifierLvalue
+	| This '.' Identifier						# MemberLvalue
+	| lvalue '.' Identifier						# MemberLvalue
+	| array = lvalue '[' subscript = object ']'	# SubscriptLvalue;
 
 object:
 	This												# ThisObject
@@ -106,7 +106,7 @@ object:
 	| object '.' Identifier								# MemberObject
 	| '(' object ')'									# BracketObject
 	| object '(' paramList ')'							# FunctionReturnObject
-	| object '[' object ']'								# SubscriptObject
+	| array = object '[' subscript = object ']'			# SubscriptObject
 	| lvalue op = ('++' | '--')							# UnaryOperatorObject
 	| <assoc = right> op = ('++' | '--') lvalue			# UnaryOperatorObject
 	| <assoc = right> op = '~' object					# UnaryOperatorObject

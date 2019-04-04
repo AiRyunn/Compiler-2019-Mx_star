@@ -11,43 +11,44 @@ import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 enum VisitState {
-    TYPE_DECLARATION, MEMBER_DECLARATION, SEMANTIC_ANALYSIS, TRANSLATION_ENTRANCE, TRANSLATION
+    TYPE_DECLARATION, DECLARATION, SEMANTIC_ANALYSIS
 }
 
-public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
+class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     private final static Logger LOGGER = Logger.getLogger(PizzaIRVisitor.class.getName());
+
+    PizzaIR ir;
 
     private VisitState state;
 
     private Domain dom = new Domain();
 
-    TypeList typeList = new TypeList();
-    VarList varList = new VarList();
-    FuncList funcList = new FuncList();
-
     private int counterVar = 0;
 
-    public Code code = new Code();
+    PizzaIRVisitor(PizzaIR ir) {
+        this.ir = ir;
+    }
 
     @Override
-    public Node visitProgram(Mx_starParser.ProgramContext ctx) {
+    public ProgramFragment visitProgram(Mx_starParser.ProgramContext ctx) {
         state = VisitState.TYPE_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        state = VisitState.MEMBER_DECLARATION;
+        state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        Func mainFunc = funcList.getFunc("main");
-        if (mainFunc == null || !mainFunc.rtype.equals("int") || mainFunc.params.count() != 0) {
+        Func mainFunc = ir.funcList.get("main");
+        if (mainFunc == null || !(mainFunc.getRtype() instanceof IntType) || mainFunc.getParams().count() != 0) {
             assert false;
         }
 
-        code.newSection("__init__");
+        ir.code.enterFunc(ir.funcList.get("__init__"));
 
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        code.packSection();
+        ir.code.packScope();
+        ir.code.exitFunc();
 
         return null;
     }
@@ -55,241 +56,216 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     ////////////////////////////// Program Section //////////////////////////////
 
     @Override
-    public Node visitProgramVariableDeclarationStatement(Mx_starParser.ProgramVariableDeclarationStatementContext ctx) {
+    public ProgramFragment visitProgramVariableDeclarationStatement(
+            Mx_starParser.ProgramVariableDeclarationStatementContext ctx) {
         switch (state) {
         case TYPE_DECLARATION:
             break;
-        case MEMBER_DECLARATION:
+        case DECLARATION:
             break;
         case SEMANTIC_ANALYSIS:
             visit(ctx.variableDeclarationStatement());
             break;
-        default:
-            break;
         }
         return null;
     }
 
     @Override
-    public Node visitProgramVariableDefinitionStatement(Mx_starParser.ProgramVariableDefinitionStatementContext ctx) {
+    public ProgramFragment visitProgramVariableDefinitionStatement(
+            Mx_starParser.ProgramVariableDefinitionStatementContext ctx) {
         switch (state) {
         case TYPE_DECLARATION:
             break;
-        case MEMBER_DECLARATION:
+        case DECLARATION:
             break;
         case SEMANTIC_ANALYSIS:
             visit(ctx.variableDefinitionStatement());
             break;
-        default:
-            break;
         }
         return null;
     }
 
     @Override
-    public Node visitProgramClassDefinitionStatement(Mx_starParser.ProgramClassDefinitionStatementContext ctx) {
-        String classname = ctx.classDefinitionStatement().Identifier().getText();
-
-        dom.enterClass(classname);
+    public ProgramFragment visitProgramClassDefinitionStatement(
+            Mx_starParser.ProgramClassDefinitionStatementContext ctx) {
+        String className = ctx.classDefinitionStatement().Identifier().getText();
 
         switch (state) {
         case TYPE_DECLARATION:
-            typeList.addType(new Type(dom.getClassTrace()));
+            Class class1 = new Class(className);
+            ir.classList.add(class1);
+            ir.typeTable.add(new CustomClassType(className, class1));
             break;
-        case MEMBER_DECLARATION:
+        case DECLARATION:
         case SEMANTIC_ANALYSIS:
+            dom.enterClass(ir.classList.get(className));
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
+            dom.exitClass();
             break;
-        case TRANSLATION_ENTRANCE:
-        case TRANSLATION:
         }
-
-        dom.exitClass();
 
         return null;
     }
 
     @Override
-    public Node visitProgramFunctionDefinitionStatement(Mx_starParser.ProgramFunctionDefinitionStatementContext ctx) {
-        if (state == VisitState.TYPE_DECLARATION) {
-            return null;
+    public ProgramFragment visitProgramFunctionDefinitionStatement(
+            Mx_starParser.ProgramFunctionDefinitionStatementContext ctx) {
+        switch (state) {
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
+            Func func = (Func) visit(ctx.functionDefinitionStatement());
+            ir.funcList.addFunc(func);
+            break;
+        case SEMANTIC_ANALYSIS:
+            visit(ctx.functionDefinitionStatement());
+            break;
         }
-
-        visit(ctx.functionDefinitionStatement());
         return null;
     }
 
     ////////////////////////////// Class //////////////////////////////
 
     @Override
-    public Node visitClassVariableDeclarationStatement(Mx_starParser.ClassVariableDeclarationStatementContext ctx) {
-
+    public ProgramFragment visitClassVariableDeclarationStatement(
+            Mx_starParser.ClassVariableDeclarationStatementContext ctx) {
         switch (state) {
-        case MEMBER_DECLARATION:
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
             String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier().getText();
-            String type = ctx.variableDeclarationStatement().variableDeclaration().type().getText();
-            Type t = typeList.getType(dom.getClassTrace());
-            t.addMember(name, type);
+            String typeName = ctx.variableDeclarationStatement().variableDeclaration().type().getText();
+            dom.getCurrentClass().addVariable(name, getTypeByName(typeName));
             break;
         case SEMANTIC_ANALYSIS:
             visit(ctx.variableDeclarationStatement());
             break;
-        default:
         }
-
         return null;
     }
 
     @Override
-    public Node visitClassConstructionFunctionStatement(Mx_starParser.ClassConstructionFunctionStatementContext ctx) {
-        FunctionNode node = (FunctionNode) visit(ctx.constructionFunctionStatement());
+    public ProgramFragment visitClassConstructionFunctionStatement(
+            Mx_starParser.ClassConstructionFunctionStatementContext ctx) {
+        Func func = (Func) visit(ctx.constructionFunctionStatement());
 
-        if (state == VisitState.MEMBER_DECLARATION) {
-            String name = node.name;
+        if (state == VisitState.DECLARATION) {
+            String name = func.name;
 
-            if (!name.equals(dom.getCurrentClass())) {
+            if (!dom.getCurrentClass().getName().equals(name)) {
                 assert false;
             }
 
-            Type t = typeList.getType(dom.getClassTrace());
-            t.addMethod(name, dom.getClassTrace() + "." + name);
+            dom.getCurrentClass().addMethod(func);
+            ir.funcList.addFunc(func);
         }
-
         return null;
     }
 
     @Override
-    public Node visitClassFunctionDefinitionStatement(Mx_starParser.ClassFunctionDefinitionStatementContext ctx) {
-        FunctionNode node = (FunctionNode) visit(ctx.functionDefinitionStatement());
+    public ProgramFragment visitClassFunctionDefinitionStatement(
+            Mx_starParser.ClassFunctionDefinitionStatementContext ctx) {
+        Func func = (Func) visit(ctx.functionDefinitionStatement());
 
-        if (state == VisitState.MEMBER_DECLARATION) {
-            String name = node.name;
+        if (state == VisitState.DECLARATION) {
+            String name = func.name;
 
-            if (name.equals(dom.getCurrentClass())) {
+            if (dom.getCurrentClass().getName().equals(name)) {
                 assert false;
             }
 
-            Type t = typeList.getType(dom.getClassTrace());
-            t.addMethod(name, dom.getClassTrace() + "." + name);
+            dom.getCurrentClass().addMethod(func);
+            ir.funcList.addFunc(func);
         }
-
         return null;
     }
 
     ////////////////////////////// Function //////////////////////////////
 
     @Override
-    public Node visitConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
-        String name = ctx.Identifier().getText();
-        String trace = dom.getClassTrace();
+    public ProgramFragment visitConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
+        Class owner = dom.getCurrentClass();
+        String identifier = ctx.Identifier().getText();
+        Type rtype = getTypeByName("void");
+        // Params params = new Params();
 
-        dom.enterFunc(trace, name, "void");
+        LOGGER.fine("enter construction function: " + identifier);
+        dom.enterFunc(owner, identifier, rtype);
 
-        LOGGER.fine("enter construction function: " + name);
+        ParamList params = (ParamList) visit(ctx.paramListDefinition());
+        // params.params.forEach(param -> params.add(param.second));
 
-        ParamListInstance node = (ParamListInstance) visit(ctx.paramListDefinition());
-
-        if (state == VisitState.MEMBER_DECLARATION) {
-            Func func = new Func(trace, name, "void");
-            if (!dom.isGlobal()) {
-                func.addParam(trace);
-            }
-            node.params.params.forEach(param -> func.addParam(param.second));
-
-            if (funcList.addFunc(func) == false) {
-                assert false;
-            }
-        } else {
-            code.newSection(dom.getAddr());
-
-            // for (Pair<String, String> param : node.params.params) {
-            //     allocateVariable(param.first, param.second);
-            // }
+        if (state == VisitState.SEMANTIC_ANALYSIS) {
+            ir.code.enterFunc(ir.funcList.get(dom.getAddr()));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            code.packScope();
-            code.packSection();
+            ir.code.packScope();
+            ir.code.exitFunc();
         }
 
-        LOGGER.fine("exit construction function: " + name);
         dom.exitFunc();
-        return new FunctionNode(name, "");
+        LOGGER.fine("exit construction function: " + identifier);
+
+        return new Func(owner, identifier, rtype, params);
     }
 
     @Override
-    public Node visitFunctionDefinitionStatement(Mx_starParser.FunctionDefinitionStatementContext ctx) {
+    public ProgramFragment visitFunctionDefinitionStatement(Mx_starParser.FunctionDefinitionStatementContext ctx) {
+        Class owner = dom.getCurrentClass();
         String name = ctx.Identifier().getText();
-        String rtype = ctx.type().getText();
-
-        String trace = dom.getClassTrace();
-
-        if (!rtype.equals("void") && !typeList.hasType(rtype)) {
-            assert false;
-        }
+        Type rtype = getTypeByName(ctx.type().getText());
 
         LOGGER.fine("enter function: " + name);
+        dom.enterFunc(owner, name, rtype);
 
-        dom.enterFunc(trace, name, rtype);
+        ParamList params = (ParamList) visit(ctx.paramListDefinition());
 
-        ParamListInstance node = (ParamListInstance) visit(ctx.paramListDefinition());
+        Func func = new Func(owner, name, rtype, params);
 
-        if (state == VisitState.MEMBER_DECLARATION) {
-            Func func = new Func(trace, name, rtype);
-            if (!dom.isGlobal()) {
-                func.addParam(trace);
-            }
-            node.params.params.forEach(param -> func.addParam(param.second));
-
-            if (funcList.addFunc(func) == false) {
-                assert false;
-            }
-        } else {
-            code.newSection(dom.getAddr());
-
-            // for (Pair<String, String> param : node.params.params) {
-            //     allocateVariable(param.first, param.second);
-            // }
+        if (state == VisitState.SEMANTIC_ANALYSIS) {
+            ir.code.enterFunc(func);
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            code.packScope();
-            code.packSection();
+            ir.code.packScope();
+            ir.code.exitFunc();
         }
 
-        LOGGER.fine("exit function: " + name);
         dom.exitFunc();
-        return new FunctionNode(name, rtype);
+        LOGGER.fine("exit function: " + name);
+
+        return func;
     }
 
     @Override
-    public Node visitParamListDefinition(Mx_starParser.ParamListDefinitionContext ctx) {
-        ParamsInstance params = new ParamsInstance();
+    public ProgramFragment visitParamListDefinition(Mx_starParser.ParamListDefinitionContext ctx) {
+        ParamList params = new ParamList();
         ctx.variableDeclaration().forEach(member -> {
-            VariableNode node = (VariableNode) visit(member);
-            params.add(node.name, node.type);
+            Object variable = (Object) visit(member);
+            params.add(variable.type);
         });
-        return new ParamListInstance(params);
+        return params;
     }
 
     @Override
-    public Node visitParamList(Mx_starParser.ParamListContext ctx) {
-        Params params = new Params();
+    public ProgramFragment visitParamList(Mx_starParser.ParamListContext ctx) {
+        ParamList params = new ParamList();
         ctx.object().forEach(member -> {
-            ObjectNode node = (ObjectNode) visit(member);
-            params.add(node.type);
+            Object variable = (Object) visit(member);
+            params.add(variable.type);
         });
-        return new ParamList(params);
+        return params;
     }
 
     ////////////////////////////// Statement //////////////////////////////
 
     @Override
-    public Node visitStatements(Mx_starParser.StatementsContext ctx) {
+    public ProgramFragment visitStatements(Mx_starParser.StatementsContext ctx) {
         ctx.statement().forEach(ch -> visit(ch));
         return null;
     }
@@ -300,84 +276,77 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     // }
 
     @Override
-    public Node visitStmtVariableDeclarationStatement(Mx_starParser.StmtVariableDeclarationStatementContext ctx) {
-        visit(ctx.variableDeclarationStatement());
-        return null;
+    public ProgramFragment visitStmtVariableDeclarationStatement(
+            Mx_starParser.StmtVariableDeclarationStatementContext ctx) {
+        return visit(ctx.variableDeclarationStatement());
     }
 
     @Override
-    public Node visitStmtVariableDefinitionStatement(Mx_starParser.StmtVariableDefinitionStatementContext ctx) {
-        visit(ctx.variableDefinitionStatement());
-        return null;
+    public ProgramFragment visitStmtVariableDefinitionStatement(
+            Mx_starParser.StmtVariableDefinitionStatementContext ctx) {
+        return visit(ctx.variableDefinitionStatement());
     }
 
     @Override
-    public Node visitVariableAssignmentStatement(Mx_starParser.VariableAssignmentStatementContext ctx) {
-        visit(ctx.variableAssignment());
-        return null;
+    public ProgramFragment visitVariableAssignmentStatement(Mx_starParser.VariableAssignmentStatementContext ctx) {
+        return visit(ctx.variableAssignment());
     }
 
     @Override
-    public Node visitStmtVariableAssignmentStatement(Mx_starParser.StmtVariableAssignmentStatementContext ctx) {
-        visit(ctx.variableAssignmentStatement());
-        return null;
+    public ProgramFragment visitStmtVariableAssignmentStatement(
+            Mx_starParser.StmtVariableAssignmentStatementContext ctx) {
+        return visit(ctx.variableAssignmentStatement());
     }
 
     @Override
-    public Node visitStmtObjectStatement(Mx_starParser.StmtObjectStatementContext ctx) {
-        visit(ctx.objectStatement());
-        return null;
+    public ProgramFragment visitStmtObjectStatement(Mx_starParser.StmtObjectStatementContext ctx) {
+        return visit(ctx.objectStatement());
     }
 
     @Override
-    public Node visitStmtLoopStatement(Mx_starParser.StmtLoopStatementContext ctx) {
-        visit(ctx.loopStatement());
-        return null;
+    public ProgramFragment visitStmtLoopStatement(Mx_starParser.StmtLoopStatementContext ctx) {
+        return visit(ctx.loopStatement());
     }
 
     @Override
-    public Node visitStmtConditionStatement(Mx_starParser.StmtConditionStatementContext ctx) {
-        visit(ctx.conditionStatement());
-        return null;
+    public ProgramFragment visitStmtConditionStatement(Mx_starParser.StmtConditionStatementContext ctx) {
+        return visit(ctx.conditionStatement());
     }
 
     @Override
-    public Node visitStmtJumpStatement(Mx_starParser.StmtJumpStatementContext ctx) {
-        visit(ctx.jumpStatement());
-        return null;
+    public ProgramFragment visitStmtJumpStatement(Mx_starParser.StmtJumpStatementContext ctx) {
+        return visit(ctx.jumpStatement());
     }
 
     @Override
-    public Node visitStmtCompoundStatement(Mx_starParser.StmtCompoundStatementContext ctx) {
-        visit(ctx.compoundStatement());
-        return null;
+    public ProgramFragment visitStmtCompoundStatement(Mx_starParser.StmtCompoundStatementContext ctx) {
+        return visit(ctx.compoundStatement());
     }
 
     @Override
-    public Node visitJumpReturn(Mx_starParser.JumpReturnContext ctx) {
+    public ProgramFragment visitJumpReturn(Mx_starParser.JumpReturnContext ctx) {
         if (!dom.inFunc()) {
             assert false;
         }
 
         if (ctx.object() != null) {
-            ObjectNode node = (ObjectNode) visit(ctx.object());
-            String objType = node.type;
+            Object variable = (Object) visit(ctx.object());
+            Type objType = variable.type;
 
-            String rtype = dom.getRtype();
-            if (objType.equals("null")) {
-                if (!rtype.endsWith("[]") && typeList.getType(rtype).isBuiltin()) {
+            Type rtype = dom.getRtype();
+            if (objType instanceof NullType) {
+                if (!(rtype instanceof NullComparable)) {
                     assert false;
                     return null;
                 }
             } else {
-                if (!objType.equals(dom.getRtype())) {
+                if (!objType.equals(rtype)) {
                     assert false;
                     return null;
                 }
             }
-
         } else {
-            if (!dom.getRtype().equals("void")) {
+            if (!(dom.getRtype() instanceof VoidType)) {
                 assert false;
                 return null;
             }
@@ -386,7 +355,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitJumpBreak(Mx_starParser.JumpBreakContext ctx) {
+    public ProgramFragment visitJumpBreak(Mx_starParser.JumpBreakContext ctx) {
         if (!dom.inLoop()) {
             assert false;
         }
@@ -394,7 +363,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitJumpContinue(Mx_starParser.JumpContinueContext ctx) {
+    public ProgramFragment visitJumpContinue(Mx_starParser.JumpContinueContext ctx) {
         if (!dom.inLoop()) {
             assert false;
         }
@@ -402,12 +371,12 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
+    public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
         dom.enterLoop(-1);
 
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+        Object variable = (Object) visit(ctx.object());
 
-        if (!node.type.equals("bool")) {
+        if (!(variable.type instanceof BoolType)) {
             assert false;
         }
 
@@ -419,7 +388,7 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitForLoop(Mx_starParser.ForLoopContext ctx) {
+    public ProgramFragment visitForLoop(Mx_starParser.ForLoopContext ctx) {
         dom.enterLoop(-1);
 
         if (ctx.forCondition().forCondition1() != null) {
@@ -427,8 +396,8 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
         }
 
         if (ctx.forCondition().forCondition2() != null) {
-            ObjectNode node = (ObjectNode) visit(ctx.forCondition().forCondition2().object());
-            if (!node.type.equals("bool")) {
+            Object node = (Object) visit(ctx.forCondition().forCondition2().object());
+            if (!(node.type instanceof BoolType)) {
                 assert false;
             }
         }
@@ -445,81 +414,75 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
-        visit(ctx.variableDeclaration());
-        return null;
+    public ProgramFragment visitForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
+        return visit(ctx.variableDeclaration());
     }
 
     @Override
-    public Node visitForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
-        visit(ctx.variableDefinition());
-        return null;
+    public ProgramFragment visitForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
+        return visit(ctx.variableDefinition());
     }
 
     @Override
-    public Node visitForCdt1VariableAssignment(Mx_starParser.ForCdt1VariableAssignmentContext ctx) {
-        visit(ctx.variableAssignment());
-        return null;
+    public ProgramFragment visitForCdt1VariableAssignment(Mx_starParser.ForCdt1VariableAssignmentContext ctx) {
+        return visit(ctx.variableAssignment());
     }
 
     @Override
-    public Node visitForCdt1Object(Mx_starParser.ForCdt1ObjectContext ctx) {
-        visit(ctx.object());
-        return null;
+    public ProgramFragment visitForCdt1Object(Mx_starParser.ForCdt1ObjectContext ctx) {
+        return visit(ctx.object());
     }
 
     @Override
-    public Node visitForCdt3VariableAssignment(Mx_starParser.ForCdt3VariableAssignmentContext ctx) {
-        visit(ctx.variableAssignment());
-        return null;
+    public ProgramFragment visitForCdt3VariableAssignment(Mx_starParser.ForCdt3VariableAssignmentContext ctx) {
+        return visit(ctx.variableAssignment());
     }
 
     @Override
-    public Node visitForCdt3Object(Mx_starParser.ForCdt3ObjectContext ctx) {
-        visit(ctx.object());
-        return null;
+    public ProgramFragment visitForCdt3Object(Mx_starParser.ForCdt3ObjectContext ctx) {
+        return visit(ctx.object());
     }
 
     @Override
-    public Node visitConditionStatement(Mx_starParser.ConditionStatementContext ctx) {
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+    public ProgramFragment visitConditionStatement(Mx_starParser.ConditionStatementContext ctx) {
+        Object node = (Object) visit(ctx.object());
 
-        if (!node.type.equals("bool")) {
+        if (!(node.type instanceof BoolType)) {
             assert false;
         }
 
         ctx.statement().forEach(ch -> {
             dom.enterCondition(-1);
-            code.packScope();
+            ir.code.packScope();
 
             visit(ch);
 
             dom.exitCondition();
         });
 
-        code.packScope();
+        ir.code.packScope();
         return null;
     }
 
     @Override
-    public Node visitObjectStatement(Mx_starParser.ObjectStatementContext ctx) {
+    public ProgramFragment visitObjectStatement(Mx_starParser.ObjectStatementContext ctx) {
         visit(ctx.object());
         return null;
     }
 
     @Override
-    public Node visitVariableDeclarationStatement(Mx_starParser.VariableDeclarationStatementContext ctx) {
+    public ProgramFragment visitVariableDeclarationStatement(Mx_starParser.VariableDeclarationStatementContext ctx) {
         visit(ctx.variableDeclaration());
         return null;
     }
 
     @Override
-    public Node visitVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
+    public ProgramFragment visitVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
         visit(ctx.variableDefinition());
         return null;
     }
 
-    public Node visitCompoundStatement(Mx_starParser.CompoundStatementContext ctx) {
+    public ProgramFragment visitCompoundStatement(Mx_starParser.CompoundStatementContext ctx) {
         if (ctx.statements() != null) {
             dom.enterCondition(-1);
 
@@ -531,32 +494,35 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitVariableDeclaration(Mx_starParser.VariableDeclarationContext ctx) {
-        String name = ctx.Identifier().getText(), type = ctx.type().getText();
+    public ProgramFragment visitVariableDeclaration(Mx_starParser.VariableDeclarationContext ctx) {
+        String name = ctx.Identifier().getText(), typeName = ctx.type().getText();
 
-        if (!typeList.hasType(type)) {
+        Type type = getTypeByName(typeName);
+
+        if (type == null) {
             assert false;
             return null;
         }
 
-        allocateVariable(name, type);
+        allocateVariable(name, type, false);
 
-        return new VariableNode(name, type);
+        return new Object(null, name, type, null);
     }
 
     @Override
-    public Node visitVariableDefinition(Mx_starParser.VariableDefinitionContext ctx) {
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+    public ProgramFragment visitVariableDefinition(Mx_starParser.VariableDefinitionContext ctx) {
+        Object node = (Object) visit(ctx.object());
 
-        String name = ctx.Identifier().getText(), type = ctx.type().getText();
+        String name = ctx.Identifier().getText(), typeName = ctx.type().getText();
 
-        if (!typeList.hasType(type)) {
+        Type type = getTypeByName(typeName);
+        if (type == null) {
             assert false;
             return null;
         }
 
-        if (node.type.equals("null")) {
-            if (!type.endsWith("[]") && typeList.getType(type).isBuiltin()) {
+        if (node.type instanceof NullType) {
+            if (!(type instanceof NullComparable)) {
                 assert false;
                 return null;
             }
@@ -567,26 +533,22 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             }
         }
 
-        allocateVariable(name, type);
+        ObjectID id = allocateVariable(name, type, true);
+        ir.code.addInstruction(new InstAssignment(id, node.id));
 
-        if (node.type.equals("null")) {
-            // Instruction inst = Instruction.newAssignment();
-        } else {
-        }
-
-        return new VariableNode(name, type);
+        return new Object(null, name, type, null);
     }
 
     @Override
-    public Node visitVariableAssignment(Mx_starParser.VariableAssignmentContext ctx) {
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+    public ProgramFragment visitVariableAssignment(Mx_starParser.VariableAssignmentContext ctx) {
+        Object node = (Object) visit(ctx.object());
 
-        VariableNode lvaluenode = (VariableNode) visit(ctx.lvalue());
+        Object lvaluenode = (Object) visit(ctx.lvalue());
 
-        String type = lvaluenode.type;
+        Type type = lvaluenode.type;
 
-        if (node.type.equals("null")) {
-            if (!type.endsWith("[]") && typeList.getType(type).isBuiltin()) {
+        if (node.type instanceof NullType) {
+            if (!(type instanceof NullComparable)) {
                 assert false;
                 return null;
             }
@@ -596,35 +558,45 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
                 return null;
             }
         }
+
+        ObjectID id = allocateVariable(lvaluenode.name, type, true);
+        ir.code.addInstruction(new InstAssignment(id, node.id));
 
         return null;
     }
 
-    @Override
-    public Node visitIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
-        String name = ctx.Identifier().getText(), type = null;
+    ////////////////////////////// Object //////////////////////////////
 
-        Variable variable = dom.getVar(name);
+    @Override
+    public ProgramFragment visitIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
+        String name = ctx.Identifier().getText();
+        Type type = null;
+
+        Object variable = dom.getVar(name);
 
         if (variable != null && variable.owner != null && variable.owner.equals(dom.getAddr())) {
             // local variable
             type = variable.type;
-            return new VariableNode(name, type);
+            return new Object(null, name, type, null);
         }
 
         if (!dom.isGlobal()) {
-            Type t = typeList.getType(dom.getClassTrace());
-            if (t.hasMember(name)) {
+            Class class1 = dom.getCurrentClass();
+            if (class1.hasVariable(name)) {
                 // member variable
-                type = t.getVarType(name);
-                return new VariableNode(name, type);
+                type = class1.getVarType(name);
+                return new Object(class1, name, type, null);
+            }
+            if (class1.hasMethod(name)) {
+                assert false;
+                return null;
             }
         }
 
         if (variable != null) {
             // global variable
             type = variable.type;
-            return new VariableNode(name, type);
+            return new Object(null, name, type, null);
         }
 
         assert false;
@@ -632,106 +604,101 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) {
-        String identifier_typename;
+    public ProgramFragment visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) {
+        Type identifier_type;
 
         if (ctx.This() != null) {
             if (dom.isGlobal()) {
                 assert false;
                 return null;
             }
-            identifier_typename = dom.getClassTrace();
+            identifier_type = getTypeByName(dom.getClassAddr());
         } else {
-            VariableNode node = (VariableNode) visit(ctx.lvalue());
-            identifier_typename = node.type;
+            Object node = (Object) visit(ctx.lvalue());
+            identifier_type = node.type;
         }
 
-        String name = ctx.Identifier().getText(), type = null;
+        String name = ctx.Identifier().getText();
 
-        Type identifier_type = typeList.getType(identifier_typename);
+        Class identifier_class = identifier_type.getTypeClass();
 
-        if (!identifier_type.hasMember(name)) {
+        if (!identifier_class.hasVariable(name)) {
             assert false;
             return null;
         }
 
-        type = identifier_type.getVarType(name);
+        Type type = identifier_class.getVarType(name);
 
-        return new VariableNode(name, type);
+        return new Object(null, null, type, null);
     }
 
     @Override
-    public Node visitSubscriptLvalue(Mx_starParser.SubscriptLvalueContext ctx) {
-        VariableNode arrayNode = (VariableNode) visit(ctx.lvalue());
+    public ProgramFragment visitSubscriptLvalue(Mx_starParser.SubscriptLvalueContext ctx) {
+        Object arrayNode = (Object) visit(ctx.array);
 
-        String name = arrayNode.name, type = arrayNode.type;
-
-        if (!type.endsWith("[]")) {
-            assert false;
-            return null;
-        } else {
-            type = type.substring(0, type.length() - 2);
-        }
-
-        ObjectNode subNode = (ObjectNode) visit(ctx.object());
-
-        if (!subNode.type.equals("int")) {
+        if (!(arrayNode.type instanceof ArrayType)) {
             assert false;
             return null;
         }
+        ArrayType arrayType = (ArrayType) arrayNode.type;
+        Type type = arrayType.getSubType();
 
-        return new VariableNode(name, type);
+        Object subNode = (Object) visit(ctx.subscript);
+
+        if (!(subNode.type instanceof IntType)) {
+            assert false;
+            return null;
+        }
+
+        return new Object(null, null, type, null);
     }
 
     @Override
-    public Node visitThisObject(Mx_starParser.ThisObjectContext ctx) {
+    public ProgramFragment visitThisObject(Mx_starParser.ThisObjectContext ctx) {
         if (dom.isGlobal()) {
             assert false;
             return null;
         }
-        String type = dom.getClassTrace();
-        return new ObjectNode(null, type, null);
+        Type type = getTypeByName(dom.getClassAddr());
+        // TODO
+        return new Object(null, null, type, null);
     }
 
     @Override
-    public Node visitIdentifierObject(Mx_starParser.IdentifierObjectContext ctx) {
-        String name = ctx.Identifier().getText(), type = null;
+    public ProgramFragment visitIdentifierObject(Mx_starParser.IdentifierObjectContext ctx) {
+        String name = ctx.Identifier().getText();
+        Type type = null;
 
-        Variable variable = dom.getVar(name);
+        Object variable = dom.getVar(name);
 
-        if (variable != null && variable.owner != null && variable.owner.equals(dom.getAddr())) {
+        if (variable != null && variable.owner != null && variable.owner.equals(dom.getCurrentClass())) {
             // local variable
-            type = variable.type;
-            return new ObjectNode(name, type, null);
+            return new Object(null, name, variable.type, variable.id);
         }
 
         if (!dom.isGlobal()) {
-            Type t = typeList.getType(dom.getClassTrace());
-            if (t.hasMember(name)) {
+            Class class1 = dom.getCurrentClass();
+            if (class1.hasVariable(name)) {
+                System.out.println(name);
                 // member variable
-                type = t.getVarType(name);
-                return new ObjectNode(name, type, null);
+                return new Object(class1, name, class1.getVarType(name), null);
             }
-            String trace = dom.getClassTrace();
-            if (funcList.getFunc(trace + "." + name) != null) {
+            if (class1.hasMethod(name)) {
                 // member method
-                String owner = trace;
-                type = "__method__";
-                return new ObjectNode(name, type, owner);
+                return new Object(class1, name, getTypeByName("__method__"), null);
             }
         }
 
         if (variable != null) {
             // global variable
             type = variable.type;
-            return new ObjectNode(name, type, null);
+            return new Object(null, name, type, variable.id);
         }
 
-        Func func = funcList.getFunc(name);
+        Func func = ir.funcList.get(name);
         if (func != null) {
             // global function
-            type = "__func__";
-            return new ObjectNode(name, type, null);
+            return new Object(null, name, getTypeByName("__func__"), null);
         }
 
         assert false;
@@ -739,55 +706,117 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitConstantObject(Mx_starParser.ConstantObjectContext ctx) {
-        String type = null;
+    public ProgramFragment visitNewObject(Mx_starParser.NewObjectContext ctx) {
+        int cntLeftBracket = 0;
+        int cntBracket = 0;
+
+        for (ParseTree ch : ctx.children) {
+            if (ch.getText().equals("[")) {
+                cntLeftBracket++;
+                cntBracket++;
+            } else if (ch instanceof Mx_starParser.ObjectContext) {
+                cntBracket--;
+
+                if (cntBracket > 0) {
+                    assert false;
+                    return null;
+                }
+
+                Object node = (Object) visit(ch);
+
+                if (!(node.type instanceof IntType)) {
+                    assert false;
+                    return null;
+                }
+            }
+        }
+
+        Type type = getTypeByName(ctx.type().getText());
+
+        for (int i = 0; i < cntLeftBracket; i++) {
+            type = new ArrayType(type, ir.classList.get("__array__"));
+        }
+
+        // TODO
+        ObjectID id = allocateVariable(null, type, false);
+        // ir.code.addInstruction(Instruction.newCall(id, func.getAddr(), new Vector<Integer>(Arrays.asList(objId))));
+
+        return new Object(null, null, type, id);
+    }
+
+    @Override
+    public ProgramFragment visitConstantObject(Mx_starParser.ConstantObjectContext ctx) {
+        Type type = null;
+        ObjectID id;
 
         ConstantContext constant = ctx.constant();
         if (constant instanceof Mx_starParser.NullContext) {
-            type = "null";
+            type = getTypeByName("null");
+            id = allocateVariable(null, type, false);
+            ir.code.addInstruction(new InstNull(id));
         } else if (constant instanceof Mx_starParser.LogicalConstantContext) {
-            type = "bool";
+            type = getTypeByName("bool");
+            id = allocateVariable(null, type, false);
+            boolean value = constant.getText().equals("true");
+            ir.code.addInstruction(new InstBool(id, value));
         } else if (constant instanceof Mx_starParser.IntegerConstantContext) {
-            type = "int";
+            type = getTypeByName("int");
+            id = allocateVariable(null, type, false);
+            Integer value = Integer.parseInt(constant.getText());
+            ir.code.addInstruction(new InstInt(id, value));
         } else if (constant instanceof Mx_starParser.StringLiteralContext) {
-            type = "string";
+            type = getTypeByName("string");
+            id = allocateVariable(null, type, false);
+            String value = constant.getText();
+            ir.code.addInstruction(new InstString(id, value));
         } else {
             assert false;
             return null;
         }
 
-        return new ObjectNode(null, type, null);
+        return new Object(null, null, type, id);
     }
 
     @Override
-    public Node visitLvalueObject(Mx_starParser.LvalueObjectContext ctx) {
-        VariableNode node = (VariableNode) visit(ctx.lvalue());
-        return new ObjectNode(null, node.type, null);
+    public ProgramFragment visitLvalueObject(Mx_starParser.LvalueObjectContext ctx) {
+        Object node = (Object) visit(ctx.lvalue());
+        ObjectID id = allocateVariable(node.name, node.type, false);
+        return new Object(null, null, node.type, id);
     }
 
     @Override
-    public Node visitMemberObject(Mx_starParser.MemberObjectContext ctx) {
-        String name = null, type = null, owner = null;
+    public ProgramFragment visitMemberObject(Mx_starParser.MemberObjectContext ctx) {
+        String name = null;
+        Class owner = null;
         String member = ctx.Identifier().getText();
+        Type type;
 
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+        Object node = (Object) visit(ctx.object());
 
-        Type identifier_type = typeList.getType(node.type);
+        Class class1 = getTypeByName(node.type.getName()).getTypeClass();
 
-        if (identifier_type.hasMember(member)) {
-            type = identifier_type.getVarType(member);
-            return new ObjectNode(name, type, owner);
+        System.out.println(ctx.getText());
+        System.out.println(class1.getName());
+
+        if (class1.hasVariable(member)) {
+            type = class1.getVarType(member);
+
+            // TODO
+            ObjectID id = allocateVariable(null, type, false);
+
+            return new Object(owner, null, type, id);
         }
 
-        if (identifier_type.hasMethod(member)) {
+        if (class1.hasMethod(member)) {
             name = member;
-            type = "__method__";
-            if (node.type.endsWith("[]")) {
-                owner = "__array__";
+            type = getTypeByName("__method__");
+            if (node.type instanceof ArrayType) {
+                owner = ir.classList.get("__array__");
             } else {
-                owner = node.type;
+                owner = node.type.getTypeClass();
             }
-            return new ObjectNode(name, type, owner);
+
+            return new Object(owner, name, type, null);
         }
 
         assert false;
@@ -795,67 +824,70 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitBracketObject(Mx_starParser.BracketObjectContext ctx) {
-        ObjectNode node = (ObjectNode) visit(ctx.object());
-        return new ObjectNode(null, node.type, null);
+    public ProgramFragment visitBracketObject(Mx_starParser.BracketObjectContext ctx) {
+        return (Object) visit(ctx.object());
     }
 
     @Override
-    public Node visitFunctionReturnObject(Mx_starParser.FunctionReturnObjectContext ctx) {
-        ObjectNode node = (ObjectNode) visit(ctx.object());
+    public ProgramFragment visitFunctionReturnObject(Mx_starParser.FunctionReturnObjectContext ctx) {
+        Object node = (Object) visit(ctx.object());
 
-        if (!node.type.equals("__func__") && !node.type.equals("__method__")) {
-            assert (false);
+        if (!(node.type instanceof FuncType) && !(node.type instanceof MethodType)) {
+            assert false;
             return null;
         }
 
         String addr = node.name;
         if (node.owner != null) {
-            addr = node.owner + "." + addr;
+            addr = node.owner.getName() + "." + addr;
         }
 
-        Func func = funcList.getFunc(addr);
+        Func func = ir.funcList.get(addr);
 
-        ParamList paramNode = (ParamList) visit(ctx.paramList());
+        ParamList params = (ParamList) visit(ctx.paramList());
 
-        Params params = new Params();
-        if (node.type.equals("__method__")) {
-            params.add(func.params.params.get(0));
-        }
-        paramNode.params.params.forEach(param -> params.add(param));
-
-        if (!func.params.match(params)) {
+        if (!func.getParams().match(params)) {
             assert false;
             return null;
         }
 
-        String type = func.rtype;
-        return new ObjectNode(null, type, null);
+        Type rtype = func.getRtype();
+
+        if (rtype instanceof VoidType) {
+            return null;
+        }
+
+        ObjectID id = allocateVariable(null, rtype, false);
+        // ir.code.addInstruction(new InstLoad(id, arrayNode.id, subNode.id));
+        return new Object(null, null, rtype, id);
     }
 
     @Override
-    public Node visitSubscriptObject(Mx_starParser.SubscriptObjectContext ctx) {
-        ObjectNode arrayNode = (ObjectNode) visit(ctx.object(0));
+    public ProgramFragment visitSubscriptObject(Mx_starParser.SubscriptObjectContext ctx) {
+        Object arrayNode = (Object) visit(ctx.array);
 
-        String type = arrayNode.type;
-        if (!type.endsWith("[]")) {
-            assert (false);
+        Type type = arrayNode.type;
+        if (!(type instanceof ArrayType)) {
+            assert false;
             return null;
         } else {
-            type = type.substring(0, type.length() - 2);
+            type = ((ArrayType) type).getSubType();
         }
 
-        ObjectNode subNode = (ObjectNode) visit(ctx.object(1));
-        if (!subNode.type.equals("int")) {
-            assert (false);
+        Object subNode = (Object) visit(ctx.subscript);
+        if (!(subNode.type instanceof IntType)) {
+            assert false;
             return null;
         }
 
-        return new ObjectNode(null, type, null);
+        ObjectID id = allocateVariable(null, type, false);
+        ir.code.addInstruction(new InstLoad(id, arrayNode.id, subNode.id));
+
+        return new Object(null, null, type, id);
     }
 
     @Override
-    public Node visitUnaryOperatorObject(Mx_starParser.UnaryOperatorObjectContext ctx) {
+    public ProgramFragment visitUnaryOperatorObject(Mx_starParser.UnaryOperatorObjectContext ctx) {
         String op = ctx.op.getText();
         String method = null;
 
@@ -883,86 +915,52 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             return null;
         }
 
-        String objType = null;
+        Type objType = null;
+        ObjectID objId = null;
 
         if (ctx.lvalue() != null) {
-            VariableNode node = (VariableNode) visit(ctx.lvalue());
+            Object node = (Object) visit(ctx.lvalue());
             objType = node.type;
+            // TODO
+            // objId = node.va
         } else {
-            ObjectNode node = (ObjectNode) visit(ctx.object());
+            Object node = (Object) visit(ctx.object());
             objType = node.type;
+            objId = node.id;
         }
 
-        String methodName = typeList.getType(objType).getMethod(method);
+        Func func = objType.getTypeClass().getMethod(method);
 
-        if (methodName == null) {
+        if (func == null) {
             assert false;
             return null;
         }
 
-        Func func = funcList.getFunc(methodName);
+        ParamList params = new ParamList();
 
-        Params params = new Params();
-        params.add(objType);
-
-        if (!func.params.match(params)) {
+        if (!func.getParams().match(params)) {
             assert false;
             return null;
         }
 
-        String type = func.rtype;
+        Type type = func.getRtype();
 
-        return new ObjectNode(null, type, null);
+        ObjectID id = allocateVariable(null, type, false);
+        ir.code.addInstruction(new InstCall(id, func.getAddr(), new Vector<ObjectID>(Arrays.asList(objId))));
+
+        return new Object(null, null, type, id);
     }
 
     @Override
-    public Node visitNewObject(Mx_starParser.NewObjectContext ctx) {
-        int cntLeftBracket = 0;
-        int cntBracket = 0;
+    public ProgramFragment visitBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
+        Class owner = null;
+        String name = null;
+        Type type;
+        Object lhs = (Object) visit(ctx.object(0));
+        Type typel = lhs.type;
 
-        for (ParseTree ch : ctx.children) {
-            if (ch.getText().equals("[")) {
-                cntLeftBracket++;
-                cntBracket++;
-            } else if (ch instanceof Mx_starParser.ObjectContext) {
-                cntBracket--;
-
-                if (cntBracket > 0) {
-                    assert false;
-                    return null;
-                }
-
-                ObjectNode node = (ObjectNode) visit(ch);
-
-                if (!node.type.equals("int")) {
-                    assert false;
-                    return null;
-                }
-            }
-        }
-
-        String type = ctx.type().getText();
-
-        if (!typeList.hasType(type)) {
-            assert false;
-            return null;
-        }
-
-        for (int i = 0; i < cntLeftBracket; i++) {
-            type += "[]";
-        }
-
-        return new ObjectNode(null, type, null);
-    }
-
-    @Override
-    public Node visitBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
-        String name = null, type = null, owner = null;
-        ObjectNode node0 = (ObjectNode) visit(ctx.object(0));
-        String type0 = node0.type;
-
-        ObjectNode node1 = (ObjectNode) visit(ctx.object(1));
-        String type1 = node1.type;
+        Object rhs = (Object) visit(ctx.object(1));
+        Type typer = rhs.type;
 
         String op = ctx.op.getText();
         String method = "";
@@ -1002,28 +1000,30 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             break;
         case "==":
             method = "__eq__";
-            if (type0.equals("null") || type1.equals("null")) {
-                if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && typeList.getType(type1).isBuiltin()) {
+            if (typel instanceof NullType || typer instanceof NullType) {
+                if (!(typel instanceof ArrayType) && !(typer instanceof ArrayType)) {
+                    if (typel instanceof FundamentalType || typer instanceof FundamentalType) {
                         assert false;
                     }
                 }
-                type = "bool";
-                return new ObjectNode(name, type, owner);
+                type = getTypeByName("bool");
+                ObjectID id = allocateVariable(null, type, false);
+                // ir.code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                return new Object(owner, name, type, id);
             }
             break;
         case "!=":
             method = "__ne__";
-            if (type0.equals("null") || type1.equals("null")) {
-                if (!type0.endsWith("[]") && !type1.endsWith("[]")) {
-                    if (type0 != "null" && typeList.getType(type0).isBuiltin()
-                            || type1 != "null" && typeList.getType(type1).isBuiltin()) {
+            if (typel instanceof NullType || typer instanceof NullType) {
+                if (!(typel instanceof ArrayType) && !(typer instanceof ArrayType)) {
+                    if (typel instanceof FundamentalType || typer instanceof FundamentalType) {
                         assert false;
                     }
                 }
-                type = "bool";
-                return new ObjectNode(name, type, owner);
+                type = getTypeByName("bool");
+                ObjectID id = allocateVariable(null, type, false);
+                // ir.code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                return new Object(owner, name, type, id);
             }
             break;
         case "&":
@@ -1046,160 +1046,62 @@ public class PizzaIRVisitor extends Mx_starBaseVisitor<Node> {
             return null;
         }
 
-        String methodName = typeList.getType(node0.type).getMethod(method);
+        Func func = lhs.type.getTypeClass().getMethod(method);
 
-        if (methodName == null) {
+        if (func == null) {
             assert false;
             return null;
         }
 
-        Func func = funcList.getFunc(methodName);
+        ParamList params = new ParamList(rhs.type);
 
-        Params params = new Params();
-        params.add(node0.type);
-        params.add(node1.type);
-
-        if (!func.params.match(params)) {
+        if (!func.getParams().match(params)) {
             assert false;
             return null;
         }
 
-        type = func.rtype;
-        return new ObjectNode(name, type, owner);
+        type = func.getRtype();
+
+        // TODO a && b
+        ObjectID id = allocateVariable(null, type, false);
+        ir.code.addInstruction(new InstCall(id, func.getAddr(), new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+
+        return new Object(owner, name, type, id);
     }
 
-    void allocateVariable(String name, String type) {
-        if (!dom.canAllocate(name)) {
+    private ObjectID allocateVariable(String name, Type type, boolean shadowing) {
+        System.out.println(type);
+        if (state != VisitState.SEMANTIC_ANALYSIS) {
+            return null;
+        }
+        if (!shadowing && name != null && !dom.canAllocate(name)) {
             assert false;
-            return;
+            return null;
+        }
+        if (type instanceof VoidType) {
+            assert false;
+            return null;
         }
 
         counterVar++;
-        Variable variable = new Variable(counterVar, name, type, dom.getAddr());
-        varList.add(variable);
-        if (dom.isGlobal() || dom.inFunc()) {
+        ObjectID id = new ObjectID(counterVar);
+        Object variable = new Object(dom.getCurrentClass(), name, type, id);
+        ir.varList.add(variable);
+        if (dom.isGlobal() || dom.inFunc())
             dom.addVar(variable);
+        return id;
+    }
+
+    private Type getTypeByName(String typeName) {
+        if (typeName.endsWith("[]")) {
+            return new ArrayType(getTypeByName(typeName.substring(0, typeName.length() - 2)),
+                    ir.classList.get("__array__"));
+        } else {
+            Type type = ir.typeTable.get(typeName);
+            if (type == null) {
+                assert false;
+            }
+            return type;
         }
-    }
-
-    void registerBuiltinType() {
-        Type t_bool = new Type("bool", true);
-        Arrays.asList("__lgcand__", "__lgcor__", "__eq__", "__ne__").forEach(method -> {
-            String addr = t_bool.name + "." + method;
-            t_bool.addMethod(method, addr);
-            Func func = new Func(t_bool.name, method, t_bool.name);
-            func.addParam(t_bool.name);
-            func.addParam(t_bool.name);
-            funcList.addFunc(func);
-        });
-        Arrays.asList("__lgcnot__").forEach(method -> {
-            String addr = t_bool.name + "." + method;
-            t_bool.addMethod(method, addr);
-            Func func = new Func(t_bool.name, method, t_bool.name);
-            func.addParam(t_bool.name);
-            funcList.addFunc(func);
-        });
-        typeList.addType(t_bool);
-
-        Type t_int = new Type("int", true);
-        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__", "__bitand__",
-                "__bitxor__", "__bitor__").forEach(method -> {
-                    String addr = t_int.name + "." + method;
-                    t_int.addMethod(method, addr);
-                    Func func = new Func(t_int.name, method, t_int.name);
-                    func.addParam(t_int.name);
-                    func.addParam(t_int.name);
-                    funcList.addFunc(func);
-                });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
-            String addr = t_int.name + "." + method;
-            t_int.addMethod(method, addr);
-            Func func = new Func(t_int.name, method, "bool");
-            func.addParam(t_int.name);
-            func.addParam(t_int.name);
-            funcList.addFunc(func);
-        });
-        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__", "__postdec__")
-                .forEach(method -> {
-                    String addr = t_int.name + "." + method;
-                    t_int.addMethod(method, addr);
-                    Func func = new Func(t_int.name, method, t_int.name);
-                    func.addParam(t_int.name);
-                    funcList.addFunc(func);
-                });
-        typeList.addType(t_int);
-
-        Type t_string = new Type("string", true);
-        Arrays.asList("__add__").forEach(method -> {
-            String addr = t_string.name + "." + method;
-            t_string.addMethod(method, addr);
-            Func func = new Func(t_string.name, method, t_string.name);
-            func.addParam(t_string.name);
-            func.addParam(t_string.name);
-            funcList.addFunc(func);
-        });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
-            String addr = t_string.name + "." + method;
-            t_string.addMethod(method, addr);
-            Func func = new Func(t_string.name, method, "bool");
-            func.addParam(t_string.name);
-            func.addParam(t_string.name);
-            funcList.addFunc(func);
-        });
-        Arrays.asList("length", "parseInt").forEach(method -> {
-            String addr = t_string.name + "." + method;
-            t_string.addMethod(method, addr);
-            Func func = new Func(t_string.name, method, "int");
-            func.addParam("string");
-            funcList.addFunc(func);
-        });
-        Arrays.asList("ord").forEach(method -> {
-            String addr = t_string.name + "." + method;
-            t_string.addMethod(method, addr);
-            Func func = new Func(t_string.name, method, "int");
-            func.addParam("string");
-            func.addParam("int");
-            funcList.addFunc(func);
-        });
-        Arrays.asList("substring").forEach(method -> {
-            String addr = t_string.name + "." + method;
-            t_string.addMethod(method, addr);
-            Func func = new Func(t_string.name, method, "string");
-            func.addParam("string");
-            func.addParam("int");
-            func.addParam("int");
-            funcList.addFunc(func);
-        });
-        typeList.addType(t_string);
-
-        Type t_array = new Type("__array__", true);
-        Arrays.asList("size").forEach(method -> {
-            String addr = t_array.name + "." + method;
-            t_array.addMethod(method, addr);
-            Func func = new Func(t_array.name, method, "int");
-            func.addParam("__array__");
-            funcList.addFunc(func);
-        });
-        typeList.addType(t_array);
-    }
-
-    void registerBuiltinFunc() {
-        Func print = new Func(null, "print", "void");
-        print.addParam("string");
-        funcList.addFunc(print);
-
-        Func println = new Func(null, "println", "void");
-        println.addParam("string");
-        funcList.addFunc(println);
-
-        Func getInt = new Func(null, "getInt", "int");
-        funcList.addFunc(getInt);
-
-        Func getString = new Func(null, "getString", "string");
-        funcList.addFunc(getString);
-
-        Func toString = new Func(null, "toString", "string");
-        toString.addParam("int");
-        funcList.addFunc(toString);
     }
 }

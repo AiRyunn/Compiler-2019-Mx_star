@@ -1892,6 +1892,8 @@ public class Mx_starParser extends Parser {
 		}
 	}
 	public static class SubscriptLvalueContext extends LvalueContext {
+		public LvalueContext array;
+		public ObjectContext subscript;
 		public LvalueContext lvalue() {
 			return getRuleContext(LvalueContext.class,0);
 		}
@@ -1999,13 +2001,14 @@ public class Mx_starParser extends Parser {
 					case 2:
 						{
 						_localctx = new SubscriptLvalueContext(new LvalueContext(_parentctx, _parentState));
+						((SubscriptLvalueContext)_localctx).array = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_lvalue);
 						setState(254);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
 						setState(255);
 						match(LeftSquareBracket);
 						setState(256);
-						object(0);
+						((SubscriptLvalueContext)_localctx).subscript = object(0);
 						setState(257);
 						match(RightSquareBracket);
 						}
@@ -2056,6 +2059,8 @@ public class Mx_starParser extends Parser {
 		}
 	}
 	public static class SubscriptObjectContext extends ObjectContext {
+		public ObjectContext array;
+		public ObjectContext subscript;
 		public List<ObjectContext> object() {
 			return getRuleContexts(ObjectContext.class);
 		}
@@ -2607,13 +2612,14 @@ public class Mx_starParser extends Parser {
 					case 13:
 						{
 						_localctx = new SubscriptObjectContext(new ObjectContext(_parentctx, _parentState));
+						((SubscriptObjectContext)_localctx).array = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_object);
 						setState(341);
 						if (!(precpred(_ctx, 17))) throw new FailedPredicateException(this, "precpred(_ctx, 17)");
 						setState(342);
 						match(LeftSquareBracket);
 						setState(343);
-						object(0);
+						((SubscriptObjectContext)_localctx).subscript = object(0);
 						setState(344);
 						match(RightSquareBracket);
 						}

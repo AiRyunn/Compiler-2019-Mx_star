@@ -29,9 +29,11 @@ public class Compiler {
 
             LOGGER.info("PizzaIRBuilder");
 
-            PizzaIR ir = PizzaIRBuilder.fromParser(parser);
+            PizzaIRBuilder builder = new PizzaIRBuilder();
+            builder.fromParser(parser);
+            PizzaIR ir = builder.getIR();
 
-            System.out.println(ir.toString());
+            // System.out.println(ir.toString());
 
             System.exit(0);
 
