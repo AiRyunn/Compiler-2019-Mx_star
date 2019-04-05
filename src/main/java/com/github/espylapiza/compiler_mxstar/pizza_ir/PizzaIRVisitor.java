@@ -1083,8 +1083,9 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         ObjectID id = new ObjectID(counterVar);
         Object variable = new Object(trace.getCurrentClass(), name, type, id);
         ir.varList.add(variable);
-        if (trace.isGlobal() || trace.inFunc())
+        if (trace.isGlobal() || trace.inFunc()) {
             trace.addVar(variable);
+        }
         return id;
     }
 

@@ -66,7 +66,6 @@ class TypeTable {
         typeTable.put(type.getName(), type);
     }
 
-    // TODO: to be deprecated
     Type get(String name) {
         return typeTable.get(name);
     }
