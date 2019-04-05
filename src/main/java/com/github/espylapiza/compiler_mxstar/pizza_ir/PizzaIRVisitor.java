@@ -21,7 +21,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     private VisitState state;
 
-    private Domain dom = new Domain();
+    private Trace trace = new Trace();
 
     private int counterVar = 0;
 
@@ -98,9 +98,9 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             break;
         case DECLARATION:
         case SEMANTIC_ANALYSIS:
-            dom.enterClass(ir.classList.get(className));
+            trace.enter(ir.classList.get(className));
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
-            dom.exitClass();
+            trace.exit();
             break;
         }
 
@@ -135,7 +135,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         case DECLARATION:
             String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier().getText();
             String typeName = ctx.variableDeclarationStatement().variableDeclaration().type().getText();
-            dom.getCurrentClass().addVariable(name, getTypeByName(typeName));
+            trace.getCurrentClass().addVariable(name, getTypeByName(typeName));
             break;
         case SEMANTIC_ANALYSIS:
             visit(ctx.variableDeclarationStatement());
@@ -152,11 +152,11 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (state == VisitState.DECLARATION) {
             String name = func.name;
 
-            if (!dom.getCurrentClass().getName().equals(name)) {
+            if (!trace.getCurrentClass().getName().equals(name)) {
                 assert false;
             }
 
-            dom.getCurrentClass().addMethod(func);
+            trace.getCurrentClass().addMethod(func);
             ir.funcList.addFunc(func);
         }
         return null;
@@ -170,11 +170,11 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (state == VisitState.DECLARATION) {
             String name = func.name;
 
-            if (dom.getCurrentClass().getName().equals(name)) {
+            if (trace.getCurrentClass().getName().equals(name)) {
                 assert false;
             }
 
-            dom.getCurrentClass().addMethod(func);
+            trace.getCurrentClass().addMethod(func);
             ir.funcList.addFunc(func);
         }
         return null;
@@ -184,61 +184,60 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
-        Class owner = dom.getCurrentClass();
+        Class owner = trace.getCurrentClass();
         String identifier = ctx.Identifier().getText();
         Type rtype = getTypeByName("void");
-        // Params params = new Params();
+        Func func = new Func(owner, identifier, rtype);
 
         LOGGER.fine("enter construction function: " + identifier);
-        dom.enterFunc(owner, identifier, rtype);
+        trace.enter(func);
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
-        // params.params.forEach(param -> params.add(param.second));
+        func.addParams(params);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            ir.code.enterFunc(ir.funcList.get(dom.getAddr()));
+            // ir.code.enterFunc(ir.funcList.get(trace.getAddr()));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.packScope();
-            ir.code.exitFunc();
+            // ir.code.packScope();
+            // ir.code.exitFunc();
         }
 
-        dom.exitFunc();
+        trace.exit();
         LOGGER.fine("exit construction function: " + identifier);
 
-        return new Func(owner, identifier, rtype, params);
+        return func;
     }
 
     @Override
     public ProgramFragment visitFunctionDefinitionStatement(Mx_starParser.FunctionDefinitionStatementContext ctx) {
-        Class owner = dom.getCurrentClass();
+        Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName(ctx.type().getText());
+        Func func = new Func(owner, name, rtype);
 
         LOGGER.fine("enter function: " + name);
-        dom.enterFunc(owner, name, rtype);
+        trace.enter(func);
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
-
-        Func func = new Func(owner, name, rtype, params);
+        func.addParams(params);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            ir.code.enterFunc(func);
+            // ir.code.enterFunc(func);
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.packScope();
-            ir.code.exitFunc();
+            // ir.code.packScope();
+            // ir.code.exitFunc();
         }
 
-        dom.exitFunc();
+        trace.exit();
         LOGGER.fine("exit function: " + name);
-
         return func;
     }
 
@@ -325,7 +324,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitJumpReturn(Mx_starParser.JumpReturnContext ctx) {
-        if (!dom.inFunc()) {
+        if (!trace.inFunc()) {
             assert false;
         }
 
@@ -333,7 +332,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             Object variable = (Object) visit(ctx.object());
             Type objType = variable.type;
 
-            Type rtype = dom.getRtype();
+            Type rtype = trace.getRtype();
             if (objType instanceof NullType) {
                 if (!(rtype instanceof NullComparable)) {
                     assert false;
@@ -346,7 +345,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 }
             }
         } else {
-            if (!(dom.getRtype() instanceof VoidType)) {
+            if (!(trace.getRtype() instanceof VoidType)) {
                 assert false;
                 return null;
             }
@@ -356,7 +355,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitJumpBreak(Mx_starParser.JumpBreakContext ctx) {
-        if (!dom.inLoop()) {
+        if (!trace.inLoop()) {
             assert false;
         }
         return null;
@@ -364,7 +363,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitJumpContinue(Mx_starParser.JumpContinueContext ctx) {
-        if (!dom.inLoop()) {
+        if (!trace.inLoop()) {
             assert false;
         }
         return null;
@@ -372,7 +371,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
-        dom.enterLoop(-1);
+        trace.enter(new LoopDomain());
 
         Object variable = (Object) visit(ctx.object());
 
@@ -382,14 +381,14 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         visit(ctx.statement());
 
-        dom.exitLoop();
+        trace.exit();
 
         return null;
     }
 
     @Override
     public ProgramFragment visitForLoop(Mx_starParser.ForLoopContext ctx) {
-        dom.enterLoop(-1);
+        trace.enter(new LoopDomain());
 
         if (ctx.forCondition().forCondition1() != null) {
             visit(ctx.forCondition().forCondition1());
@@ -408,7 +407,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         visit(ctx.statement());
 
-        dom.exitLoop();
+        trace.exit();
 
         return null;
     }
@@ -452,15 +451,15 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         ctx.statement().forEach(ch -> {
-            dom.enterCondition(-1);
-            ir.code.packScope();
+            trace.enter(new Domain());
+            // ir.code.packScope();
 
             visit(ch);
 
-            dom.exitCondition();
+            trace.exit();
         });
 
-        ir.code.packScope();
+        // ir.code.packScope();
         return null;
     }
 
@@ -484,11 +483,11 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     public ProgramFragment visitCompoundStatement(Mx_starParser.CompoundStatementContext ctx) {
         if (ctx.statements() != null) {
-            dom.enterCondition(-1);
+            trace.enter(new Domain());
 
             visit(ctx.statements());
 
-            dom.exitCondition();
+            trace.exit();
         }
         return null;
     }
@@ -572,16 +571,16 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String name = ctx.Identifier().getText();
         Type type = null;
 
-        Object variable = dom.getVar(name);
+        Object variable = trace.getVar(name);
 
-        if (variable != null && variable.owner != null && variable.owner.equals(dom.getAddr())) {
+        if (variable != null && variable.owner != null && variable.owner.equals(trace.getCurrentClass())) {
             // local variable
             type = variable.type;
             return new Object(null, name, type, null);
         }
 
-        if (!dom.isGlobal()) {
-            Class class1 = dom.getCurrentClass();
+        if (!trace.isGlobal()) {
+            Class class1 = trace.getCurrentClass();
             if (class1.hasVariable(name)) {
                 // member variable
                 type = class1.getVarType(name);
@@ -605,22 +604,23 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) {
-        Type identifier_type;
+        // Type identifier_type;
+        Class identifier_class;
 
         if (ctx.This() != null) {
-            if (dom.isGlobal()) {
+            if (trace.isGlobal()) {
                 assert false;
                 return null;
             }
-            identifier_type = getTypeByName(dom.getClassAddr());
+            identifier_class = trace.getCurrentClass();
+            // identifier_type = getTypeByName(dom.getClassAddr());
         } else {
             Object node = (Object) visit(ctx.lvalue());
-            identifier_type = node.type;
+            identifier_class = node.type.getTypeClass();
+            // identifier_type = node.type;
         }
 
         String name = ctx.Identifier().getText();
-
-        Class identifier_class = identifier_type.getTypeClass();
 
         if (!identifier_class.hasVariable(name)) {
             assert false;
@@ -655,11 +655,11 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitThisObject(Mx_starParser.ThisObjectContext ctx) {
-        if (dom.isGlobal()) {
+        if (trace.isGlobal()) {
             assert false;
             return null;
         }
-        Type type = getTypeByName(dom.getClassAddr());
+        Type type = getTypeByName(trace.getClassAddr());
         // TODO
         return new Object(null, null, type, null);
     }
@@ -669,15 +669,15 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String name = ctx.Identifier().getText();
         Type type = null;
 
-        Object variable = dom.getVar(name);
+        Object variable = trace.getVar(name);
 
-        if (variable != null && variable.owner != null && variable.owner.equals(dom.getCurrentClass())) {
+        if (variable != null && variable.owner != null && variable.owner.equals(trace.getCurrentClass())) {
             // local variable
             return new Object(null, name, variable.type, variable.id);
         }
 
-        if (!dom.isGlobal()) {
-            Class class1 = dom.getCurrentClass();
+        if (!trace.isGlobal()) {
+            Class class1 = trace.getCurrentClass();
             if (class1.hasVariable(name)) {
                 System.out.println(name);
                 // member variable
@@ -1001,10 +1001,8 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         case "==":
             method = "__eq__";
             if (typel instanceof NullType || typer instanceof NullType) {
-                if (!(typel instanceof ArrayType) && !(typer instanceof ArrayType)) {
-                    if (typel instanceof FundamentalType || typer instanceof FundamentalType) {
-                        assert false;
-                    }
+                if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
+                    assert false;
                 }
                 type = getTypeByName("bool");
                 ObjectID id = allocateVariable(null, type, false);
@@ -1015,10 +1013,8 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         case "!=":
             method = "__ne__";
             if (typel instanceof NullType || typer instanceof NullType) {
-                if (!(typel instanceof ArrayType) && !(typer instanceof ArrayType)) {
-                    if (typel instanceof FundamentalType || typer instanceof FundamentalType) {
-                        assert false;
-                    }
+                if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
+                    assert false;
                 }
                 type = getTypeByName("bool");
                 ObjectID id = allocateVariable(null, type, false);
@@ -1074,7 +1070,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (state != VisitState.SEMANTIC_ANALYSIS) {
             return null;
         }
-        if (!shadowing && name != null && !dom.canAllocate(name)) {
+        if (!shadowing && name != null && !trace.canAllocate(name)) {
             assert false;
             return null;
         }
@@ -1085,10 +1081,10 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         counterVar++;
         ObjectID id = new ObjectID(counterVar);
-        Object variable = new Object(dom.getCurrentClass(), name, type, id);
+        Object variable = new Object(trace.getCurrentClass(), name, type, id);
         ir.varList.add(variable);
-        if (dom.isGlobal() || dom.inFunc())
-            dom.addVar(variable);
+        if (trace.isGlobal() || trace.inFunc())
+            trace.addVar(variable);
         return id;
     }
 

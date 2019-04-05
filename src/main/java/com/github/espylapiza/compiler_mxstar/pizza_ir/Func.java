@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.google.gson.annotations.Expose;
 
-class Func extends ProgramFragment {
+class Func extends Domain {
     Class owner;
     @Expose
     protected String name;
@@ -16,6 +16,12 @@ class Func extends ProgramFragment {
 
     private List<Scope> scps = new ArrayList<Scope>();
     private Scope scope;
+
+    Func(Class owner, String name, Type rtype) {
+        this.owner = owner;
+        this.name = name;
+        this.rtype = rtype;
+    }
 
     Func(Class owner, String name, Type rtype, ParamList params) {
         this.owner = owner;
@@ -41,6 +47,10 @@ class Func extends ProgramFragment {
 
     ParamList getParams() {
         return params;
+    }
+
+    void addParams(ParamList params) {
+        this.params = params;
     }
 
     void addInstruction(Inst inst) {
@@ -97,14 +107,6 @@ class ParamList extends ProgramFragment {
         params.add(type);
     }
 
-    Type getType(int index) {
-        return params.get(index);
-    }
-
-    List<Type> getParams() {
-        return params;
-    }
-
     boolean match(ParamList rhs) {
         if (params.size() != rhs.params.size()) {
             return false;
@@ -141,28 +143,5 @@ class Scope {
             result += "\t" + inst.toString() + "\n";
         }
         return result;
-    }
-}
-
-enum BlockType {
-    CLASS, FUNC, SCOPE, LOOP
-}
-
-class Block {
-    int position;
-    BlockType type;
-    String name;
-    Type rtype;
-
-    Block(int position, BlockType type) {
-        this.position = position;
-        this.type = type;
-    }
-
-    Block(int position, BlockType type, String name, Type rtype) {
-        this.position = position;
-        this.type = type;
-        this.name = name;
-        this.rtype = rtype;
     }
 }

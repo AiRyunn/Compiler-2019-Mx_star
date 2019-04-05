@@ -4,7 +4,7 @@ import java.util.*;
 
 import com.google.gson.annotations.Expose;
 
-class Class implements Cloneable {
+class Class extends Domain implements Cloneable {
     @Expose
     private String name;
     @Expose
