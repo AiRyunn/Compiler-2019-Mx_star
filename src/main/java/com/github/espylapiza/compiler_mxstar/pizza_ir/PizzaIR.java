@@ -3,9 +3,13 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Stack;
+import java.util.logging.Logger;
 
 import com.github.espylapiza.compiler_mxstar.nasm.*;
+import com.github.espylapiza.compiler_mxstar.utils.Pair;
 import com.google.gson.*;
 import com.google.gson.annotations.Expose;
 
@@ -145,5 +149,122 @@ class FuncList {
     @Override
     public String toString() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create().toJson(funcList);
+    }
+}
+
+class Trace {
+    private final static Logger LOGGER = Logger.getLogger(Trace.class.getName());
+
+    private Class currentClass;
+    private Func currentFunc;
+
+    private Integer depth = 0;
+    private Stack<Pair<Object, Integer>> varStack = new Stack<Pair<Object, Integer>>();
+    private Stack<Domain> doms = new Stack<Domain>();
+
+    boolean isGlobal() {
+        return currentClass == null;
+    }
+
+    void addVar(Object variable) {
+        LOGGER.fine("allocate variable: " + variable.type + " " + variable.name);
+        if (variable.name != null) {
+            varStack.add(new Pair<Object, Integer>(variable, depth));
+        }
+    }
+
+    boolean hasVar(String name) {
+        for (ListIterator<Pair<Object, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Object, Integer> pre = it.previous();
+            if (pre.first.name.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Object getVar(String name) {
+        for (ListIterator<Pair<Object, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Object, Integer> pre = it.previous();
+            if (pre.first.name != null && pre.first.name.equals(name)) {
+                return pre.first;
+            }
+        }
+        return null;
+    }
+
+    Class getCurrentClass() {
+        return currentClass;
+    }
+
+    Func getCurrentFunc() {
+        return currentFunc;
+    }
+
+    String getClassAddr() {
+        if (currentClass == null) {
+            return "";
+        }
+        return currentClass.getName();
+    }
+
+    void enter(Domain dom) {
+        depth++;
+        if (dom instanceof Class) {
+            currentClass = (Class) dom;
+        } else if (dom instanceof Func) {
+            currentFunc = (Func) dom;
+        }
+        doms.add(dom);
+    }
+
+    void exit() {
+        while (!varStack.isEmpty() && varStack.lastElement().second.equals(depth)) {
+            LOGGER.fine(
+                    "remove variable: " + varStack.lastElement().first.type + " " + varStack.lastElement().first.name);
+            varStack.pop();
+        }
+        depth--;
+
+        Domain dom = doms.pop();
+        if (dom instanceof Class) {
+            currentClass = null;
+        } else if (dom instanceof Func) {
+            currentFunc = null;
+        }
+    }
+
+    boolean inLoop() {
+        for (Domain dom : doms) {
+            if (dom instanceof LoopDomain)
+                return true;
+        }
+        return false;
+    }
+
+    boolean inFunc() {
+        return currentFunc != null;
+    }
+
+    Type getRtype() {
+        for (Domain dom : doms) {
+            if (dom instanceof Func)
+                return ((Func) dom).getRtype();
+        }
+        assert false;
+        return null;
+    }
+
+    boolean canAllocate(String name) {
+        for (ListIterator<Pair<Object, Integer>> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+            Pair<Object, Integer> pre = it.previous();
+            if (pre.second < depth) {
+                break;
+            }
+            if (pre.first.name.equals(name)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
