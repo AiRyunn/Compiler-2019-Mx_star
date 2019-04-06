@@ -57,11 +57,18 @@ class Func extends Domain {
         scope.addInstruction(inst);
     }
 
-    void packScope() {
+    void pack() {
         if (scope != null) {
             scps.add(scope);
         }
-        scope = new Scope(getAddr() + "_" + scps.size());
+    }
+
+    void newScope() {
+        scope = new Scope(getAddr() + "." + scps.size());
+    }
+
+    void newScope(String info) {
+        scope = new Scope(getAddr() + "." + info + "_" + scps.size());
     }
 
     void enter() {
