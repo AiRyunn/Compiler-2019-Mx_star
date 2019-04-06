@@ -23,17 +23,17 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     private Trace trace = new Trace();
 
-    private int counterVar = 0;
-
     PizzaIRVisitor(PizzaIR ir) {
         this.ir = ir;
     }
 
     @Override
     public ProgramFragment visitProgram(Mx_starParser.ProgramContext ctx) {
+        LOGGER.info("TYPE_DECLARATION");
         state = VisitState.TYPE_DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
+        LOGGER.info("DECLARATION");
         state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
@@ -43,8 +43,9 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         ir.code.enterFunc(ir.funcList.get("__init__"));
-        ir.code.newScope();
+        ir.code.enterScope(ir.code.newScope());
 
+        LOGGER.info("SEMANTIC_ANALYSIS");
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
@@ -198,7 +199,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
-            ir.code.newScope();
+            ir.code.enterScope(ir.code.newScope());
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
@@ -229,7 +230,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
-            ir.code.newScope();
+            ir.code.enterScope(ir.code.newScope());
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
@@ -333,8 +334,8 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         if (ctx.object() != null) {
-            Object variable = (Object) visit(ctx.object());
-            Type objType = variable.type;
+            Object obj = (Object) visit(ctx.object());
+            Type objType = obj.type;
 
             Type rtype = trace.getRtype();
             if (objType instanceof NullType) {
@@ -342,17 +343,23 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                     assert false;
                     return null;
                 }
+                // return null
+                ir.code.addInstruction(new InstRet(obj.id));
             } else {
                 if (!objType.equals(rtype)) {
                     assert false;
                     return null;
                 }
+                // return object
+                ir.code.addInstruction(new InstRet(obj.id));
             }
         } else {
             if (!(trace.getRtype() instanceof VoidType)) {
                 assert false;
                 return null;
             }
+            // return
+            ir.code.addInstruction(new InstRet());
         }
         return null;
     }
@@ -448,28 +455,58 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitConditionStatement(Mx_starParser.ConditionStatementContext ctx) {
-        Object node = (Object) visit(ctx.object());
+        Object obj = (Object) visit(ctx.object());
 
-        if (!(node.type instanceof BoolType)) {
+        if (!(obj.type instanceof BoolType)) {
             assert false;
         }
 
-        int id = 0;
-        String[] info = { "IF", "ELSE" };
+        Scope scp_if = null, scp_else = null, scp_endif;
+        if (ctx.if_stmt != null) {
+            scp_if = ir.code.newScope("IF");
+        }
+        if (ctx.else_stmt != null) {
+            scp_else = ir.code.newScope("ELSE");
+        }
+        scp_endif = ir.code.newScope("END_IF");
 
-        for (StatementContext statement : ctx.statement()) {
+        if (ctx.else_stmt == null) {
+            ir.code.addInstruction(new InstCondition(obj.id, scp_if, scp_endif));
+        } else {
+            ir.code.addInstruction(new InstCondition(obj.id, scp_if, scp_else));
+        }
+
+        ir.code.pack();
+
+        if (ctx.if_stmt != null) {
             trace.enter(new Domain());
 
-            ir.code.pack();
-            ir.code.newScope(info[id++]);
+            ir.code.enterScope(scp_if);
 
-            visit(statement);
+            visit(ctx.if_stmt);
+
+            ir.code.addInstruction(new InstJump(scp_endif));
+
+            ir.code.pack();
 
             trace.exit();
         }
 
-        ir.code.pack();
-        ir.code.newScope("END_IF");
+        if (ctx.else_stmt != null) {
+            trace.enter(new Domain());
+
+            ir.code.enterScope(scp_else);
+
+            visit(ctx.else_stmt);
+
+            ir.code.addInstruction(new InstJump(scp_endif));
+
+            ir.code.pack();
+
+            trace.exit();
+        }
+
+        ir.code.enterScope(scp_endif);
 
         return null;
     }
@@ -806,9 +843,6 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Class class1 = getTypeByName(node.type.getName()).getTypeClass();
 
-        System.out.println(ctx.getText());
-        System.out.println(class1.getName());
-
         if (class1.hasVariable(member)) {
             type = class1.getVarType(member);
 
@@ -1077,7 +1111,6 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     private ObjectID allocateVariable(String name, Type type, boolean shadowing) {
-        System.out.println(type);
         if (state != VisitState.SEMANTIC_ANALYSIS) {
             return null;
         }
@@ -1090,14 +1123,16 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        counterVar++;
-        ObjectID id = new ObjectID(counterVar);
-        Object variable = new Object(trace.getCurrentClass(), name, type, id);
-        ir.varList.add(variable);
+        // Object variable = new Object(trace.getCurrentClass(), name, type, id);
+        Object variable = trace.getCurrentFunc().allocate(name, type);
+
+        // if (trace.isGlobal()) {
+        //     ir.varList.add(variable);
+        // }
         if (trace.isGlobal() || trace.inFunc()) {
             trace.addVar(variable);
         }
-        return id;
+        return variable.id;
     }
 
     private Type getTypeByName(String typeName) {

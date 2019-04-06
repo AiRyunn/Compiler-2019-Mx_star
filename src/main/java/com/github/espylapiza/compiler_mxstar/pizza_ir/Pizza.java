@@ -54,7 +54,7 @@ class Code {
     void enterFunc(Func func) {
         LOGGER.fine("enterFunc: " + func.getAddr());
         funcStack.add(func);
-        func.enter();
+        // func.enter();
     }
 
     void exitFunc() {
@@ -62,18 +62,30 @@ class Code {
         funcList.add(funcStack.pop());
     }
 
+    Scope newScope() {
+        return funcStack.lastElement().newScope();
+    }
+
+    Scope newScope(String info) {
+        return funcStack.lastElement().newScope(info);
+    }
+
+    void enterScope(Scope scp) {
+        funcStack.lastElement().enterScope(scp);
+    }
+
     void pack() {
         LOGGER.fine("packScope");
         funcStack.lastElement().pack();
     }
 
-    void newScope() {
-        funcStack.lastElement().newScope();
-    }
+    // void newScope() {
+    //     funcStack.lastElement().newScope();
+    // }
 
-    void newScope(String info) {
-        funcStack.lastElement().newScope(info);
-    }
+    // void newScope(String info) {
+    //     funcStack.lastElement().newScope(info);
+    // }
 
     @Override
     public String toString() {

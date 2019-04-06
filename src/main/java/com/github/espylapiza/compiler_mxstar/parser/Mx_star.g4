@@ -73,7 +73,9 @@ forCondition3:
 	| object			# ForCdt3Object;
 
 conditionStatement:
-	If '(' object ')' statement (Else statement)?;
+	If '(' object ')' if_stmt = statement (
+		Else else_stmt = statement
+	)?;
 
 jumpStatement:
 	Return object? ';'	# JumpReturn

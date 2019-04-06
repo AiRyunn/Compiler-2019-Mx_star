@@ -117,6 +117,14 @@ class VarList {
         varList.add(variable);
     }
 
+    int size() {
+        return varList.size();
+    }
+
+    Object get(int index) {
+        return varList.get(index);
+    }
+
     JsonElement toJson() {
         return new Gson().toJsonTree(varList, List.class);
     }

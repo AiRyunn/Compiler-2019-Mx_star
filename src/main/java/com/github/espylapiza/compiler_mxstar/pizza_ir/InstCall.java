@@ -1,13 +1,13 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-import java.util.Vector;
+import java.util.List;
 
 class InstCall extends Inst {
     ObjectID dst;
     String addr;
-    Vector<ObjectID> params;
+    List<ObjectID> params;
 
-    InstCall(ObjectID dst, String addr, Vector<ObjectID> params) {
+    InstCall(ObjectID dst, String addr, List<ObjectID> params) {
         super();
         this.dst = dst;
         this.addr = addr;

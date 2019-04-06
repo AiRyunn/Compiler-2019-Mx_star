@@ -13,9 +13,12 @@ class Func extends Domain {
     private Type rtype;
     @Expose
     private ParamList params;
+    private VarList varList = new VarList();
 
     private List<Scope> scps = new ArrayList<Scope>();
     private Scope scope;
+
+    private int counter = 0;
 
     Func(Class owner, String name, Type rtype) {
         this.owner = owner;
@@ -57,27 +60,45 @@ class Func extends Domain {
         scope.addInstruction(inst);
     }
 
+    Scope newScope() {
+        return new Scope(getAddr() + "." + (counter++));
+    }
+
+    Scope newScope(String info) {
+        return new Scope(getAddr() + "." + info + "_" + (counter++));
+    }
+
+    void enterScope(Scope scp) {
+        scope = scp;
+    }
+
     void pack() {
         if (scope != null) {
             scps.add(scope);
         }
     }
 
-    void newScope() {
-        scope = new Scope(getAddr() + "." + scps.size());
-    }
+    // void enter() {
+    //     // scope = new Scope(getAddr() + "_0");
+    // }
 
-    void newScope(String info) {
-        scope = new Scope(getAddr() + "." + info + "_" + scps.size());
-    }
+    // ObjectID allocate(Object variable) {
+    //     varList.add(variable);
+    //     return new ObjectID(varList.size());
+    // }
 
-    void enter() {
-        scope = new Scope(getAddr() + "_0");
+    Object allocate(String name, Type type) {
+        Object variable = new Object(owner, name, type, new ObjectID(varList.size()));
+        varList.add(variable);
+        return variable;
     }
 
     @Override
     public String toString() {
         String result = "func " + getAddr();
+        for (int i = 0; i < params.count(); i++) {
+            result += " " + varList.get(i).id;
+        }
         result += " {\n";
         boolean first = true;
         for (Scope scp : scps) {
@@ -133,10 +154,14 @@ class ParamList extends ProgramFragment {
 
 class Scope {
     private String label;
-    private List<Inst> insts = new ArrayList<Inst>();
+    List<Inst> insts = new ArrayList<Inst>();
 
     Scope(String label) {
         this.label = label;
+    }
+
+    String getLabel() {
+        return "#" + label;
     }
 
     void addInstruction(Inst inst) {

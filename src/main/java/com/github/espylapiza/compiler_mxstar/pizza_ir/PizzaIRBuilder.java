@@ -29,8 +29,8 @@ public class PizzaIRBuilder {
         // data.add("func", visitor.funcList.toJson());
         // data.add("var", visitor.varList.toJson());
 
-        System.out.println(ir.typeTable.toString());
-        System.out.println(ir.classList.toString());
+        // System.out.println(ir.typeTable.toString());
+        // System.out.println(ir.classList.toString());
         System.out.println(ir.code.toString());
         // System.out.println(visitor.varList.toJson().toString());
         // System.out.println(visitor.code.toString());

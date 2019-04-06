@@ -1535,6 +1535,8 @@ public class Mx_starParser extends Parser {
 	}
 
 	public static class ConditionStatementContext extends ParserRuleContext {
+		public StatementContext if_stmt;
+		public StatementContext else_stmt;
 		public TerminalNode If() { return getToken(Mx_starParser.If, 0); }
 		public ObjectContext object() {
 			return getRuleContext(ObjectContext.class,0);
@@ -1572,7 +1574,7 @@ public class Mx_starParser extends Parser {
 			setState(209);
 			match(RightRoundBracket);
 			setState(210);
-			statement();
+			((ConditionStatementContext)_localctx).if_stmt = statement();
 			setState(213);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,18,_ctx) ) {
@@ -1581,7 +1583,7 @@ public class Mx_starParser extends Parser {
 				setState(211);
 				match(Else);
 				setState(212);
-				statement();
+				((ConditionStatementContext)_localctx).else_stmt = statement();
 				}
 				break;
 			}
