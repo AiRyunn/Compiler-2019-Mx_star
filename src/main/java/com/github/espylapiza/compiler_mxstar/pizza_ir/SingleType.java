@@ -57,8 +57,8 @@ abstract class CustomType extends SingleType {
 }
 
 class VoidType extends FundamentalType {
-    VoidType(String typeName, Class typeClass) {
-        super(typeName, typeClass);
+    VoidType(String typeName) {
+        super(typeName, null);
     }
 }
 

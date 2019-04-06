@@ -196,14 +196,14 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         func.addParams(params);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            // ir.code.enterFunc(ir.funcList.get(trace.getAddr()));
+            ir.code.enterFunc(func);
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
             // ir.code.packScope();
-            // ir.code.exitFunc();
+            ir.code.exitFunc();
         }
 
         trace.exit();
@@ -226,14 +226,15 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         func.addParams(params);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            // ir.code.enterFunc(func);
+            ir.code.enterFunc(func);
+            ir.code.newlabel();
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
             // ir.code.packScope();
-            // ir.code.exitFunc();
+            ir.code.exitFunc();
         }
 
         trace.exit();

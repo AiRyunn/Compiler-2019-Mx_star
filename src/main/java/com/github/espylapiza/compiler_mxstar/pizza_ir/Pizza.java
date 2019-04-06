@@ -67,6 +67,9 @@ class Code {
         funcStack.lastElement().packScope();
     }
 
+    void newlabel() {
+    }
+
     @Override
     public String toString() {
         String result = "";

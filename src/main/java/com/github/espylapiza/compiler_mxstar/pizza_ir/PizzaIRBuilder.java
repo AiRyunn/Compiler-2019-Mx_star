@@ -31,6 +31,7 @@ public class PizzaIRBuilder {
 
         System.out.println(ir.typeTable.toString());
         System.out.println(ir.classList.toString());
+        System.out.println(ir.code.toString());
         // System.out.println(visitor.varList.toJson().toString());
         // System.out.println(visitor.code.toString());
     }
@@ -44,7 +45,7 @@ public class PizzaIRBuilder {
         ir.typeTable.add(t_null);
 
         Class c_void = new Class("void");
-        VoidType t_void = new VoidType("void", c_void);
+        VoidType t_void = new VoidType("void");
         ir.classList.add(c_void);
         ir.typeTable.add(t_void);
 
