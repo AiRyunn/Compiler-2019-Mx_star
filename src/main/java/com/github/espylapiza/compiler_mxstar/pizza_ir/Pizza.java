@@ -43,7 +43,7 @@ class ObjectID {
 class Code {
     private final static Logger LOGGER = Logger.getLogger(Code.class.getName());
 
-    private List<Func> funcs = new ArrayList<Func>();
+    private List<Func> funcList = new ArrayList<Func>();
     private Stack<Func> funcStack = new Stack<Func>();
 
     void addInstruction(Inst inst) {
@@ -59,22 +59,27 @@ class Code {
 
     void exitFunc() {
         LOGGER.fine("exitFunc");
-        funcs.add(funcStack.pop());
+        funcList.add(funcStack.pop());
     }
 
-    void packScope() {
+    void pack() {
         LOGGER.fine("packScope");
-        funcStack.lastElement().packScope();
+        funcStack.lastElement().pack();
     }
 
-    void newlabel() {
+    void newScope() {
+        funcStack.lastElement().newScope();
+    }
+
+    void newScope(String info) {
+        funcStack.lastElement().newScope(info);
     }
 
     @Override
     public String toString() {
         String result = "";
         boolean first = true;
-        for (Func sec : funcs) {
+        for (Func sec : funcList) {
             if (first) {
                 first = false;
             } else {

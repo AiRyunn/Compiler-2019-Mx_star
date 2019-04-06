@@ -43,11 +43,12 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         ir.code.enterFunc(ir.funcList.get("__init__"));
+        ir.code.newScope();
 
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        ir.code.packScope();
+        ir.code.pack();
         ir.code.exitFunc();
 
         return null;
@@ -197,12 +198,13 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
+            ir.code.newScope();
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            // ir.code.packScope();
+            ir.code.pack();
             ir.code.exitFunc();
         }
 
@@ -227,13 +229,13 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
-            ir.code.newlabel();
+            ir.code.newScope();
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            // ir.code.packScope();
+            ir.code.pack();
             ir.code.exitFunc();
         }
 
@@ -263,6 +265,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     ////////////////////////////// Statement //////////////////////////////
+    // SEMANTIC
 
     @Override
     public ProgramFragment visitStatements(Mx_starParser.StatementsContext ctx) {
@@ -451,16 +454,23 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        ctx.statement().forEach(ch -> {
-            trace.enter(new Domain());
-            // ir.code.packScope();
+        int id = 0;
+        String[] info = { "IF", "ELSE" };
 
-            visit(ch);
+        for (StatementContext statement : ctx.statement()) {
+            trace.enter(new Domain());
+
+            ir.code.pack();
+            ir.code.newScope(info[id++]);
+
+            visit(statement);
 
             trace.exit();
-        });
+        }
 
-        // ir.code.packScope();
+        ir.code.pack();
+        ir.code.newScope("END_IF");
+
         return null;
     }
 
