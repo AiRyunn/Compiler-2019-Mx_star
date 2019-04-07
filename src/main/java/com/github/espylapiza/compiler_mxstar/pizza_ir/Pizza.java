@@ -70,21 +70,25 @@ class Code {
         return funcStack.lastElement().newScope(info);
     }
 
-    void enterScope(Scope scp) {
-        funcStack.lastElement().enterScope(scp);
-    }
-
-    void pack() {
-        LOGGER.fine("packScope");
-        funcStack.lastElement().pack();
-    }
-
-    // void newScope() {
-    //     funcStack.lastElement().newScope();
+    // void enterScope(Scope scp) {
+    //     funcStack.lastElement().enterScope(scp);
     // }
 
-    // void newScope(String info) {
-    //     funcStack.lastElement().newScope(info);
+    // void pack() {
+    //     LOGGER.fine("packScope");
+    //     funcStack.lastElement().pack();
+    // }
+
+    void pushScope(Scope scp) {
+        funcStack.lastElement().pushScope(scp);
+    }
+
+    void popScope() {
+        funcStack.lastElement().popScope();
+    }
+
+    // void jumpToTop() {
+    //     funcStack.lastElement().jumpToTop();
     // }
 
     @Override

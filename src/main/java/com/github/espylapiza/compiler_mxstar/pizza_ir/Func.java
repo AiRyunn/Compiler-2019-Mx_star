@@ -2,7 +2,9 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
+import com.github.espylapiza.compiler_mxstar.utils.Pair;
 import com.google.gson.annotations.Expose;
 
 class Func extends Domain {
@@ -16,7 +18,8 @@ class Func extends Domain {
     private VarList varList = new VarList();
 
     private List<Scope> scps = new ArrayList<Scope>();
-    private Scope scope;
+    private Stack<Pair<Scope, Boolean>> scpStack = new Stack<Pair<Scope, Boolean>>();
+    // private Scope scope;
 
     private int counter = 0;
 
@@ -57,7 +60,13 @@ class Func extends Domain {
     }
 
     void addInstruction(Inst inst) {
-        scope.addInstruction(inst);
+        if (scpStack.lastElement().second) {
+            return;
+        }
+        scpStack.lastElement().first.addInstruction(inst);
+        if (inst instanceof InstJump || inst instanceof InstRet) {
+            scpStack.lastElement().second = true;
+        }
     }
 
     Scope newScope() {
@@ -68,15 +77,27 @@ class Func extends Domain {
         return new Scope(getAddr() + "." + info + "_" + (counter++));
     }
 
-    void enterScope(Scope scp) {
-        scope = scp;
+    // void enterScope(Scope scp) {
+    //     scope = scp;
+    // }
+
+    void pushScope(Scope scp) {
+        scpStack.add(new Pair<Scope, Boolean>(scp, false));
     }
 
-    void pack() {
-        if (scope != null) {
-            scps.add(scope);
+    void popScope() {
+        Pair<Scope, Boolean> top = scpStack.pop();
+        if (!top.second && !scpStack.empty()) {
+            top.first.addInstruction(new InstJump(scpStack.lastElement().first));
         }
+        scps.add(top.first);
     }
+
+    // void pack() {
+    //     if (scope != null) {
+    //         scps.add(scope);
+    //     }
+    // }
 
     // void enter() {
     //     // scope = new Scope(getAddr() + "_0");
@@ -154,7 +175,7 @@ class ParamList extends ProgramFragment {
 
 class Scope {
     private String label;
-    List<Inst> insts = new ArrayList<Inst>();
+    private List<Inst> insts = new ArrayList<Inst>();
 
     Scope(String label) {
         this.label = label;

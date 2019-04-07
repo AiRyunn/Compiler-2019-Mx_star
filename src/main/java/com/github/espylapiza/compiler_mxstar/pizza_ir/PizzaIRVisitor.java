@@ -43,13 +43,13 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         ir.code.enterFunc(ir.funcList.get("__init__"));
-        ir.code.enterScope(ir.code.newScope());
+        ir.code.pushScope(ir.code.newScope());
 
         LOGGER.info("SEMANTIC_ANALYSIS");
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        ir.code.pack();
+        ir.code.popScope();
         ir.code.exitFunc();
 
         return null;
@@ -199,13 +199,13 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
-            ir.code.enterScope(ir.code.newScope());
+            ir.code.pushScope(ir.code.newScope());
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.pack();
+            ir.code.popScope();
             ir.code.exitFunc();
         }
 
@@ -230,13 +230,13 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             ir.code.enterFunc(func);
-            ir.code.enterScope(ir.code.newScope());
+            ir.code.pushScope(ir.code.newScope());
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.pack();
+            ir.code.popScope();
             ir.code.exitFunc();
         }
 
@@ -462,51 +462,32 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         Scope scp_if = null, scp_else = null, scp_endif;
-        if (ctx.if_stmt != null) {
-            scp_if = ir.code.newScope("IF");
-        }
-        if (ctx.else_stmt != null) {
-            scp_else = ir.code.newScope("ELSE");
-        }
+
+        scp_if = ir.code.newScope("IF");
         scp_endif = ir.code.newScope("END_IF");
 
-        if (ctx.else_stmt == null) {
-            ir.code.addInstruction(new InstCondition(obj.id, scp_if, scp_endif));
-        } else {
-            ir.code.addInstruction(new InstCondition(obj.id, scp_if, scp_else));
-        }
-
-        ir.code.pack();
-
-        if (ctx.if_stmt != null) {
-            trace.enter(new Domain());
-
-            ir.code.enterScope(scp_if);
-
-            visit(ctx.if_stmt);
-
-            ir.code.addInstruction(new InstJump(scp_endif));
-
-            ir.code.pack();
-
-            trace.exit();
-        }
-
         if (ctx.else_stmt != null) {
-            trace.enter(new Domain());
-
-            ir.code.enterScope(scp_else);
-
-            visit(ctx.else_stmt);
-
-            ir.code.addInstruction(new InstJump(scp_endif));
-
-            ir.code.pack();
-
-            trace.exit();
+            scp_else = ir.code.newScope("ELSE");
+        } else {
+            scp_else = scp_endif;
         }
 
-        ir.code.enterScope(scp_endif);
+        ir.code.addInstruction(new InstCondition(obj.id, scp_if, scp_else));
+        ir.code.popScope();
+
+        ir.code.pushScope(scp_endif);
+
+        for (StatementContext stmt : ctx.statement()) {
+            trace.enter(new Domain());
+            if (stmt == ctx.if_stmt) {
+                ir.code.pushScope(scp_if);
+            } else {
+                ir.code.pushScope(scp_else);
+            }
+            visit(stmt);
+            ir.code.popScope();
+            trace.exit();
+        }
 
         return null;
     }
