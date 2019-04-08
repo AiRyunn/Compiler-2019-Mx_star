@@ -41,16 +41,16 @@ public class PizzaIRBuilder {
     }
 
     private void registerBuiltinClass(PizzaIR ir) {
-        NullType t_null = new NullType("null");
+        TypeNull t_null = new TypeNull("null");
         ir.typeTable.add(t_null);
 
         Class c_void = new Class("void");
-        VoidType t_void = new VoidType("void");
+        TypeVoid t_void = new TypeVoid("void");
         ir.classList.add(c_void);
         ir.typeTable.add(t_void);
 
         Class c_bool = new Class("bool");
-        BoolType t_bool = new BoolType("bool", c_bool);
+        TypeBool t_bool = new TypeBool("bool", c_bool);
         Arrays.asList("__lgcnot__").forEach(method -> {
             Func func = new Func(c_bool, method, t_bool, new ParamList());
             c_bool.addMethod(func);
@@ -65,7 +65,7 @@ public class PizzaIRBuilder {
         ir.typeTable.add(t_bool);
 
         Class c_int = new Class("int");
-        IntType t_int = new IntType("int", c_int);
+        TypeInt t_int = new TypeInt("int", c_int);
         Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__", "__postdec__")
                 .forEach(method -> {
                     Func func = new Func(c_int, method, t_int, new ParamList());
@@ -87,7 +87,7 @@ public class PizzaIRBuilder {
         ir.typeTable.add(t_int);
 
         Class c_string = new Class("string");
-        StringType t_string = new StringType("string", c_string);
+        TypeString t_string = new TypeString("string", c_string);
         Arrays.asList("__add__").forEach(method -> {
             Func func = new Func(c_string, method, t_string, new ParamList(Arrays.asList(t_string)));
             c_string.addMethod(func);
@@ -126,12 +126,12 @@ public class PizzaIRBuilder {
         classArray = c_array;
 
         Class c_func = new Class("__func__");
-        FuncType t_func = new FuncType("__func__", c_void);
+        TypeFunc t_func = new TypeFunc("__func__", c_void);
         ir.classList.add(c_func);
         ir.typeTable.add(t_func);
 
         Class c_method = new Class("__method__");
-        MethodType t_method = new MethodType("__method__", c_void);
+        TypeMethod t_method = new TypeMethod("__method__", c_void);
         ir.classList.add(c_method);
         ir.typeTable.add(t_method);
     }

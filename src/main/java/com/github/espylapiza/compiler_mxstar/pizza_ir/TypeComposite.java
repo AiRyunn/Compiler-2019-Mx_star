@@ -1,15 +1,15 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-abstract class CompositeType extends Type {
-    CompositeType(String typeName, Class typeClass) {
+abstract class TypeComposite extends Type {
+    TypeComposite(String typeName, Class typeClass) {
         super(typeName, typeClass);
     }
 }
 
-class ArrayType extends CompositeType implements NullComparable {
+class TypeArray extends TypeComposite implements NullComparable {
     private final Type subType;
 
-    ArrayType(Type subType, Class arrayClass) {
+    TypeArray(Type subType, Class arrayClass) {
         super(subType.getName() + "[]", arrayClass);
         this.subType = subType;
     }
@@ -20,8 +20,8 @@ class ArrayType extends CompositeType implements NullComparable {
 
     @Override
     boolean equals(Type other) {
-        if (other instanceof ArrayType) {
-            return subType.equals(((ArrayType) other).getSubType());
+        if (other instanceof TypeArray) {
+            return subType.equals(((TypeArray) other).getSubType());
         }
         return false;
     }

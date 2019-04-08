@@ -57,13 +57,13 @@ public class PizzaIR {
 }
 
 class TypeTable {
-    private transient HashMap<String, SingleType> typeTable;
+    private transient HashMap<String, TypeSingle> typeTable;
 
     TypeTable() {
-        typeTable = new HashMap<String, SingleType>();
+        typeTable = new HashMap<String, TypeSingle>();
     }
 
-    void add(SingleType type) {
+    void add(TypeSingle type) {
         if (typeTable.containsKey(type.getName())) {
             assert false;
         }
@@ -117,7 +117,7 @@ class VarList {
         varList.add(variable);
     }
 
-    int size() {
+    int count() {
         return varList.size();
     }
 
@@ -176,9 +176,7 @@ class Trace {
 
     void addVar(Object variable) {
         LOGGER.fine("allocate variable: " + variable.type + " " + variable.name);
-        if (variable.name != null) {
-            varStack.add(new Pair<Object, Integer>(variable, depth));
-        }
+        varStack.add(new Pair<Object, Integer>(variable, depth));
     }
 
     boolean hasVar(String name) {
@@ -248,10 +246,6 @@ class Trace {
                 return true;
         }
         return false;
-    }
-
-    boolean inFunc() {
-        return currentFunc != null;
     }
 
     Type getRtype() {

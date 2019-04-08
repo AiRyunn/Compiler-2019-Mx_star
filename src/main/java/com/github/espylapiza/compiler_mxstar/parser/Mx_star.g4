@@ -126,8 +126,9 @@ object:
 	| object op = '&&' object							# BinaryOperatorObject
 	| object op = '||' object							# BinaryOperatorObject;
 
-type: simpleType | compositeType;
 ////////// Data Type //////////
+
+type: simpleType | compositeType;
 
 simpleType: fundamentalType | customType;
 compositeType: simpleType ('[' ']')+;
@@ -143,8 +144,9 @@ constant:
 
 /****************************** Tokens ******************************/
 
-New: 'new';
 ////////// Keywords //////////
+
+New: 'new';
 
 Bool: 'bool';
 Int: 'int';

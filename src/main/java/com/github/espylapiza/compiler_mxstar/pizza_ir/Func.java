@@ -2,6 +2,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Stack;
 
 import com.github.espylapiza.compiler_mxstar.utils.Pair;
@@ -64,25 +65,50 @@ class Func extends Domain {
             return;
         }
         scpStack.lastElement().first.addInstruction(inst);
-        if (inst instanceof InstJump || inst instanceof InstRet) {
+        if (inst instanceof InstBaseJump) {
             scpStack.lastElement().second = true;
         }
     }
 
-    Scope newScope() {
-        return new Scope(getAddr() + "." + (counter++));
+    void jumpBreak() {
+        if (scpStack.lastElement().second) {
+            return;
+        }
+        for (ListIterator<Pair<Scope, Boolean>> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
+            Pair<Scope, Boolean> pre = it.previous();
+            if (pre.first.getType() == ScopeType.ENDLOOP) {
+                scpStack.lastElement().first.addInstruction(new InstJump(pre.first));
+                scpStack.lastElement().second = true;
+            }
+        }
     }
 
-    Scope newScope(String info) {
-        return new Scope(getAddr() + "." + info + "_" + (counter++));
+    void jumpContinue() {
+        if (scpStack.lastElement().second) {
+            return;
+        }
+        scpStack.lastElement().first.addInstruction(new InstJump(scpStack.lastElement().first));
+        scpStack.lastElement().second = true;
     }
+
+    Scope newScope(ScopeType type) {
+        return new Scope(type, getAddr() + "." + type.toString() + "_" + (counter++));
+    }
+
+    // Scope newScope(String info) {
+    //     return new Scope(getAddr() + "." + info + "_" + (counter++));
+    // }
 
     // void enterScope(Scope scp) {
     //     scope = scp;
     // }
 
     void pushScope(Scope scp) {
-        scpStack.add(new Pair<Scope, Boolean>(scp, false));
+        boolean dead = false;
+        if (!scpStack.empty()) {
+            dead = scpStack.lastElement().second;
+        }
+        scpStack.add(new Pair<Scope, Boolean>(scp, dead));
     }
 
     void popScope() {
@@ -93,34 +119,33 @@ class Func extends Domain {
         scps.add(top.first);
     }
 
-    // void pack() {
-    //     if (scope != null) {
-    //         scps.add(scope);
-    //     }
-    // }
-
-    // void enter() {
-    //     // scope = new Scope(getAddr() + "_0");
-    // }
-
-    // ObjectID allocate(Object variable) {
-    //     varList.add(variable);
-    //     return new ObjectID(varList.size());
-    // }
-
-    Object allocate(String name, Type type) {
-        Object variable = new Object(owner, name, type, new ObjectID(varList.size()));
-        varList.add(variable);
-        return variable;
+    Object allocate(Object obj) {
+        obj.setID(new ObjectID(varList.count()));
+        varList.add(obj);
+        return obj;
     }
 
     @Override
     public String toString() {
-        String result = "func " + getAddr();
+        String result = "func " + getAddr() + " (\n";
         for (int i = 0; i < params.count(); i++) {
-            result += " " + varList.get(i).id;
+            result += "\t" + varList.get(i) + ": " + varList.get(i).type.getName() + "\n";
         }
-        result += " {\n";
+        result += ") {\n";
+        result += "\tvar: (\n";
+        for (int i = params.count(); i < varList.count(); i++) {
+            if (varList.get(i).name != null) {
+                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + ", " + varList.get(i).name
+                        + "\n";
+            }
+        }
+        result += "\t), (\n";
+        for (int i = params.count(); i < varList.count(); i++) {
+            if (varList.get(i).name == null) {
+                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + "\n";
+            }
+        }
+        result += "\t)\n";
         boolean first = true;
         for (Scope scp : scps) {
             if (first) {
@@ -173,12 +198,22 @@ class ParamList extends ProgramFragment {
     }
 }
 
+enum ScopeType {
+    FUNC, ENDFUNC, IF, ELSE, ENDIF, LOOP, ENDLOOP
+}
+
 class Scope {
+    private ScopeType type;
     private String label;
     private List<Inst> insts = new ArrayList<Inst>();
 
-    Scope(String label) {
+    Scope(ScopeType type, String label) {
+        this.type = type;
         this.label = label;
+    }
+
+    ScopeType getType() {
+        return type;
     }
 
     String getLabel() {

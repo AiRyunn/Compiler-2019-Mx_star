@@ -24,4 +24,9 @@ abstract class Type {
     };
 
     abstract boolean equals(Type other);
+
+    @Override
+    public String toString() {
+        return typeName;
+    }
 }
