@@ -5,7 +5,6 @@ class Object extends ProgramFragment {
     String name;
     Type type;
     ObjectID id;
-    boolean temp = true;
 
     Object(Class owner, String name, Type type) {
         this.owner = owner;
