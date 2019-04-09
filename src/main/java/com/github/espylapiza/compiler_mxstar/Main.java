@@ -1,6 +1,9 @@
 package com.github.espylapiza.compiler_mxstar;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -9,7 +12,7 @@ import java.util.logging.Logger;
 public class Main {
     public static void main(String[] args) {
         Compiler compiler = createCompiler(args);
-        compiler.run();
+        compiler.compile();
     }
 
     private static Compiler createCompiler(String[] args) {

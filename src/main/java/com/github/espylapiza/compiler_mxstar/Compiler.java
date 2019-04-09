@@ -1,12 +1,15 @@
 package com.github.espylapiza.compiler_mxstar;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.logging.Logger;
 
-import org.antlr.v4.runtime.tree.*;
-import com.github.espylapiza.compiler_mxstar.parser.*;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.*;
-import com.github.espylapiza.compiler_mxstar.nasm.*;
+import org.antlr.v4.runtime.tree.ParseTree;
+
+import com.github.espylapiza.compiler_mxstar.optimizers.PizzaIROptimizer;
+import com.github.espylapiza.compiler_mxstar.back_end.NASMTranslator;
+import com.github.espylapiza.compiler_mxstar.front_end.ParserBuilder;
+import com.github.espylapiza.compiler_mxstar.front_end.PizzaIRBuilder;
 
 public class Compiler {
     private final static Logger LOGGER = Logger.getLogger(Compiler.class.getName());
@@ -19,31 +22,21 @@ public class Compiler {
         this.ostream = ostream;
     }
 
-    void run() {
+    void compile() {
         try {
-            LOGGER.info("parser");
-
+            LOGGER.info("parse");
             ParseTree parser = ParserBuilder.fromStream(istream);
 
-            istream.close();
-
-            LOGGER.info("PizzaIRBuilder");
-
+            LOGGER.info("build PizzaIR");
             PizzaIRBuilder builder = new PizzaIRBuilder();
             builder.fromParser(parser);
-            PizzaIR ir = builder.getIR();
-
-            // System.out.println(ir.toString());
-
-            System.exit(0);
 
             LOGGER.info("optimization");
+            PizzaIROptimizer optimizer = new PizzaIROptimizer(builder.getIR());
+            optimizer.optimize();
 
-            ir.optimize();
-
-            LOGGER.info("NASM");
-
-            NASM nasm = ir.toNASM();
+            LOGGER.info("NASM translation");
+            NASMTranslator nasm = new NASMTranslator(optimizer.getIR());
 
             ostream.write(nasm.toString().getBytes());
             ostream.close();

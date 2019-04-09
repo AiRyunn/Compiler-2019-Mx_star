@@ -1,12 +1,12 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-class Object extends ProgramFragment {
-    Class owner;
-    String name;
-    Type type;
-    ObjectID id;
+public class Object extends ProgramFragment {
+    public Class owner;
+    public String name;
+    public Type type;
+    private ObjectID id;
 
-    Object(Class owner, String name, Type type) {
+    public Object(Class owner, String name, Type type) {
         this.owner = owner;
         this.name = name;
         this.type = type;
@@ -25,66 +25,13 @@ class Object extends ProgramFragment {
     }
 }
 
-abstract class ConstantObject extends Object {
-    ConstantObject(Class owner, String name, Type type) {
+abstract class ObjectConstant extends Object {
+    ObjectConstant(Class owner, String name, Type type) {
         super(owner, name, type);
     }
 
     @Override
-    abstract public String toString();
-}
-
-class NullObject extends ConstantObject {
-    NullObject(Class owner, String name, Type type) {
-        super(owner, name, type);
-    }
-
-    @Override
-    public String toString() {
-        return "null";
-    }
-}
-
-class BoolObject extends ConstantObject {
-    Boolean value;
-
-    BoolObject(Class owner, String name, Type type, Boolean value) {
-        super(owner, name, type);
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
-    }
-}
-
-class IntObject extends ConstantObject {
-    Integer value;
-
-    IntObject(Class owner, String name, Type type, Integer value) {
-        super(owner, name, type);
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
-    }
-}
-
-class StringObject extends ConstantObject {
-    String value;
-
-    StringObject(Class owner, String name, Type type, String value) {
-        super(owner, name, type);
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return value;
-    }
+    public abstract String toString();
 }
 
 class ObjectID {

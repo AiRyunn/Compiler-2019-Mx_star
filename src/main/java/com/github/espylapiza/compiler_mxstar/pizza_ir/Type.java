@@ -2,10 +2,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import com.google.gson.annotations.Expose;
 
-interface NullComparable {
-}
-
-abstract class Type {
+public abstract class Type {
     @Expose
     private String typeName;
     protected transient Class typeClass;
@@ -15,15 +12,16 @@ abstract class Type {
         this.typeClass = typeClass;
     }
 
-    String getName() {
+    public String getName() {
         return typeName;
     };
 
-    Class getTypeClass() {
+    public Class getTypeClass() {
         return typeClass;
     };
 
-    abstract boolean equals(Type other);
+    @Override
+    public abstract boolean equals(java.lang.Object o);
 
     @Override
     public String toString() {

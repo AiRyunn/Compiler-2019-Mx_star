@@ -1,9 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class InstAssignment extends Inst {
+public class InstStore extends InstBaseMemoryAccess {
     Object dst, src;
 
-    public InstAssignment(Object dst, Object src) {
+    public InstStore(Object dst, Object src) {
         super();
         this.dst = dst;
         this.src = src;
@@ -11,6 +11,6 @@ public class InstAssignment extends Inst {
 
     @Override
     public String toString() {
-        return dst + " = " + src;
+        return "[ addr " + dst + " ] = " + src;
     }
 }

@@ -1,12 +1,47 @@
-package com.github.espylapiza.compiler_mxstar.pizza_ir;
+package com.github.espylapiza.compiler_mxstar.front_end;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starBaseVisitor;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser;
-import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.*;
+import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.ConstantContext;
+import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.StatementContext;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAssignment;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstLoad;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstMember;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstStore;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.NullComparable;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ProgramFragment;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeArray;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeBool;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeCustomClass;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeFunc;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeInt;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeMethod;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeNull;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeVoid;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -14,16 +49,16 @@ enum VisitState {
     TYPE_DECLARATION, DECLARATION, SEMANTIC_ANALYSIS
 }
 
-class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
-    private final static Logger LOGGER = Logger.getLogger(PizzaIRVisitor.class.getName());
+class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
+    private final static Logger LOGGER = Logger.getLogger(Mx_starParseTreeVisitor.class.getName());
 
-    PizzaIR ir;
+    private PizzaIR ir;
 
     private VisitState state;
+    private ScopeManager manager = new ScopeManager();
+    private DomainTrace trace = new DomainTrace();
 
-    private Trace trace = new Trace();
-
-    PizzaIRVisitor(PizzaIR ir) {
+    Mx_starParseTreeVisitor(PizzaIR ir) {
         this.ir = ir;
     }
 
@@ -37,20 +72,20 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        Func mainFunc = ir.funcList.get("main");
+        Func mainFunc = ir.funcList.get(new FuncAddr().addString("main"));
         if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt) || mainFunc.getParams().count() != 0) {
             assert false;
         }
 
-        ir.code.enterFunc(ir.funcList.get("__init__"));
-        ir.code.pushScope(ir.code.newScope(ScopeType.FUNC));
+        manager.enter((FuncExtra) ir.funcList.get(new FuncAddr().addString("__init__")));
+        manager.pushScope(manager.newScope(ScopeType.FUNC));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        ir.code.popScope();
-        ir.code.exitFunc();
+        manager.popScope();
+        manager.exit();
 
         return null;
     }
@@ -187,32 +222,40 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     @Override
     public ProgramFragment visitConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
         Class owner = trace.getCurrentClass();
-        String identifier = ctx.Identifier().getText();
+        String name = ctx.Identifier().getText();
         Type rtype = getTypeByName("void");
-        Func func = new Func(owner, identifier, rtype);
+        FuncAddr addr = new FuncAddr().addClass(owner).addString(name);
 
-        LOGGER.fine("enter construction function: " + identifier);
+        FuncExtra func;
+        if (state == VisitState.DECLARATION) {
+            func = new FuncExtra(addr, name, rtype);
+        } else {
+            func = (FuncExtra) ir.funcList.get(addr);
+        }
+
+        LOGGER.fine("enter construction function: " + name);
         trace.enter(func);
 
         defineVar(allocateVariable(new Object(owner, "this", getTypeByName(trace.getClassAddr()))));
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
-        func.addParams(params);
 
-        if (state == VisitState.SEMANTIC_ANALYSIS) {
-            ir.code.enterFunc(func);
-            ir.code.pushScope(ir.code.newScope(ScopeType.FUNC));
+        if (state == VisitState.DECLARATION) {
+            func.addParams(params);
+        } else {
+            manager.enter(func);
+            manager.pushScope(manager.newScope(ScopeType.FUNC));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.popScope();
-            ir.code.exitFunc();
+            manager.popScope();
+            manager.exit();
         }
 
         trace.exit();
-        LOGGER.fine("exit construction function: " + identifier);
+        LOGGER.fine("exit construction function: " + name);
 
         return func;
     }
@@ -222,7 +265,14 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName(ctx.type().getText());
-        Func func = new Func(owner, name, rtype);
+        FuncAddr addr = new FuncAddr().addClass(owner).addString(name);
+
+        FuncExtra func;
+        if (state == VisitState.DECLARATION) {
+            func = new FuncExtra(addr, name, rtype);
+        } else {
+            func = (FuncExtra) ir.funcList.get(addr);
+        }
 
         LOGGER.fine("enter function: " + name);
         trace.enter(func);
@@ -232,18 +282,19 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
-        func.addParams(params);
 
-        if (state == VisitState.SEMANTIC_ANALYSIS) {
-            ir.code.enterFunc(func);
-            ir.code.pushScope(ir.code.newScope(ScopeType.FUNC));
+        if (state == VisitState.DECLARATION) {
+            func.addParams(params);
+        } else {
+            manager.enter(func);
+            manager.pushScope(manager.newScope(ScopeType.FUNC));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
-            ir.code.popScope();
-            ir.code.exitFunc();
+            manager.popScope();
+            manager.exit();
         }
 
         trace.exit();
@@ -341,7 +392,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 assert false;
                 return null;
             }
-            ir.code.addInstruction(new InstRet());
+            manager.addInstruction(new InstRet());
         } else {
             Object obj = (Object) visit(ctx.object());
 
@@ -352,14 +403,14 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                     assert false;
                     return null;
                 }
-                ir.code.addInstruction(new InstRet(obj));
+                manager.addInstruction(new InstRet(obj));
             } else {
                 // return object
                 if (!obj.type.equals(rtype)) {
                     assert false;
                     return null;
                 }
-                ir.code.addInstruction(new InstRet(obj));
+                manager.addInstruction(new InstRet(obj));
             }
         }
         return null;
@@ -370,7 +421,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (!trace.inLoop()) {
             assert false;
         }
-        ir.code.jumpBreak();
+        manager.jumpBreak();
         return null;
     }
 
@@ -379,23 +430,23 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (!trace.inLoop()) {
             assert false;
         }
-        ir.code.jumpContinue();
+        manager.jumpContinue();
         return null;
     }
 
     @Override
     public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
-        trace.enter(new LoopDomain());
+        trace.enter(new DomainLoop());
 
         Scope scpLoop, scpEndLoop;
 
-        scpLoop = ir.code.newScope(ScopeType.LOOP);
-        scpEndLoop = ir.code.newScope(ScopeType.ENDLOOP);
+        scpLoop = manager.newScope(ScopeType.LOOP);
+        scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
-        ir.code.addInstruction(new InstJump(scpLoop));
-        ir.code.popScope();
-        ir.code.pushScope(scpEndLoop);
-        ir.code.pushScope(scpLoop);
+        manager.addInstruction(new InstJump(scpLoop));
+        manager.popScope();
+        manager.pushScope(scpEndLoop);
+        manager.pushScope(scpLoop);
 
         Object obj = (Object) visit(ctx.object());
 
@@ -403,12 +454,12 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        ir.code.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
+        manager.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
 
         visit(ctx.statement());
 
-        ir.code.addInstruction(new InstJump(scpLoop));
-        ir.code.popScope();
+        manager.addInstruction(new InstJump(scpLoop));
+        manager.popScope();
 
         trace.exit();
 
@@ -417,7 +468,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitForLoop(Mx_starParser.ForLoopContext ctx) {
-        trace.enter(new LoopDomain());
+        trace.enter(new DomainLoop());
 
         if (ctx.forCondition().forCondition1() != null) {
             visit(ctx.forCondition().forCondition1());
@@ -425,22 +476,22 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Scope scpLoop, scpEndLoop;
 
-        scpLoop = ir.code.newScope(ScopeType.LOOP);
-        scpEndLoop = ir.code.newScope(ScopeType.ENDLOOP);
+        scpLoop = manager.newScope(ScopeType.LOOP);
+        scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
-        ir.code.addInstruction(new InstJump(scpLoop));
-        ir.code.popScope();
-        ir.code.pushScope(scpEndLoop);
-        ir.code.pushScope(scpLoop);
+        manager.addInstruction(new InstJump(scpLoop));
+        manager.popScope();
+        manager.pushScope(scpEndLoop);
+        manager.pushScope(scpLoop);
 
         if (ctx.forCondition().forCondition2() != null) {
             Object obj = (Object) visit(ctx.forCondition().forCondition2().object());
             if (!(obj.type instanceof TypeBool)) {
                 assert false;
             }
-            ir.code.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
+            manager.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
         } else {
-            ir.code.addInstruction(new InstJump(scpLoop));
+            manager.addInstruction(new InstJump(scpLoop));
         }
 
         visit(ctx.statement());
@@ -449,8 +500,8 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             visit(ctx.forCondition().forCondition3());
         }
 
-        ir.code.addInstruction(new InstJump(scpLoop));
-        ir.code.popScope();
+        manager.addInstruction(new InstJump(scpLoop));
+        manager.popScope();
 
         trace.exit();
 
@@ -497,29 +548,29 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Scope scpIfTrue, scpIfFalse, scpEndIf;
 
-        scpIfTrue = ir.code.newScope(ScopeType.IF);
-        scpEndIf = ir.code.newScope(ScopeType.ENDIF);
+        scpIfTrue = manager.newScope(ScopeType.IF);
+        scpEndIf = manager.newScope(ScopeType.ENDIF);
 
         if (ctx.else_stmt != null) {
-            scpIfFalse = ir.code.newScope(ScopeType.ELSE);
+            scpIfFalse = manager.newScope(ScopeType.ELSE);
         } else {
             scpIfFalse = scpEndIf;
         }
 
-        ir.code.addInstruction(new InstBr(obj, scpIfTrue, scpIfFalse));
-        ir.code.popScope();
+        manager.addInstruction(new InstBr(obj, scpIfTrue, scpIfFalse));
+        manager.popScope();
 
-        ir.code.pushScope(scpEndIf);
+        manager.pushScope(scpEndIf);
 
         for (StatementContext stmt : ctx.statement()) {
             trace.enter(new Domain());
             if (stmt == ctx.if_stmt) {
-                ir.code.pushScope(scpIfTrue);
+                manager.pushScope(scpIfTrue);
             } else {
-                ir.code.pushScope(scpIfFalse);
+                manager.pushScope(scpIfFalse);
             }
             visit(stmt);
-            ir.code.popScope();
+            manager.popScope();
             trace.exit();
         }
 
@@ -598,7 +649,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Object src;
         if (obj.name != null) {
             src = allocateVariable(new Object(trace.getCurrentClass(), name, type));
-            ir.code.addInstruction(new InstAssignment(src, obj));
+            manager.addInstruction(new InstAssignment(src, obj));
         } else {
             src = obj;
             src.type = type;
@@ -607,7 +658,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Object dst = allocateVariable(new Object(trace.getCurrentClass(), name, type));
         defineVar(dst);
 
-        ir.code.addInstruction(new InstStore(dst, src));
+        manager.addInstruction(new InstStore(dst, src));
 
         return null;
     }
@@ -634,12 +685,12 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Object src;
         if (obj.name != null) {
             src = allocateVariable(new Object(trace.getCurrentClass(), null, type));
-            ir.code.addInstruction(new InstAssignment(src, obj));
+            manager.addInstruction(new InstAssignment(src, obj));
         } else {
             src = obj;
         }
 
-        ir.code.addInstruction(new InstStore(dst, src));
+        manager.addInstruction(new InstStore(dst, src));
 
         return null;
     }
@@ -662,7 +713,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             if (class1.hasVariable(name)) {
                 // member variable
                 Object dst = new Object(class1, null, class1.getVarType(name));
-                ir.code.addInstruction(new InstMember(dst, variable, name));
+                manager.addInstruction(new InstMember(dst, variable, name));
                 return dst;
             }
             if (class1.hasMethod(name)) {
@@ -766,7 +817,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return obj;
         }
 
-        Func func = ir.funcList.get(name);
+        Func func = ir.funcList.get(new FuncAddr().addString(name));
         if (func != null) {
             // global function
             return new Object(null, name, getTypeByName("__func__"));
@@ -815,7 +866,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         // TODO
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, type));
-        // ir.code.addInstruction(Instruction.newCall(id, func.getAddr(), new Vector<Integer>(Arrays.asList(objId))));
+        // code.addInstruction(Instruction.newCall(id, func.getAddr(), new Vector<Integer>(Arrays.asList(objId))));
 
         return ret;
     }
@@ -826,16 +877,16 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         ConstantContext constant = ctx.constant();
         if (constant instanceof Mx_starParser.NullContext) {
-            obj = new NullObject(trace.getCurrentClass(), null, getTypeByName("null"));
+            obj = new ObjectNull(trace.getCurrentClass(), null, getTypeByName("null"));
         } else if (constant instanceof Mx_starParser.LogicalConstantContext) {
             Boolean value = constant.getText().equals("true");
-            obj = new BoolObject(trace.getCurrentClass(), null, getTypeByName("bool"), value);
+            obj = new ObjectBool(trace.getCurrentClass(), null, getTypeByName("bool"), value);
         } else if (constant instanceof Mx_starParser.IntegerConstantContext) {
             Integer value = Integer.parseInt(constant.getText());
-            obj = new IntObject(trace.getCurrentClass(), null, getTypeByName("int"), value);
+            obj = new ObjectInt(trace.getCurrentClass(), null, getTypeByName("int"), value);
         } else if (constant instanceof Mx_starParser.StringLiteralContext) {
             String value = constant.getText();
-            obj = new StringObject(trace.getCurrentClass(), null, getTypeByName("string"), value);
+            obj = new ObjectString(trace.getCurrentClass(), null, getTypeByName("string"), value);
         } else {
             assert false;
             return null;
@@ -896,10 +947,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        String addr = obj.name;
-        if (obj.owner != null) {
-            addr = obj.owner.getName() + "." + addr;
-        }
+        FuncAddr addr = new FuncAddr().addClass(obj.owner).addString(obj.name);
 
         Func func = ir.funcList.get(addr);
 
@@ -917,7 +965,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, rtype));
-        // ir.code.addInstruction(new InstLoad(id, arrayNode.id, subNode.id));
+        // code.addInstruction(new InstLoad(id, arrayNode.id, subNode.id));
         return ret;
     }
 
@@ -940,7 +988,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, type));
-        ir.code.addInstruction(new InstLoad(ret, array, sub));
+        manager.addInstruction(new InstLoad(ret, array, sub));
 
         return ret;
     }
@@ -1004,7 +1052,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         // ObjectID id = allocateVariable(null, type, false, true);
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, rtype));
-        ir.code.addInstruction(new InstCall(ret, func.getAddr(), new ArrayList<Object>(Arrays.asList(node))));
+        manager.addInstruction(new InstCall(ret, func.getAddr(), new ArrayList<Object>(Arrays.asList(node))));
 
         return ret;
     }
@@ -1065,7 +1113,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 type = getTypeByName("bool");
                 Object ret = allocateVariable(new Object(owner, name, type));
                 return ret;
-                // ir.code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
             }
             break;
         case "!=":
@@ -1076,7 +1124,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 }
                 type = getTypeByName("bool");
                 Object ret = allocateVariable(new Object(owner, name, type));
-                // ir.code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
                 return ret;
             }
             break;
@@ -1118,7 +1166,7 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         // TODO a && b
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, type));
-        ir.code.addInstruction(new InstCall(ret, func.getAddr(), new ArrayList<Object>(Arrays.asList(lhs, rhs))));
+        manager.addInstruction(new InstCall(ret, func.getAddr(), new ArrayList<Object>(Arrays.asList(lhs, rhs))));
 
         return ret;
     }
@@ -1138,14 +1186,18 @@ class PizzaIRVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     private Object allocateVariable(Object obj) {
         LOGGER.fine("alloc " + obj.name + ": " + obj.type);
-        Func func = trace.getCurrentFunc();
+        FuncExtra func = trace.getCurrentFunc();
         if (func == null) {
-            func = ir.funcList.get("__init__");
+            func = (FuncExtra) ir.funcList.get(new FuncAddr().addString("__init__"));
         }
         return func.allocate(obj);
     }
 
     private void defineVar(Object obj) {
+        if (state != VisitState.SEMANTIC_ANALYSIS) {
+            return;
+        }
+
         if (!trace.canAllocate(obj.name)) {
             assert false;
         }

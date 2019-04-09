@@ -1,10 +1,11 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 
-class Class extends Domain implements Cloneable {
+public class Class extends Domain implements Cloneable {
     @Expose
     private String name;
     @Expose
@@ -12,25 +13,25 @@ class Class extends Domain implements Cloneable {
     @Expose
     private Map<String, Func> memMtd;
 
-    Class(String addr) {
+    public Class(String addr) {
         this.name = addr;
         memVar = new HashMap<String, Type>();
         memMtd = new HashMap<String, Func>();
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    boolean hasVariable(String variableName) {
+    public boolean hasVariable(String variableName) {
         return memVar.containsKey(variableName);
     }
 
-    boolean hasMethod(String methodName) {
+    public boolean hasMethod(String methodName) {
         return memMtd.containsKey(methodName);
     }
 
-    void addVariable(String variableName, Type type) {
+    public void addVariable(String variableName, Type type) {
         if (hasVariable(variableName)) {
             assert false;
         }
@@ -40,7 +41,7 @@ class Class extends Domain implements Cloneable {
         memVar.put(variableName, type);
     }
 
-    void addMethod(Func func) {
+    public void addMethod(Func func) {
         if (hasVariable(func.name)) {
             assert false;
         }
@@ -50,11 +51,11 @@ class Class extends Domain implements Cloneable {
         memMtd.put(func.name, func);
     }
 
-    Type getVarType(String member) {
+    public Type getVarType(String member) {
         return memVar.get(member);
     }
 
-    Func getMethod(String member) {
+    public Func getMethod(String member) {
         return memMtd.get(member);
     }
 }
