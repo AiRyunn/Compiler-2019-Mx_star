@@ -5,12 +5,24 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Stack;
 
-import com.github.espylapiza.compiler_mxstar.utils.Pair;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 
-public class FuncExtra extends Func {
+public final class FuncExtra extends Func {
+    private class ScopeWithStatus {
+        final Scope scope;
+        boolean dead;
+
+        ScopeWithStatus(Scope scope, boolean dead) {
+            this.scope = scope;
+            this.dead = dead;
+        }
+    }
+
     private VarList varList = new VarList();
     private List<Scope> scps = new ArrayList<Scope>();
-    private Stack<Pair<Scope, Boolean>> scpStack = new Stack<Pair<Scope, Boolean>>();
+    private Stack<ScopeWithStatus> scpStack = new Stack<ScopeWithStatus>();
     private int counter = 0;
 
     public FuncExtra(FuncAddr addr, String name, Type rtype) {
@@ -22,34 +34,34 @@ public class FuncExtra extends Func {
     }
 
     public void addInstruction(Inst inst) {
-        if (scpStack.lastElement().second) {
+        if (scpStack.lastElement().dead) {
             return;
         }
-        scpStack.lastElement().first.addInstruction(inst);
+        scpStack.lastElement().scope.addInstruction(inst);
         if (inst instanceof InstBaseJump) {
-            scpStack.lastElement().second = true;
+            scpStack.lastElement().dead = true;
         }
     }
 
     public void jumpBreak() {
-        if (scpStack.lastElement().second) {
+        if (scpStack.lastElement().dead) {
             return;
         }
-        for (ListIterator<Pair<Scope, Boolean>> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
-            Pair<Scope, Boolean> pre = it.previous();
-            if (pre.first.getType() == ScopeType.ENDLOOP) {
-                scpStack.lastElement().first.addInstruction(new InstJump(pre.first));
-                scpStack.lastElement().second = true;
+        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
+            ScopeWithStatus pre = it.previous();
+            if (pre.scope.getType() == ScopeType.ENDLOOP) {
+                scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));
+                scpStack.lastElement().dead = true;
             }
         }
     }
 
     public void jumpContinue() {
-        if (scpStack.lastElement().second) {
+        if (scpStack.lastElement().dead) {
             return;
         }
-        scpStack.lastElement().first.addInstruction(new InstJump(scpStack.lastElement().first));
-        scpStack.lastElement().second = true;
+        scpStack.lastElement().scope.addInstruction(new InstJump(scpStack.lastElement().scope));
+        scpStack.lastElement().dead = true;
     }
 
     public Scope newScope(ScopeType type) {
@@ -59,17 +71,17 @@ public class FuncExtra extends Func {
     public void pushScope(Scope scp) {
         boolean dead = false;
         if (!scpStack.empty()) {
-            dead = scpStack.lastElement().second;
+            dead = scpStack.lastElement().dead;
         }
-        scpStack.add(new Pair<Scope, Boolean>(scp, dead));
+        scpStack.add(new ScopeWithStatus(scp, dead));
     }
 
     public void popScope() {
-        Pair<Scope, Boolean> top = scpStack.pop();
-        if (!top.second && !scpStack.empty()) {
-            top.first.addInstruction(new InstJump(scpStack.lastElement().first));
+        ScopeWithStatus top = scpStack.pop();
+        if (!top.dead && !scpStack.empty()) {
+            top.scope.addInstruction(new InstJump(scpStack.lastElement().scope));
         }
-        scps.add(top.first);
+        scps.add(top.scope);
     }
 
     public Object allocate(Object obj) {
@@ -110,5 +122,30 @@ public class FuncExtra extends Func {
         }
         result += "}";
         return result;
+    }
+}
+
+class VarList {
+    private List<Object> varList = new ArrayList<Object>();
+
+    void add(Object variable) {
+        varList.add(variable);
+    }
+
+    int count() {
+        return varList.size();
+    }
+
+    Object get(int index) {
+        return varList.get(index);
+    }
+
+    JsonElement toJson() {
+        return new Gson().toJsonTree(varList, List.class);
+    }
+
+    @Override
+    public String toString() {
+        return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create().toJson(varList);
     }
 }

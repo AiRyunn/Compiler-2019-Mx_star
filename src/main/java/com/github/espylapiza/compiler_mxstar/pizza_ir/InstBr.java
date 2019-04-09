@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class InstBr extends InstBaseJump {
+public final class InstBr extends InstBaseJump {
     Object obj;
     Scope scpIfTrue, scpIfFalse;
 

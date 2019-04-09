@@ -5,50 +5,48 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 
-public class Class extends Domain implements Cloneable {
+public final class Class extends Domain implements Cloneable {
     @Expose
-    private String name;
+    private final String name;
     @Expose
-    private Map<String, Type> memVar;
+    private Map<String, Type> memVar = new HashMap<String, Type>();
     @Expose
-    private Map<String, Func> memMtd;
+    private Map<String, Func> memMtd = new HashMap<String, Func>();
 
-    public Class(String addr) {
-        this.name = addr;
-        memVar = new HashMap<String, Type>();
-        memMtd = new HashMap<String, Func>();
+    public Class(String name) {
+        this.name = name;
     }
 
     public String getName() {
         return name;
     }
 
-    public boolean hasVariable(String variableName) {
-        return memVar.containsKey(variableName);
+    public boolean hasVariable(String name) {
+        return memVar.containsKey(name);
     }
 
-    public boolean hasMethod(String methodName) {
-        return memMtd.containsKey(methodName);
+    public boolean hasMethod(String name) {
+        return memMtd.containsKey(name);
     }
 
-    public void addVariable(String variableName, Type type) {
-        if (hasVariable(variableName)) {
+    public void addVariable(String name, Type type) {
+        if (hasVariable(name)) {
             assert false;
         }
-        if (hasMethod(variableName)) {
+        if (hasMethod(name)) {
             assert false;
         }
-        memVar.put(variableName, type);
+        memVar.put(name, type);
     }
 
     public void addMethod(Func func) {
-        if (hasVariable(func.name)) {
+        if (hasVariable(func.getName())) {
             assert false;
         }
-        if (hasMethod(func.name)) {
+        if (hasMethod(func.getName())) {
             assert false;
         }
-        memMtd.put(func.name, func);
+        memMtd.put(func.getName(), func);
     }
 
     public Type getVarType(String member) {

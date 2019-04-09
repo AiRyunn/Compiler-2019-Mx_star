@@ -1,17 +1,17 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class FuncAddr {
-    String addr = new String();
+    private String addr = new String();
 
-    public FuncAddr addClass(Class class1) {
-        if (class1 != null) {
-            addr += "." + class1.getName();
-        }
+    public FuncAddr add(String name) {
+        addr += "." + name;
         return this;
     }
 
-    public FuncAddr addString(String name) {
-        addr += "." + name;
+    public FuncAddr addClass(Class class1) {
+        if (class1 != null) {
+            add("." + class1.getName());
+        }
         return this;
     }
 

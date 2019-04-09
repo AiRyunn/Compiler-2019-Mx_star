@@ -72,12 +72,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        Func mainFunc = ir.funcList.get(new FuncAddr().addString("main"));
+        Func mainFunc = ir.funcList.get(new FuncAddr().add("main"));
         if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt) || mainFunc.getParams().count() != 0) {
             assert false;
         }
 
-        manager.enter((FuncExtra) ir.funcList.get(new FuncAddr().addString("__init__")));
+        manager.enter((FuncExtra) ir.funcList.get(new FuncAddr().add("__init__")));
         manager.pushScope(manager.newScope(ScopeType.FUNC));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
@@ -125,17 +125,17 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     @Override
     public ProgramFragment visitProgramClassDefinitionStatement(
             Mx_starParser.ProgramClassDefinitionStatementContext ctx) {
-        String className = ctx.classDefinitionStatement().Identifier().getText();
+        String name = ctx.classDefinitionStatement().Identifier().getText();
 
         switch (state) {
         case TYPE_DECLARATION:
-            Class class1 = new Class(className);
+            Class class1 = new Class(name);
             ir.classList.add(class1);
-            ir.typeTable.add(new TypeCustomClass(className, class1));
+            ir.typeTable.add(new TypeCustomClass(name, class1));
             break;
         case DECLARATION:
         case SEMANTIC_ANALYSIS:
-            trace.enter(ir.classList.get(className));
+            trace.enter(ir.classList.get(name));
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
             trace.exit();
             break;
@@ -171,8 +171,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             break;
         case DECLARATION:
             String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier().getText();
-            String typeName = ctx.variableDeclarationStatement().variableDeclaration().type().getText();
-            trace.getCurrentClass().addVariable(name, getTypeByName(typeName));
+            Type type = getTypeByName(ctx.variableDeclarationStatement().variableDeclaration().type().getText());
+            trace.getCurrentClass().addVariable(name, type);
             break;
         case SEMANTIC_ANALYSIS:
             visit(ctx.variableDeclarationStatement());
@@ -187,7 +187,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Func func = (Func) visit(ctx.constructionFunctionStatement());
 
         if (state == VisitState.DECLARATION) {
-            String name = func.name;
+            String name = func.getName();
 
             if (!trace.getCurrentClass().getName().equals(name)) {
                 assert false;
@@ -205,7 +205,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Func func = (Func) visit(ctx.functionDefinitionStatement());
 
         if (state == VisitState.DECLARATION) {
-            String name = func.name;
+            String name = func.getName();
 
             if (trace.getCurrentClass().getName().equals(name)) {
                 assert false;
@@ -224,7 +224,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName("void");
-        FuncAddr addr = new FuncAddr().addClass(owner).addString(name);
+        FuncAddr addr = new FuncAddr().addClass(owner).add(name);
 
         FuncExtra func;
         if (state == VisitState.DECLARATION) {
@@ -236,12 +236,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         LOGGER.fine("enter construction function: " + name);
         trace.enter(func);
 
-        defineVar(allocateVariable(new Object(owner, "this", getTypeByName(trace.getClassAddr()))));
+        defineVar(allocateVariable(new Object(owner, "this", getTypeByName(trace.getClass().getName()))));
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
 
         if (state == VisitState.DECLARATION) {
-            func.addParams(params);
+            func.setParams(params);
         } else {
             manager.enter(func);
             manager.pushScope(manager.newScope(ScopeType.FUNC));
@@ -265,7 +265,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName(ctx.type().getText());
-        FuncAddr addr = new FuncAddr().addClass(owner).addString(name);
+        FuncAddr addr = new FuncAddr().addClass(owner).add(name);
 
         FuncExtra func;
         if (state == VisitState.DECLARATION) {
@@ -278,13 +278,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         trace.enter(func);
 
         if (owner != null) {
-            defineVar(allocateVariable(new Object(owner, "this", getTypeByName(trace.getClassAddr()))));
+            defineVar(allocateVariable(new Object(owner, "this", getTypeByName(trace.getClass().getName()))));
         }
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
 
         if (state == VisitState.DECLARATION) {
-            func.addParams(params);
+            func.setParams(params);
         } else {
             manager.enter(func);
             manager.pushScope(manager.newScope(ScopeType.FUNC));
@@ -438,9 +438,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
         trace.enter(new DomainLoop());
 
-        Scope scpLoop, scpEndLoop;
+        Scope scpLoop, scpLoopBody, scpEndLoop;
 
         scpLoop = manager.newScope(ScopeType.LOOP);
+        scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
         scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
         manager.addInstruction(new InstJump(scpLoop));
@@ -455,6 +456,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         manager.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
+
+        manager.popScope();
+        manager.pushScope(scpLoopBody);
 
         visit(ctx.statement());
 
@@ -474,9 +478,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             visit(ctx.forCondition().forCondition1());
         }
 
-        Scope scpLoop, scpEndLoop;
+        Scope scpLoop, scpLoopBody, scpEndLoop;
 
         scpLoop = manager.newScope(ScopeType.LOOP);
+        scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
         scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
         manager.addInstruction(new InstJump(scpLoop));
@@ -493,6 +498,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         } else {
             manager.addInstruction(new InstJump(scpLoop));
         }
+
+        manager.popScope();
+        manager.pushScope(scpLoopBody);
 
         visit(ctx.statement());
 
@@ -817,7 +825,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return obj;
         }
 
-        Func func = ir.funcList.get(new FuncAddr().addString(name));
+        Func func = ir.funcList.get(new FuncAddr().add(name));
         if (func != null) {
             // global function
             return new Object(null, name, getTypeByName("__func__"));
@@ -947,7 +955,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        FuncAddr addr = new FuncAddr().addClass(obj.owner).addString(obj.name);
+        FuncAddr addr = new FuncAddr().addClass(obj.owner).add(obj.name);
 
         Func func = ir.funcList.get(addr);
 
@@ -1050,7 +1058,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Type rtype = func.getRtype();
 
-        // ObjectID id = allocateVariable(null, type, false, true);
         Object ret = allocateVariable(new Object(trace.getCurrentClass(), null, rtype));
         manager.addInstruction(new InstCall(ret, func.getAddr(), new ArrayList<Object>(Arrays.asList(node))));
 
@@ -1188,7 +1195,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         LOGGER.fine("alloc " + obj.name + ": " + obj.type);
         FuncExtra func = trace.getCurrentFunc();
         if (func == null) {
-            func = (FuncExtra) ir.funcList.get(new FuncAddr().addString("__init__"));
+            func = (FuncExtra) ir.funcList.get(new FuncAddr().add("__init__"));
         }
         return func.allocate(obj);
     }

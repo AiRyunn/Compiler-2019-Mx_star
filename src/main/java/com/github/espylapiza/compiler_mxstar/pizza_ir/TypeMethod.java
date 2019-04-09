@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class TypeMethod extends TypeSingle {
+public final class TypeMethod extends TypeSingle {
     public TypeMethod(String typeName, Class typeClass) {
         super(typeName, typeClass);
     }

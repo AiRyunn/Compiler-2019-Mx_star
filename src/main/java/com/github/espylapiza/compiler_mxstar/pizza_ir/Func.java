@@ -2,12 +2,12 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import com.google.gson.annotations.Expose;
 
-public class Func extends Domain {
-    private FuncAddr addr;
+public abstract class Func extends Domain {
+    private final FuncAddr addr;
     @Expose
-    public String name;
+    private final String name;
     @Expose
-    private Type rtype;
+    private final Type rtype;
     @Expose
     protected ParamList params;
 
@@ -28,6 +28,10 @@ public class Func extends Domain {
         return addr;
     }
 
+    public final String getName() {
+        return name;
+    }
+
     public final Type getRtype() {
         return rtype;
     }
@@ -36,7 +40,7 @@ public class Func extends Domain {
         return params;
     }
 
-    public final void addParams(ParamList params) {
+    public final void setParams(ParamList params) {
         this.params = params;
     }
 

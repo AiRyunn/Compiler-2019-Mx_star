@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class ObjectInt extends ObjectConstant {
+public final class ObjectInt extends ObjectConstant {
     private Integer value;
 
     public ObjectInt(Class owner, String name, Type type, Integer value) {

@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class InstMember extends InstBaseMemoryAccess {
+public final class InstMember extends InstBaseMemoryAccess {
     Object dst, src;
     String name;
 

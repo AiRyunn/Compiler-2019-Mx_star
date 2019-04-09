@@ -25,10 +25,6 @@ public class FuncList {
         return new Gson().toJsonTree(funcList, HashMap.class);
     }
 
-    // @Override
-    // public String toString() {
-    //     return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create().toJson(funcList);
-    // }
     @Override
     public String toString() {
         String result = new String();
