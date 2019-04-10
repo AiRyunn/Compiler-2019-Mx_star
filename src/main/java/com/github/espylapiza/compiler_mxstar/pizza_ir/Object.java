@@ -1,13 +1,13 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class Object extends ProgramFragment {
-    public Class owner;
-    public String name;
-    public Type type;
-    private ObjectID id;
+    public Func belong;
+    public final String name;
+    public final Type type;
+    protected ObjectID id;
 
-    public Object(Class owner, String name, Type type) {
-        this.owner = owner;
+    public Object(Func belong, String name, Type type) {
+        this.belong = belong;
         this.name = name;
         this.type = type;
     }
@@ -26,8 +26,8 @@ public class Object extends ProgramFragment {
 }
 
 abstract class ObjectConstant extends Object {
-    ObjectConstant(Class owner, String name, Type type) {
-        super(owner, name, type);
+    ObjectConstant(Func belong, String name, Type type) {
+        super(belong, name, type);
     }
 
     @Override

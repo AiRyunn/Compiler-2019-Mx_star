@@ -7,12 +7,6 @@ public final class InstCall extends InstBaseCall {
     FuncAddr addr;
     List<Object> params;
 
-    InstCall(FuncAddr addr, List<Object> params) {
-        super();
-        this.addr = addr;
-        this.params = params;
-    }
-
     public InstCall(Object dst, FuncAddr addr, List<Object> params) {
         super();
         this.dst = dst;

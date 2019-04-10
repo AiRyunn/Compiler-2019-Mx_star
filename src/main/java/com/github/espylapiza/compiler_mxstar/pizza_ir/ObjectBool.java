@@ -3,8 +3,8 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 public final class ObjectBool extends ObjectConstant {
     private Boolean value;
 
-    public ObjectBool(Class owner, String name, Type type, Boolean value) {
-        super(owner, name, type);
+    public ObjectBool(Func belong, String name, Type type, Boolean value) {
+        super(belong, name, type);
         this.value = value;
     }
 

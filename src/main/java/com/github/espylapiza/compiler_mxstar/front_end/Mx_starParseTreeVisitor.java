@@ -34,6 +34,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ProgramFragment;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamInstanceList;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeArray;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeBool;
@@ -313,10 +314,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitParamList(Mx_starParser.ParamListContext ctx) {
-        ParamList params = new ParamList();
+        ParamInstanceList params = new ParamInstanceList();
         ctx.object().forEach(member -> {
             Object variable = (Object) visit(member);
-            params.add(variable.type);
+            params.add(variable);
         });
         return params;
     }
@@ -944,16 +945,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitFunctionReturnObject(Mx_starParser.FunctionReturnObjectContext ctx) {
         ObjectFunction obj = (ObjectFunction) visit(ctx.object());
 
-        // if (!(obj.type instanceof TypeFunc) && !(obj.type instanceof TypeMethod)) {
-        //     assert false;
-        //     return null;
-        // }
-
         Func func = obj.func;
 
-        ParamList params = (ParamList) visit(ctx.paramList());
+        ParamInstanceList params = (ParamInstanceList) visit(ctx.paramList());
 
-        if (!func.getParams().match(params)) {
+        if (!params.match(func.getParams())) {
             assert false;
             return null;
         }
@@ -967,9 +963,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         } else {
             ret = allocateVariable(new Object(trace.getCurrentFunc(), null, rtype));
         }
-        // manager.addInstruction(new InstCall(ret, func.getAddr(), func.getParams()));
+        manager.addInstruction(new InstCall(ret, func.getAddr(), params.get()));
 
-        // TODO: function call
         return ret;
     }
 
@@ -1045,9 +1040,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        ParamList params = new ParamList();
+        ParamInstanceList params = new ParamInstanceList();
 
-        if (!func.getParams().match(params)) {
+        if (!params.match(func.getParams())) {
             assert false;
             return null;
         }
@@ -1158,9 +1153,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        ParamList params = new ParamList(rhs.type);
+        ParamInstanceList params = new ParamInstanceList(rhs);
 
-        if (!func.getParams().match(params)) {
+        if (!params.match(func.getParams())) {
             assert false;
             return null;
         }

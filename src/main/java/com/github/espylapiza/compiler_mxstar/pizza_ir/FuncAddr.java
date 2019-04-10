@@ -10,7 +10,7 @@ public class FuncAddr {
 
     public FuncAddr addClass(Class class1) {
         if (class1 != null) {
-            add("." + class1.getName());
+            addr += class1.getName();
         }
         return this;
     }

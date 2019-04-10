@@ -26,16 +26,8 @@ public class ParamList extends ProgramFragment {
         params.add(type);
     }
 
-    public boolean match(ParamList rhs) {
-        if (params.size() != rhs.params.size()) {
-            return false;
-        }
-        for (int i = 0; i < params.size(); i++) {
-            if (!params.get(i).equals(rhs.params.get(i))) {
-                return false;
-            }
-        }
-        return true;
+    List<Type> get() {
+        return params;
     }
 
     public int count() {
