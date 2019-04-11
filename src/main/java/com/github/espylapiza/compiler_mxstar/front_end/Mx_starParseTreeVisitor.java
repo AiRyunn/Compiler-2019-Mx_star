@@ -61,8 +61,14 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     private ScopeManager manager = new ScopeManager();
     private DomainTrace trace = new DomainTrace();
 
+    private Func mainFunc;
+    private final Func initFunc;
+    private final Class arrayClass;
+
     Mx_starParseTreeVisitor(PizzaIR ir) {
         this.ir = ir;
+        initFunc = getFuncByAddr(new FuncAddr().add("__init__"));
+        arrayClass = getClassByName("__array__");
     }
 
     @Override
@@ -75,12 +81,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        Func mainFunc = ir.funcList.get(new FuncAddr().add("main"));
+        mainFunc = getFuncByAddr(new FuncAddr().add("main"));
         if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt) || mainFunc.getParams().count() != 0) {
             assert false;
         }
 
-        manager.enter((FuncExtra) ir.funcList.get(new FuncAddr().add("__init__")));
+        manager.enter((FuncExtra) initFunc);
         manager.pushScope(manager.newScope(ScopeType.FUNC));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
@@ -138,7 +144,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             break;
         case DECLARATION:
         case SEMANTIC_ANALYSIS:
-            trace.enter(ir.classList.get(name));
+            trace.enter(getClassByName(name));
             ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
             trace.exit();
             break;
@@ -233,7 +239,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (state == VisitState.DECLARATION) {
             func = new FuncExtra(addr, name, rtype);
         } else {
-            func = (FuncExtra) ir.funcList.get(addr);
+            func = (FuncExtra) getFuncByAddr(addr);
         }
 
         LOGGER.fine("enter construction function: " + name);
@@ -277,7 +283,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (state == VisitState.DECLARATION) {
             func = new FuncExtra(addr, name, rtype);
         } else {
-            func = (FuncExtra) ir.funcList.get(addr);
+            func = (FuncExtra) getFuncByAddr(addr);
         }
 
         LOGGER.fine("enter function: " + name);
@@ -688,7 +694,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        // manager.addInstruction(new InstAssignment(dst, src));
         manager.addInstruction(new InstStore((ObjectPointer) dst, src));
 
         return null;
@@ -778,7 +783,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return src;
         }
 
-        Func func = ir.funcList.get(new FuncAddr().add(name));
+        Func func = getFuncByAddr(new FuncAddr().add(name));
         if (func != null) {
             // global function
             return new ObjectFunction(func, currentFunc, name, getTypeByName("__func__"));
@@ -822,7 +827,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         for (int i = 0; i < cntLeftBracket; i++) {
-            type = new TypeArray(type, ir.classList.get("__array__"));
+            type = new TypeArray(type, arrayClass);
         }
 
         // TODO: alloc size
@@ -888,7 +893,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitMemberObject(Mx_starParser.MemberObjectContext ctx) {
-        // Class owner = null;
         String name = ctx.Identifier().getText();
         Type type;
 
@@ -1025,19 +1029,15 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        Type objType = null;
         Object obj;
 
         if (ctx.lvalue() != null) {
             obj = (Object) visit(ctx.lvalue());
-            objType = obj.type;
-            // TODO
         } else {
             obj = (Object) visit(ctx.object());
-            objType = obj.type;
         }
 
-        Func func = objType.getTypeClass().getMethod(method);
+        Func func = obj.type.getTypeClass().getMethod(method);
 
         if (func == null) {
             assert false;
@@ -1061,7 +1061,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
-        // Class owner = null;
         Type type;
         Object lhs = (Object) visit(ctx.object(0));
         Type typel = lhs.type;
@@ -1172,12 +1171,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         return dst;
     }
 
-    private Type getTypeByName(String typeName) {
-        if (typeName.endsWith("[]")) {
-            return new TypeArray(getTypeByName(typeName.substring(0, typeName.length() - 2)),
-                    ir.classList.get("__array__"));
+    private Type getTypeByName(String name) {
+        if (name.endsWith("[]")) {
+            return new TypeArray(getTypeByName(name.substring(0, name.length() - 2)), arrayClass);
         } else {
-            Type type = ir.typeTable.get(typeName);
+            Type type = ir.typeTable.get(name);
             if (type == null) {
                 assert false;
             }
@@ -1185,10 +1183,18 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
     }
 
+    private Func getFuncByAddr(FuncAddr addr) {
+        return ir.funcList.get(addr);
+    }
+
+    private Class getClassByName(String name) {
+        return ir.classList.get(name);
+    }
+
     private Object allocateVariable(Object obj) {
         FuncExtra func = trace.getCurrentFunc();
         if (func == null) {
-            func = (FuncExtra) ir.funcList.get(new FuncAddr().add("__init__"));
+            func = (FuncExtra) initFunc;
         }
         LOGGER.fine("alloc " + obj.name + ": " + obj.type);
         return func.allocate(obj);
