@@ -16,13 +16,14 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAssignment;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAlloc;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstMember;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstOffset;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstStore;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.NullComparable;
@@ -500,9 +501,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             if (!(obj.type instanceof TypeBool)) {
                 assert false;
             }
-            manager.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
+            manager.addInstruction(new InstBr(obj, scpLoopBody, scpEndLoop));
         } else {
-            manager.addInstruction(new InstJump(scpLoop));
+            manager.addInstruction(new InstJump(scpLoopBody));
         }
 
         manager.popScope();
@@ -663,7 +664,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), name, type));
         defineVar(dst);
 
-        manager.addInstruction(new InstAssignment(dst, src));
+        manager.addInstruction(new InstStore((ObjectPointer) dst, src));
 
         return null;
     }
@@ -687,7 +688,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        manager.addInstruction(new InstAssignment(dst, src));
+        // manager.addInstruction(new InstAssignment(dst, src));
+        manager.addInstruction(new InstStore((ObjectPointer) dst, src));
 
         return null;
     }
@@ -823,9 +825,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             type = new TypeArray(type, ir.classList.get("__array__"));
         }
 
-        // TODO
+        // TODO: alloc size
         Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), null, type));
-        // code.addInstruction(Instruction.newCall(id, func.getAddr(), new Vector<Integer>(Arrays.asList(objId))));
+        manager.addInstruction(new InstAlloc(dst, null));
 
         return dst;
     }

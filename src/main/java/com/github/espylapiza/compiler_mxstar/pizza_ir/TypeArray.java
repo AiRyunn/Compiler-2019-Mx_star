@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class TypeArray extends TypeComposite implements NullComparable {
+public class TypeArray extends TypeComposite implements NullComparable, Pointer {
     private final Type subType;
 
     public TypeArray(Type subType, Class arrayClass) {

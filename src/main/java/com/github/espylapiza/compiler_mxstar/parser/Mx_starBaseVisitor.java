@@ -1,4 +1,4 @@
-// Generated from /home/espylapiza/Documents/Lectures/Compiler/Compiler-2019-Mx_star/src/main/java/com/github/espylapiza/compiler_mxstar/parser/Mx_star.g4 by ANTLR 4.7.1
+// Generated from Mx_star.g4 by ANTLR 4.7.1
 
     package com.github.espylapiza.compiler_mxstar.parser;
 
@@ -356,6 +356,13 @@ public class Mx_starBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitThisLvalue(Mx_starParser.ThisLvalueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

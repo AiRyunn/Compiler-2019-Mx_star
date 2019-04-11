@@ -606,6 +606,18 @@ public class Mx_starBaseListener implements Mx_starListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterThisLvalue(Mx_starParser.ThisLvalueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitThisLvalue(Mx_starParser.ThisLvalueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) { }
 	/**
 	 * {@inheritDoc}

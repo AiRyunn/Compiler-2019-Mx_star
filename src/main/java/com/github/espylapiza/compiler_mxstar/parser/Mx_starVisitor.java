@@ -1,4 +1,4 @@
-// Generated from /home/espylapiza/Documents/Lectures/Compiler/Compiler-2019-Mx_star/src/main/java/com/github/espylapiza/compiler_mxstar/parser/Mx_star.g4 by ANTLR 4.7.1
+// Generated from Mx_star.g4 by ANTLR 4.7.1
 
     package com.github.espylapiza.compiler_mxstar.parser;
 
@@ -336,6 +336,13 @@ public interface Mx_starVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ThisLvalue}
+	 * labeled alternative in {@link Mx_starParser#lvalue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitThisLvalue(Mx_starParser.ThisLvalueContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code IdentifierLvalue}
 	 * labeled alternative in {@link Mx_starParser#lvalue}.

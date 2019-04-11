@@ -96,13 +96,13 @@ variableAssignment: lvalue '=' object;
 
 lvalue:
 	Identifier									# IdentifierLvalue
-	| This '.' Identifier						# MemberLvalue
+	| This										# ThisLvalue
 	| lvalue '.' Identifier						# MemberLvalue
 	| array = lvalue '[' subscript = object ']'	# SubscriptLvalue;
 
 object:
-	This												# ThisObject
-	| Identifier										# IdentifierObject
+	Identifier											# IdentifierObject
+	| This												# ThisObject
 	| constant											# ConstantObject
 	| lvalue											# LvalueObject
 	| object '.' Identifier								# MemberObject
