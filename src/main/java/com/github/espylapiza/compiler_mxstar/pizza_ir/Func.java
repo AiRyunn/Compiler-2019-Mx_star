@@ -1,15 +1,15 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-import com.google.gson.annotations.Expose;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class Func extends Domain {
-    private final FuncAddr addr;
-    @Expose
-    private final String name;
-    @Expose
-    private final Type rtype;
-    @Expose
+public class Func extends Domain {
+    private FuncAddr addr;
+    private String name;
+    private Type rtype;
     protected ParamList params;
+    public VarList varList = new VarList();
+    public List<Scope> scps = new ArrayList<Scope>();
 
     public Func(FuncAddr addr, String name, Type rtype) {
         this.addr = addr;
@@ -44,4 +44,9 @@ public abstract class Func extends Domain {
         this.params = params;
     }
 
+    public Object allocate(Object obj) {
+        obj.setID(new ObjectID(varList.count()));
+        varList.add(obj);
+        return obj;
+    }
 }

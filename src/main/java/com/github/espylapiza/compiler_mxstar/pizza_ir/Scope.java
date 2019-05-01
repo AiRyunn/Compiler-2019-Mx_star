@@ -8,12 +8,12 @@ public class Scope {
     private String label;
     private List<Inst> insts = new ArrayList<Inst>();
 
-    Scope(ScopeType type, String label) {
+    public Scope(ScopeType type, String label) {
         this.type = type;
         this.label = label;
     }
 
-    ScopeType getType() {
+    public ScopeType getType() {
         return type;
     }
 
@@ -21,7 +21,7 @@ public class Scope {
         return "#" + label;
     }
 
-    void addInstruction(Inst inst) {
+    public void addInstruction(Inst inst) {
         insts.add(inst);
     }
 

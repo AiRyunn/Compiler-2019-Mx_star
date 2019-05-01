@@ -8,3 +8,4 @@
 set -e
 cd "$(dirname "$0")"
 java -ea -classpath "./lib/antlr-4.7.1-complete.jar:./lib/gson-2.8.5.jar:./bin" com.github.espylapiza.compiler_mxstar.Main $*
+cat target.asm

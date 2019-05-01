@@ -12,7 +12,7 @@ public class Object extends ProgramFragment {
         this.type = type;
     }
 
-    void setID(ObjectID id) {
+    public void setID(ObjectID id) {
         this.id = id;
     }
 
@@ -32,25 +32,4 @@ abstract class ObjectConstant extends Object {
 
     @Override
     public abstract String toString();
-}
-
-class ObjectID {
-    private Integer id;
-
-    ObjectID(int id) {
-        this.id = id;
-    }
-
-    Integer getInt() {
-        return id;
-    }
-
-    boolean equals(ObjectID other) {
-        return id.equals(other.getInt());
-    }
-
-    @Override
-    public String toString() {
-        return "$" + id;
-    }
 }

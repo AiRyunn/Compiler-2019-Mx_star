@@ -1,12 +1,10 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-
-public class FuncList {
+public class FuncList implements Iterable<Func> {
     private Map<FuncAddr, Func> funcList = new HashMap<FuncAddr, Func>();
 
     public void addFunc(Func func) {
@@ -21,10 +19,6 @@ public class FuncList {
         return funcList.get(addr);
     }
 
-    JsonElement toJson() {
-        return new Gson().toJsonTree(funcList, HashMap.class);
-    }
-
     @Override
     public String toString() {
         String result = new String();
@@ -32,15 +26,20 @@ public class FuncList {
 
         for (Map.Entry<FuncAddr, Func> entry : funcList.entrySet()) {
             Func func = entry.getValue();
-            if (func instanceof FuncExtra) {
-                if (first) {
-                    first = false;
-                } else {
-                    result += "\n\n";
-                }
-                result += func.toString();
+            // if (func instanceof FuncExtra) {
+            if (first) {
+                first = false;
+            } else {
+                result += "\n\n";
             }
+            result += func.toString();
+            // }
         }
         return result;
+    }
+
+    @Override
+    public Iterator<Func> iterator() {
+        return funcList.values().iterator();
     }
 }

@@ -1,10 +1,9 @@
 bin/
-autotest/
+testing/
 .vscode/
 
-source.mx
-target.asm
+/source.*
+/target.*
+/target
 
 *.class
-*.sqlite
-

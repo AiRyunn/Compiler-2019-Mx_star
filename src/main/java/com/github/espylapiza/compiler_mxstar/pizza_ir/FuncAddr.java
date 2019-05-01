@@ -1,10 +1,14 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class FuncAddr {
-    private String addr = new String();
+    private String addr;
 
     public FuncAddr add(String name) {
-        addr += "." + name;
+        if (addr == null) {
+            addr = name;
+        } else {
+            addr += "." + name;
+        }
         return this;
     }
 

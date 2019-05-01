@@ -15,7 +15,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
+// import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAlloc;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
@@ -86,7 +86,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        manager.enter((FuncExtra) initFunc);
+        manager.enter(initFunc);
         manager.pushScope(manager.newScope(ScopeType.FUNC));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
@@ -235,11 +235,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Type rtype = getTypeByName("void");
         FuncAddr addr = new FuncAddr().addClass(owner).add(name);
 
-        FuncExtra func;
+        Func func;
         if (state == VisitState.DECLARATION) {
-            func = new FuncExtra(addr, name, rtype);
+            func = new Func(addr, name, rtype);
         } else {
-            func = (FuncExtra) getFuncByAddr(addr);
+            func = (Func) getFuncByAddr(addr);
         }
 
         LOGGER.fine("enter construction function: " + name);
@@ -279,11 +279,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Type rtype = getTypeByName(ctx.type().getText());
         FuncAddr addr = new FuncAddr().addClass(owner).add(name);
 
-        FuncExtra func;
+        Func func;
         if (state == VisitState.DECLARATION) {
-            func = new FuncExtra(addr, name, rtype);
+            func = new Func(addr, name, rtype);
         } else {
-            func = (FuncExtra) getFuncByAddr(addr);
+            func = (Func) getFuncByAddr(addr);
         }
 
         LOGGER.fine("enter function: " + name);
@@ -1192,9 +1192,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     private Object allocateVariable(Object obj) {
-        FuncExtra func = trace.getCurrentFunc();
+        Func func = trace.getCurrentFunc();
         if (func == null) {
-            func = (FuncExtra) initFunc;
+            func = (Func) initFunc;
         }
         LOGGER.fine("alloc " + obj.name + ": " + obj.type);
         return func.allocate(obj);

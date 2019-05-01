@@ -24,7 +24,7 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
 
-            if (arg.equals("-o")) {
+            if (arg.equals("-o") || arg.equals("--output")) {
                 i++;
                 try {
                     ostream = new FileOutputStream(args[i], false);

@@ -25,22 +25,22 @@ public class Compiler {
 
     void compile() {
         try {
-            LOGGER.info("parse");
+            LOGGER.info("build parse tree...");
             ParseTree parser = ParserBuilder.fromStream(istream);
 
-            LOGGER.info("build PizzaIR");
+            LOGGER.info("build PizzaIR...");
             PizzaIRBuilder builder = new PizzaIRBuilder();
             builder.fromParser(parser);
 
-            LOGGER.info("optimization");
+            LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(builder.getIR());
             optimizer.optimize();
 
-            LOGGER.info("NASM translation");
-            NASMTranslator nasmTranslator = new NASMTranslator(optimizer.getIR());
+            LOGGER.info("translate to NASM...");
+            NASMTranslator translator = new NASMTranslator(optimizer.getIR());
+            NASM nasm = translator.getNASM();
 
-            NASM nasm = nasmTranslator.getNASM();
-
+            // TODO: Printer
             ostream.write(nasm.toString().getBytes());
             ostream.close();
         } catch (Exception e) {
