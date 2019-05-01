@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class TypeFunc extends TypeSingle {
-    public TypeFunc(String typeName, Class typeClass) {
+    TypeFunc(String typeName, Class typeClass) {
         super(typeName, typeClass);
     }
 

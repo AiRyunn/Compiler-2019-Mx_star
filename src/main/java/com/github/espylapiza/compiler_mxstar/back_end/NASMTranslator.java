@@ -48,7 +48,7 @@ class SectionBuilder {
     }
 
     void buildFromPizzaIR(PizzaIR ir) {
-        Func initFunc = ir.funcList.get(new FuncAddr().add("__init__"));
+        Func initFunc = ir.funcList.get(FuncAddr.createFuncAddr("__init__"));
         System.out.println(initFunc.getAddr());
         // TODO: process global variables here
 

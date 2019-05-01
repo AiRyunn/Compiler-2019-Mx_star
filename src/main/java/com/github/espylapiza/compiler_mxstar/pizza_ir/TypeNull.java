@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class TypeNull extends TypeSingle implements NullComparable {
-    public TypeNull(String typeName) {
+    TypeNull(String typeName) {
         super(typeName, null);
     }
 

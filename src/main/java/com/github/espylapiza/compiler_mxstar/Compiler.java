@@ -30,7 +30,7 @@ public class Compiler {
 
             LOGGER.info("build PizzaIR...");
             PizzaIRBuilder builder = new PizzaIRBuilder();
-            builder.fromParser(parser);
+            builder.fromMxStarParser(parser);
 
             LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(builder.getIR());

@@ -1,22 +1,38 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class FuncAddr {
-    private String addr;
+    private final String addr;
 
-    public FuncAddr add(String name) {
-        if (addr == null) {
-            addr = name;
-        } else {
-            addr += "." + name;
-        }
-        return this;
+    private FuncAddr(String strFunc) {
+        this.addr = strFunc;
     }
 
-    public FuncAddr addClass(Class class1) {
-        if (class1 != null) {
-            addr += class1.getName();
-        }
-        return this;
+    /**
+     * Create a func addr from string.
+     * @param str
+     * @return FuncAddr Object
+     */
+    public static FuncAddr create(String str) {
+        return new FuncAddr(str);
+    }
+
+    /**
+     * Create a func addr by func's name..
+     * @param strFunc
+     * @return FuncAddr Object
+     */
+    public static FuncAddr createFuncAddr(String strFunc) {
+        return create("~." + strFunc);
+    }
+
+    /**
+     * Create a func addr by a method of class.
+     * @param class1
+     * @param strFunc
+     * @return FuncAddr Object
+     */
+    public static FuncAddr createMethodAddr(Class class1, String strFunc) {
+        return create("~." + class1.getName() + "." + strFunc);
     }
 
     @Override
