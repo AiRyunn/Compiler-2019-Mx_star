@@ -13,10 +13,6 @@ public class PizzaIR {
     public PizzaIR() {
     }
 
-    Type getTypeByName(String typeName) {
-        return null;
-    }
-
     // @Override
     // public String toString() {
     //     return new GsonBuilder().setPrettyPrinting().create().toJson(data);

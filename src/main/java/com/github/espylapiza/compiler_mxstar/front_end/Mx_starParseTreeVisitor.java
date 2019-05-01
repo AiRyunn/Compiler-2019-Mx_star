@@ -830,7 +830,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             type = new TypeArray(type, arrayClass);
         }
 
-        // TODO: alloc size
+        // TODO: alloc size, syntactic sugar new: Object[size][size]
         Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), null, type));
         manager.addInstruction(new InstAlloc(dst, null));
 

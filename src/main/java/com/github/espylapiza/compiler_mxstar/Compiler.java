@@ -10,6 +10,7 @@ import com.github.espylapiza.compiler_mxstar.optimizers.PizzaIROptimizer;
 import com.github.espylapiza.compiler_mxstar.back_end.NASMTranslator;
 import com.github.espylapiza.compiler_mxstar.front_end.ParserBuilder;
 import com.github.espylapiza.compiler_mxstar.front_end.PizzaIRBuilder;
+import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 
 public class Compiler {
     private final static Logger LOGGER = Logger.getLogger(Compiler.class.getName());
@@ -36,7 +37,9 @@ public class Compiler {
             optimizer.optimize();
 
             LOGGER.info("NASM translation");
-            NASMTranslator nasm = new NASMTranslator(optimizer.getIR());
+            NASMTranslator nasmTranslator = new NASMTranslator(optimizer.getIR());
+
+            NASM nasm = nasmTranslator.getNASM();
 
             ostream.write(nasm.toString().getBytes());
             ostream.close();
