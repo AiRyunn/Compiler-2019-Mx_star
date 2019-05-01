@@ -1,9 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-import com.google.gson.annotations.Expose;
-
 public abstract class Type {
-    @Expose
     private String typeName;
     protected transient Class typeClass;
 

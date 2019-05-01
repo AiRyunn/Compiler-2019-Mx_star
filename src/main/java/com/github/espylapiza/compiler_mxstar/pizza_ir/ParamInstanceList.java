@@ -3,10 +3,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.annotations.Expose;
-
 public class ParamInstanceList extends ProgramFragment {
-    @Expose
     private List<Object> params;
 
     public ParamInstanceList() {

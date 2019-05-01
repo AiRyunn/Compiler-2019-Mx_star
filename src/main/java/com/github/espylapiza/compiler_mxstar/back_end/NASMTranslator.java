@@ -6,7 +6,6 @@ import com.github.espylapiza.compiler_mxstar.nasm.SectionData;
 import com.github.espylapiza.compiler_mxstar.nasm.SectionText;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
-// import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 
 public class NASMTranslator {

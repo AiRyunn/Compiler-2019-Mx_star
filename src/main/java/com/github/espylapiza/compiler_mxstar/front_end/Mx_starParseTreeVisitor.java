@@ -15,7 +15,6 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
-// import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAlloc;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
@@ -1197,7 +1196,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             func = (Func) initFunc;
         }
         LOGGER.fine("alloc " + obj.name + ": " + obj.type);
-        return func.allocate(obj);
+        func.allocateVariable(obj);
+        return obj;
     }
 
     private void defineVar(Object obj) {

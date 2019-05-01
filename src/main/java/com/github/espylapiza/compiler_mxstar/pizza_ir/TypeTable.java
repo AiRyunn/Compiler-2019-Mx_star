@@ -2,9 +2,6 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.HashMap;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-
 public class TypeTable {
     private transient HashMap<String, TypeSingle> typeTable;
 
@@ -21,14 +18,5 @@ public class TypeTable {
 
     public Type get(String name) {
         return typeTable.get(name);
-    }
-
-    JsonElement toJson() {
-        return new GsonBuilder().create().toJsonTree(typeTable, HashMap.class);
-    }
-
-    @Override
-    public String toString() {
-        return new GsonBuilder().create().toJson(typeTable);
     }
 }

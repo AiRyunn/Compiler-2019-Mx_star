@@ -389,12 +389,12 @@ class FuncBuilder {
         if (!top.dead && !scpStack.empty()) {
             top.scope.addInstruction(new InstJump(scpStack.lastElement().scope));
         }
-        func.scps.add(top.scope);
+        func.getScps().add(top.scope);
     }
 
     public Object allocate(Object obj) {
-        obj.setID(new ObjectID(func.varList.count()));
-        func.varList.add(obj);
+        obj.setID(new ObjectID(func.getVarList().count()));
+        func.getVarList().add(obj);
         return obj;
     }
 }

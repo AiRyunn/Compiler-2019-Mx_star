@@ -3,20 +3,23 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.annotations.Expose;
-
 public final class Class extends Domain implements Cloneable {
-    @Expose
     private final String name;
-    @Expose
     private Map<String, Type> memVar = new HashMap<String, Type>();
-    @Expose
     private Map<String, Func> memMtd = new HashMap<String, Func>();
 
+    /**
+     * 
+     * @param name
+     */
     public Class(String name) {
         this.name = name;
     }
 
+    /**
+     * 
+     * @return name
+     */
     public String getName() {
         return name;
     }

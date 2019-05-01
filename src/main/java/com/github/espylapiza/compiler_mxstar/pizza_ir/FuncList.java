@@ -26,14 +26,12 @@ public class FuncList implements Iterable<Func> {
 
         for (Map.Entry<FuncAddr, Func> entry : funcList.entrySet()) {
             Func func = entry.getValue();
-            // if (func instanceof FuncExtra) {
             if (first) {
                 first = false;
             } else {
                 result += "\n\n";
             }
             result += func.toString();
-            // }
         }
         return result;
     }
