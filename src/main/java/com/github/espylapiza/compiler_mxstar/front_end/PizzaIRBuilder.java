@@ -50,6 +50,12 @@ public class PizzaIRBuilder {
         Arrays.asList(
                 new Func(FuncAddr.createGlobalFuncAddr("__init__"), "__init__",
                         ir.typeTable.get("void"), new ParamList()),
+                new Func(FuncAddr.createGlobalFuncAddr("printf"), "printf",
+                        ir.typeTable.get("void"),
+                        new ParamList(Arrays.asList(ir.typeTable.get("string"),
+                                ir.typeTable.get("string")))),
+                new Func(FuncAddr.createGlobalFuncAddr("itoa"), "itoa", ir.typeTable.get("string"),
+                        new ParamList(ir.typeTable.get("int"))),
                 new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
                         new ParamList(ir.typeTable.get("string"))),
                 new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
