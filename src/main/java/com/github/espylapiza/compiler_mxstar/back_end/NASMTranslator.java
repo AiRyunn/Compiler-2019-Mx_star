@@ -35,6 +35,7 @@ public class NASMTranslator {
     }
 }
 
+
 class SectionBuilder {
     private SectionText sectionText = new SectionText();
     private SectionData sectionData = new SectionData();
@@ -48,7 +49,7 @@ class SectionBuilder {
     }
 
     void buildFromPizzaIR(PizzaIR ir) {
-        Func initFunc = ir.funcList.get(FuncAddr.createFuncAddr("__init__"));
+        Func initFunc = ir.funcList.get(FuncAddr.createGlobalFuncAddr("__init__"));
         System.out.println(initFunc.getAddr());
         // TODO: process global variables here
 

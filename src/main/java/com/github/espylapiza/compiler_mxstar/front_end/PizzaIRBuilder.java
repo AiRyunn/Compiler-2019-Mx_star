@@ -1,9 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.front_end;
 
+import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Stack;
 import java.util.logging.Logger;
-
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
@@ -19,7 +19,6 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectID;
-
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class PizzaIRBuilder {
@@ -48,29 +47,25 @@ public class PizzaIRBuilder {
     }
 
     private void registerBuiltinFunc() {
-        Func __init__ = new Func(FuncAddr.create("__init__"), "__init__", ir.typeTable.get("void"), new ParamList());
-        ir.funcList.addFunc(__init__);
-
-        Func print = new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("int"),
-                new ParamList(ir.typeTable.get("string")));
-        ir.funcList.addFunc(print);
-
-        Func println = new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
-                new ParamList(ir.typeTable.get("string")));
-        ir.funcList.addFunc(println);
-
-        Func getInt = new Func(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"), new ParamList());
-        ir.funcList.addFunc(getInt);
-
-        Func getString = new Func(FuncAddr.createFuncAddr("getString"), "getString", ir.typeTable.get("string"),
-                new ParamList());
-        ir.funcList.addFunc(getString);
-
-        Func toString = new Func(FuncAddr.createFuncAddr("toString"), "toString", ir.typeTable.get("string"),
-                new ParamList(ir.typeTable.get("int")));
-        ir.funcList.addFunc(toString);
+        Arrays.asList(
+                new Func(FuncAddr.createGlobalFuncAddr("__init__"), "__init__",
+                        ir.typeTable.get("void"), new ParamList()),
+                new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
+                        new ParamList(ir.typeTable.get("string"))),
+                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
+                        new ParamList(ir.typeTable.get("string"))),
+                new Func(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
+                        new ParamList()),
+                new Func(FuncAddr.createFuncAddr("getString"), "getString",
+                        ir.typeTable.get("string"), new ParamList()),
+                new Func(FuncAddr.createFuncAddr("toString"), "toString",
+                        ir.typeTable.get("string"), new ParamList(ir.typeTable.get("int"))))
+                .forEach(func -> {
+                    ir.funcList.addFunc(func);
+                });
     }
 }
+
 
 class DomainTrace {
     private class VarAndDepth {
@@ -102,7 +97,8 @@ class DomainTrace {
     }
 
     Object getVar(String name) {
-        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it
+                .hasPrevious();) {
             VarAndDepth pre = it.previous();
             if (pre.variable.name != null && pre.variable.name.equals(name)) {
                 return pre.variable;
@@ -164,7 +160,8 @@ class DomainTrace {
     }
 
     boolean canAllocate(String name) {
-        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
+        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it
+                .hasPrevious();) {
             VarAndDepth pre = it.previous();
             if (pre.depth < depth) {
                 break;
@@ -176,6 +173,7 @@ class DomainTrace {
         return true;
     }
 }
+
 
 class ScopeManager {
     private final static Logger LOGGER = Logger.getLogger(ScopeManager.class.getName());
@@ -218,6 +216,7 @@ class ScopeManager {
     }
 }
 
+
 class FuncBuilder {
     private class ScopeWithStatus {
         final Scope scope;
@@ -251,7 +250,8 @@ class FuncBuilder {
         if (scpStack.lastElement().dead) {
             return;
         }
-        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
+        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it
+                .hasPrevious();) {
             ScopeWithStatus pre = it.previous();
             if (pre.scope.getType() == ScopeType.ENDLOOP) {
                 scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));

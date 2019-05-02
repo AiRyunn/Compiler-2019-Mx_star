@@ -12,7 +12,7 @@ public class FuncAddr {
      * @param str
      * @return FuncAddr Object
      */
-    public static FuncAddr create(String str) {
+    public static FuncAddr createGlobalFuncAddr(String str) {
         return new FuncAddr(str);
     }
 
@@ -22,7 +22,7 @@ public class FuncAddr {
      * @return FuncAddr Object
      */
     public static FuncAddr createFuncAddr(String strFunc) {
-        return create("~." + strFunc);
+        return createGlobalFuncAddr("~." + strFunc);
     }
 
     /**
@@ -32,7 +32,11 @@ public class FuncAddr {
      * @return FuncAddr Object
      */
     public static FuncAddr createMethodAddr(Class class1, String strFunc) {
-        return create("~." + class1.getName() + "." + strFunc);
+        if (class1 == null) {
+            return createFuncAddr(strFunc);
+        } else {
+            return createGlobalFuncAddr("~." + class1.getName() + "." + strFunc);
+        }
     }
 
     @Override

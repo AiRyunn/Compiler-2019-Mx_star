@@ -1,10 +1,8 @@
 package com.github.espylapiza.compiler_mxstar.front_end;
 
 import java.io.InputStream;
-
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starLexer;
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser;
-
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -18,11 +16,13 @@ class ThrowingErrorListener extends BaseErrorListener {
     public static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();
 
     @Override
-    public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
-            String msg, RecognitionException e) throws ParseCancellationException {
+    public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
+            int charPositionInLine, String msg, RecognitionException e)
+            throws ParseCancellationException {
         throw new ParseCancellationException("line " + line + ":" + charPositionInLine + " " + msg);
     }
 }
+
 
 public class ParserBuilder {
     public static ParseTree fromStream(InputStream istream) throws Exception {

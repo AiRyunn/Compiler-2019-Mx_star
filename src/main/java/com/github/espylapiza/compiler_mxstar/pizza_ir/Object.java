@@ -25,6 +25,7 @@ public class Object extends ProgramFragment {
     }
 }
 
+
 abstract class ObjectConstant extends Object {
     ObjectConstant(Func belong, String name, Type type) {
         super(belong, name, type);

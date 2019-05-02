@@ -67,9 +67,7 @@ public final class Func extends Domain {
      * @param rtype
      */
     public Func(FuncAddr addr, String name, Type rtype) {
-        this.addr = addr;
-        this.name = name;
-        this.rtype = rtype;
+        this(addr, name, rtype, new ParamList());
     }
 
     /**
@@ -80,7 +78,9 @@ public final class Func extends Domain {
      * @param params
      */
     public Func(FuncAddr addr, String name, Type rtype, ParamList params) {
-        this(addr, name, rtype);
+        this.addr = addr;
+        this.name = name;
+        this.rtype = rtype;
         this.setParams(params);
     }
 

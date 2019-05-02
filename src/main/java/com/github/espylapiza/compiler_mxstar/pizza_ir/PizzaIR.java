@@ -23,7 +23,8 @@ public class PizzaIR {
         Class c_bool = new Class("bool");
         TypeBool t_bool = new TypeBool("bool", c_bool);
         Arrays.asList("__lgcnot__").forEach(method -> {
-            Func func = new Func(FuncAddr.createMethodAddr(c_bool, method), method, t_bool, new ParamList());
+            Func func = new Func(FuncAddr.createMethodAddr(c_bool, method), method, t_bool,
+                    new ParamList());
             c_bool.addMethod(func);
             funcList.addFunc(func);
         });
@@ -38,25 +39,27 @@ public class PizzaIR {
 
         Class c_int = new Class("int");
         TypeInt t_int = new TypeInt("int", c_int);
-        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__", "__postdec__")
-                .forEach(method -> {
-                    Func func = new Func(FuncAddr.createMethodAddr(c_int, method), method, t_int, new ParamList());
+        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__",
+                "__postdec__").forEach(method -> {
+                    Func func = new Func(FuncAddr.createMethodAddr(c_int, method), method, t_int,
+                            new ParamList());
                     c_int.addMethod(func);
                     funcList.addFunc(func);
                 });
-        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__", "__bitand__",
-                "__bitxor__", "__bitor__").forEach(method -> {
+        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__",
+                "__bitand__", "__bitxor__", "__bitor__").forEach(method -> {
                     Func func = new Func(FuncAddr.createMethodAddr(c_int, method), method, t_int,
                             new ParamList(Arrays.asList(t_int)));
                     c_int.addMethod(func);
                     funcList.addFunc(func);
                 });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
-            Func func = new Func(FuncAddr.createMethodAddr(c_int, method), method, t_bool,
-                    new ParamList(Arrays.asList(t_int)));
-            c_int.addMethod(func);
-            funcList.addFunc(func);
-        });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__")
+                .forEach(method -> {
+                    Func func = new Func(FuncAddr.createMethodAddr(c_int, method), method, t_bool,
+                            new ParamList(Arrays.asList(t_int)));
+                    c_int.addMethod(func);
+                    funcList.addFunc(func);
+                });
         classList.add(c_int);
         typeTable.add(t_int);
 
@@ -68,14 +71,16 @@ public class PizzaIR {
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
-            Func func = new Func(FuncAddr.createMethodAddr(c_string, method), method, t_bool,
-                    new ParamList(Arrays.asList(t_string)));
-            c_string.addMethod(func);
-            funcList.addFunc(func);
-        });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__")
+                .forEach(method -> {
+                    Func func = new Func(FuncAddr.createMethodAddr(c_string, method), method,
+                            t_bool, new ParamList(Arrays.asList(t_string)));
+                    c_string.addMethod(func);
+                    funcList.addFunc(func);
+                });
         Arrays.asList("length", "parseInt").forEach(method -> {
-            Func func = new Func(FuncAddr.createMethodAddr(c_string, method), method, t_int, new ParamList());
+            Func func = new Func(FuncAddr.createMethodAddr(c_string, method), method, t_int,
+                    new ParamList());
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
@@ -96,7 +101,8 @@ public class PizzaIR {
 
         Class c_array = new Class("__array__");
         Arrays.asList("size").forEach(method -> {
-            Func func = new Func(FuncAddr.createMethodAddr(c_array, method), method, t_int, new ParamList());
+            Func func = new Func(FuncAddr.createMethodAddr(c_array, method), method, t_int,
+                    new ParamList());
             c_array.addMethod(func);
             funcList.addFunc(func);
         });

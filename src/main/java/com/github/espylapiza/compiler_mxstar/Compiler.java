@@ -3,9 +3,7 @@ package com.github.espylapiza.compiler_mxstar;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.logging.Logger;
-
 import org.antlr.v4.runtime.tree.ParseTree;
-
 import com.github.espylapiza.compiler_mxstar.optimizers.PizzaIROptimizer;
 import com.github.espylapiza.compiler_mxstar.back_end.NASMTranslator;
 import com.github.espylapiza.compiler_mxstar.front_end.ParserBuilder;
