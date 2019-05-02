@@ -4,23 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SectionText extends Section {
-    private List<SectionTextItem> items;
+    private List<SectionItem> items;
 
     public SectionText() {
         super(".text");
-        items = new ArrayList<SectionTextItem>();
+        items = new ArrayList<SectionItem>();
     }
 
-    public void addLabel(String label) {
-        items.add(new Label(label));
+    public void addItem(SectionItem item) {
+        items.add(item);
     }
 
     @Override
     public String toString() {
         String result = super.getDeclaration();
-        for (SectionTextItem item : items) {
-            if (item instanceof Label) {
-                result += item.toString() + ":\n";
+        for (SectionItem item : items) {
+            if (item.label != null) {
+                result += item.label.toString() + ":\n";
             }
         }
         return result;

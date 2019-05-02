@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public abstract class Type {
     private String typeName;
-    protected transient Class typeClass;
+    protected Class typeClass;
 
     Type(String typeName, Class typeClass) {
         this.typeName = typeName;

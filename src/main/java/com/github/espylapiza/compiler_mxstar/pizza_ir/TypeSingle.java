@@ -6,6 +6,7 @@ public abstract class TypeSingle extends Type {
     }
 }
 
+
 abstract class TypeFundamental extends TypeSingle {
     TypeFundamental(String typeName, Class typeClass) {
         super(typeName, typeClass);
@@ -19,6 +20,7 @@ abstract class TypeFundamental extends TypeSingle {
         return getClass() == o.getClass();
     }
 }
+
 
 abstract class TypeCustom extends TypeSingle {
     TypeCustom(String typeName, Class typeClass) {

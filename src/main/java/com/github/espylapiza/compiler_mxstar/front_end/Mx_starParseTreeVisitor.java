@@ -27,14 +27,13 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.NullComparable;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Pointer;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ProgramFragment;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamInstanceList;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeArray;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeBool;
@@ -239,7 +238,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Func func;
         if (state == VisitState.DECLARATION) {
-            func = new Func(addr, name, rtype);
+            func = new Func(addr, name, rtype, null);
         } else {
             func = (Func) getFuncByAddr(addr);
         }
@@ -284,7 +283,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Func func;
         if (state == VisitState.DECLARATION) {
-            func = new Func(addr, name, rtype);
+            func = new Func(addr, name, rtype, null);
         } else {
             func = (Func) getFuncByAddr(addr);
         }
@@ -323,14 +322,14 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         ParamList params = new ParamList();
         ctx.variableDeclaration().forEach(member -> {
             Object variable = (Object) visit(member);
-            params.add(variable.type);
+            params.add(variable);
         });
         return params;
     }
 
     @Override
     public ProgramFragment visitParamList(Mx_starParser.ParamListContext ctx) {
-        ParamInstanceList params = new ParamInstanceList();
+        ParamList params = new ParamList();
         ctx.object().forEach(member -> {
             Object variable = (Object) visit(member);
             params.add(variable);
@@ -891,10 +890,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         String name = ctx.Identifier().getText();
 
-        System.out.println(ctx.getText());
         Type type = src.type.getTypeClass().getVarType(name);
-
-        System.out.println(name);
 
         if (type == null) {
             assert false;
@@ -946,9 +942,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         ObjectFunction obj = (ObjectFunction) visit(ctx.object());
 
         Func func = obj.func;
-        System.out.println(func.getName());
 
-        ParamInstanceList params = (ParamInstanceList) visit(ctx.paramList());
+        ParamList params = (ParamList) visit(ctx.paramList());
 
         if (!params.match(func.getParams())) {
             assert false;
@@ -1063,7 +1058,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        ParamInstanceList params = new ParamInstanceList();
+        ParamList params = new ParamList();
 
         if (!params.match(func.getParams())) {
             assert false;
@@ -1176,7 +1171,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        ParamInstanceList params = new ParamInstanceList(rhs);
+        ParamList params = new ParamList(rhs);
 
         if (!params.match(func.getParams())) {
             assert false;

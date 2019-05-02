@@ -23,8 +23,8 @@ public class NASM {
         return result;
     }
 
-    public void addDirective(DirectiveGlobal directiveGlobal) {
-        directives.add(directiveGlobal);
+    public void addDirective(Directive directive) {
+        directives.add(directive);
     }
 
     public void addSection(Section section) {

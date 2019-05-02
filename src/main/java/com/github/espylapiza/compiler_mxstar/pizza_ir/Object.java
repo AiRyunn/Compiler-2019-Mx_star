@@ -16,6 +16,10 @@ public class Object extends ProgramFragment {
         this.id = id;
     }
 
+    public ObjectID getID() {
+        return id;
+    }
+
     @Override
     public String toString() {
         if (id == null) {

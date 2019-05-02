@@ -1,14 +1,14 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class Label {
+public class DirectiveExtern extends Directive {
     private final String name;
 
-    public Label(String name) {
+    public DirectiveExtern(String name) {
         this.name = name;
     }
 
     @Override
     public String toString() {
-        return name;
+        return "extern " + name;
     }
 }

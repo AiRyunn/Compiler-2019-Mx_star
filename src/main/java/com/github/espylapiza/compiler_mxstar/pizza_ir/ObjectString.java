@@ -10,6 +10,6 @@ public final class ObjectString extends ObjectConstant {
 
     @Override
     public String toString() {
-        return value;
+        return "\"" + value + "\"";
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 public final class InstCall extends InstBaseCall {
     Object dst;
     FuncAddr addr;
-    List<Object> params;
+    public List<Object> params;
 
     /**
      * 

@@ -1,5 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.front_end;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Stack;
@@ -8,17 +9,21 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectID;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class PizzaIRBuilder {
@@ -50,25 +55,61 @@ public class PizzaIRBuilder {
         Arrays.asList(
                 new Func(FuncAddr.createGlobalFuncAddr("__init__"), "__init__",
                         ir.typeTable.get("void"), new ParamList()),
-                new Func(FuncAddr.createGlobalFuncAddr("printf"), "printf",
+                new FuncExtern(FuncAddr.createGlobalFuncAddr("printf"), "printf",
                         ir.typeTable.get("void"),
-                        new ParamList(Arrays.asList(ir.typeTable.get("string"),
-                                ir.typeTable.get("string")))),
-                new Func(FuncAddr.createGlobalFuncAddr("itoa"), "itoa", ir.typeTable.get("string"),
-                        new ParamList(ir.typeTable.get("int"))),
+                        new ParamList(
+                                Arrays.asList(new Object(null, "str", ir.typeTable.get("string")),
+                                        new Object(null, "str", ir.typeTable.get("string"))))),
+                new FuncExtern(FuncAddr.createGlobalFuncAddr("itoa"), "itoa",
+                        ir.typeTable.get("string"),
+                        new ParamList(new Object(null, "rhs", ir.typeTable.get("int")))),
                 new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
-                        new ParamList(ir.typeTable.get("string"))),
-                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
-                        new ParamList(ir.typeTable.get("string"))),
+                        new ParamList(new Object(null, "rhs", ir.typeTable.get("string")))),
+                // new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
+                //         new ParamList(ir.typeTable.get("string"))),
+                getPrintln(),
                 new Func(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
                         new ParamList()),
                 new Func(FuncAddr.createFuncAddr("getString"), "getString",
                         ir.typeTable.get("string"), new ParamList()),
                 new Func(FuncAddr.createFuncAddr("toString"), "toString",
-                        ir.typeTable.get("string"), new ParamList(ir.typeTable.get("int"))))
+                        ir.typeTable.get("string"),
+                        new ParamList(new Object(null, "rhs", ir.typeTable.get("int")))))
                 .forEach(func -> {
                     ir.funcList.addFunc(func);
                 });
+
+
+    }
+
+    private Func getPrint() {
+        Func print = new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
+                new ParamList(new Object(null, "rhs", ir.typeTable.get("string"))));
+        Object param0 = new Object(print, "str", (TypeString) ir.typeTable.get("string"));
+        print.allocateVariable(param0);
+        Scope scp = new Scope(ScopeType.FUNC, "print");
+        scp.addInstruction(new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
+                Arrays.asList((Object) new ObjectString(print, null,
+                        (TypeString) ir.typeTable.get("string"), "%s"), param0)));
+        print.getScps().add(scp);
+        return print;
+    }
+
+    private Func getPrintln() {
+        Func print =
+                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
+                        new ParamList(new Object(null, "rhs", ir.typeTable.get("string"))));
+        Object param0 = new Object(print, "str", (TypeString) ir.typeTable.get("string"));
+        print.allocateVariable(param0);
+        Scope scp = new Scope(ScopeType.FUNC, "println");
+        scp.addInstruction(
+                new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
+                        Arrays.asList(
+                                (Object) new ObjectString(print, null,
+                                        (TypeString) ir.typeTable.get("string"), "%s\\n"),
+                                param0)));
+        print.getScps().add(scp);
+        return print;
     }
 }
 
@@ -242,7 +283,7 @@ class FuncBuilder {
         this.func = func;
     }
 
-    public void addInstruction(Inst inst) {
+    void addInstruction(Inst inst) {
         if (scpStack.lastElement().dead) {
             return;
         }
@@ -252,7 +293,7 @@ class FuncBuilder {
         }
     }
 
-    public void jumpBreak() {
+    void jumpBreak() {
         if (scpStack.lastElement().dead) {
             return;
         }
@@ -266,7 +307,7 @@ class FuncBuilder {
         }
     }
 
-    public void jumpContinue() {
+    void jumpContinue() {
         if (scpStack.lastElement().dead) {
             return;
         }
@@ -274,11 +315,11 @@ class FuncBuilder {
         scpStack.lastElement().dead = true;
     }
 
-    public Scope newScope(ScopeType type) {
+    Scope newScope(ScopeType type) {
         return new Scope(type, func.getAddr() + "." + type.toString() + "_" + (counter++));
     }
 
-    public void pushScope(Scope scp) {
+    void pushScope(Scope scp) {
         boolean dead = false;
         if (!scpStack.empty()) {
             dead = scpStack.lastElement().dead;
@@ -286,17 +327,11 @@ class FuncBuilder {
         scpStack.add(new ScopeWithStatus(scp, dead));
     }
 
-    public void popScope() {
+    void popScope() {
         ScopeWithStatus top = scpStack.pop();
         if (!top.dead && !scpStack.empty()) {
             top.scope.addInstruction(new InstJump(scpStack.lastElement().scope));
         }
         func.getScps().add(top.scope);
-    }
-
-    public Object allocate(Object obj) {
-        obj.setID(new ObjectID(func.getVarList().count()));
-        func.getVarList().add(obj);
-        return obj;
     }
 }

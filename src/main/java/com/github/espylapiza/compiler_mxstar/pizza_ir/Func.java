@@ -3,7 +3,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class Func extends Domain {
+public class Func extends Domain {
     private final FuncAddr addr;
     private final String name;
     private final Type rtype;
@@ -58,16 +58,6 @@ public final class Func extends Domain {
      */
     public void setParams(ParamList params) {
         this.params = params;
-    }
-
-    /**
-     * Construct a func without params.
-     * @param addr
-     * @param name
-     * @param rtype
-     */
-    public Func(FuncAddr addr, String name, Type rtype) {
-        this(addr, name, rtype, new ParamList());
     }
 
     /**
