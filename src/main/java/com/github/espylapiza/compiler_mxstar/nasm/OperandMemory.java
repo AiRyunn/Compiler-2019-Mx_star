@@ -8,4 +8,15 @@ public class OperandMemory extends Operand {
         this.reg = reg;
         this.offset = offset;
     }
+
+    @Override
+    public String toString() {
+        if (offset > 0) {
+            return "[ " + reg.name + " + " + String.valueOf(offset) + " ]";
+        } else if (offset < 0) {
+            return "[ " + reg.name + " - " + String.valueOf(-offset) + " ]";
+        } else {
+            return "[ " + reg.name + " ]";
+        }
+    }
 }

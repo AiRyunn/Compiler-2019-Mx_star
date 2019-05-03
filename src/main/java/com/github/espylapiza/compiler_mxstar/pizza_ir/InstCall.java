@@ -4,7 +4,7 @@ import java.util.List;
 
 public final class InstCall extends InstBaseCall {
     Object dst;
-    FuncAddr addr;
+    private FuncAddr addr;
     public List<Object> params;
 
     /**
@@ -14,8 +14,22 @@ public final class InstCall extends InstBaseCall {
      */
     public InstCall(FuncAddr addr, List<Object> params) {
         super();
-        this.addr = addr;
+        this.setAddr(addr);
         this.params = params;
+    }
+
+    /**
+     * @return the addr
+     */
+    public FuncAddr getAddr() {
+        return addr;
+    }
+
+    /**
+     * @param addr the addr to set
+     */
+    public void setAddr(FuncAddr addr) {
+        this.addr = addr;
     }
 
     /**
@@ -35,7 +49,7 @@ public final class InstCall extends InstBaseCall {
         if (dst != null) {
             result += dst + " = ";
         }
-        result += "call " + addr;
+        result += "call " + getAddr();
         for (Object param : params) {
             result += " " + param;
         }

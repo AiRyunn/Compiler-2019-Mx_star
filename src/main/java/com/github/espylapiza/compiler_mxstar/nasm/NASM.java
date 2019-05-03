@@ -9,7 +9,8 @@ public class NASM {
      *   3. [Instruction] [Operands]
      */
     private Directives directives = new Directives();
-    private Sections sections = new Sections();
+    public SectionText sectionText = new SectionText();
+    public SectionData sectionData = new SectionData();
 
     public NASM() {
     }
@@ -19,15 +20,13 @@ public class NASM {
         String result = new String();
         result += directives.toString();
         result += "\n";
-        result += sections.toString();
+        result += sectionText.toString();
+        result += "\n";
+        result += sectionData.toString();
         return result;
     }
 
     public void addDirective(Directive directive) {
         directives.add(directive);
-    }
-
-    public void addSection(Section section) {
-        sections.add(section);
     }
 }

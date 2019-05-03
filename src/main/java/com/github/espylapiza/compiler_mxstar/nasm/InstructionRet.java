@@ -1,10 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public abstract class OperandRegister extends Operand {
-    String name;
+public class InstructionRet extends Instruction {
+    private static final String name = "ret";
 
-    OperandRegister(String name) {
-        this.name = name;
+    public InstructionRet() {
     }
 
     @Override

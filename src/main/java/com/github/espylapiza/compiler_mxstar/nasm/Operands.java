@@ -17,4 +17,19 @@ public class Operands {
         operandList.add(operand1);
         operandList.add(operand2);
     }
+
+    @Override
+    public String toString() {
+        String result = new String();
+        boolean first = true;
+        for (Operand operand : operandList) {
+            if (first) {
+                first = false;
+            } else {
+                result += ", ";
+            }
+            result += operand.toString();
+        }
+        return result;
+    }
 }

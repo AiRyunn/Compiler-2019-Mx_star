@@ -64,7 +64,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     Mx_starParseTreeVisitor(PizzaIR ir) {
         this.ir = ir;
-        initFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("__init__"));
+        initFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("main"));
         arrayClass = getClassByName("__array__");
     }
 
@@ -253,15 +253,16 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
 
-        if (state == VisitState.DECLARATION) {
-            func.setParams(params);
-        } else {
+        func.setParams(params);
+        if (state == VisitState.SEMANTIC_ANALYSIS) {
             manager.enter(func);
             manager.pushScope(manager.newScope(ScopeType.FUNC));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
+
+            manager.addInstruction(new InstRet());
 
             manager.popScope();
             manager.exit();
@@ -298,15 +299,16 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
 
-        if (state == VisitState.DECLARATION) {
-            func.setParams(params);
-        } else {
+        func.setParams(params);
+        if (state == VisitState.SEMANTIC_ANALYSIS) {
             manager.enter(func);
             manager.pushScope(manager.newScope(ScopeType.FUNC));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
+
+            manager.addInstruction(new InstRet());
 
             manager.popScope();
             manager.exit();
@@ -416,14 +418,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
             Type rtype = trace.getRtype();
             if (obj.type instanceof TypeNull) {
-                // return null
                 if (!(rtype instanceof NullComparable)) {
                     assert false;
                     return null;
                 }
                 manager.addInstruction(new InstRet(obj));
             } else {
-                // return object
                 if (!obj.type.equals(rtype)) {
                     assert false;
                     return null;
@@ -872,7 +872,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
             return null;
         }
-        return obj;
+        return allocateVariable(obj);
     }
 
     @Override

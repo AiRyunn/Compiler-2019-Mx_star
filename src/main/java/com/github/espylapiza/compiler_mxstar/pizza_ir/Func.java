@@ -79,7 +79,41 @@ public class Func extends Domain {
      * @param obj
      */
     public void allocateVariable(Object obj) {
-        obj.setID(new ObjectID(getVarList().count()));
-        getVarList().add(obj);
+        obj.setID(new ObjectID(varList.count()));
+        varList.add(obj);
+    }
+
+    @Override
+    public String toString() {
+        String result = "func " + getAddr() + " (\n";
+        for (int i = 0; i < params.count(); i++) {
+            result += "\t" + params.get(i) + ": " + params.get(i).type.getName() + "\n";
+        }
+        result += ") {\n";
+        result += "\tvar: (\n";
+        for (int i = params.count(); i < varList.count(); i++) {
+            if (varList.get(i).name != null) {
+                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + ", "
+                        + varList.get(i).name + "\n";
+            }
+        }
+        result += "\t), (\n";
+        for (int i = params.count(); i < varList.count(); i++) {
+            if (varList.get(i).name == null) {
+                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + "\n";
+            }
+        }
+        result += "\t)\n";
+        boolean first = true;
+        for (Scope scp : scps) {
+            if (first) {
+                first = false;
+            } else {
+                result += "\n";
+            }
+            result += scp.toString();
+        }
+        result += "}";
+        return result;
     }
 }

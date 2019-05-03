@@ -28,13 +28,3 @@ public class Object extends ProgramFragment {
         return id.toString();
     }
 }
-
-
-abstract class ObjectConstant extends Object {
-    ObjectConstant(Func belong, String name, Type type) {
-        super(belong, name, type);
-    }
-
-    @Override
-    public abstract String toString();
-}

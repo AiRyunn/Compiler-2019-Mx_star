@@ -22,7 +22,7 @@ public class FuncAddr {
      * @return FuncAddr Object
      */
     public static FuncAddr createFuncAddr(String strFunc) {
-        return createGlobalFuncAddr("~." + strFunc);
+        return createGlobalFuncAddr("_" + strFunc);
     }
 
     /**

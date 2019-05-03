@@ -19,9 +19,7 @@ public class SectionText extends Section {
     public String toString() {
         String result = super.getDeclaration();
         for (SectionItem item : items) {
-            if (item.label != null) {
-                result += item.label.toString() + ":\n";
-            }
+            result += item.toString();
         }
         return result;
     }

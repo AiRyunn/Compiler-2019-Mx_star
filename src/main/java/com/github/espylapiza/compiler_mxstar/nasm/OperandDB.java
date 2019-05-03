@@ -1,9 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class OperandsString extends Operands {
+public class OperandDB extends Operand {
     private final String str;
 
-    OperandsString(String str) {
+    public OperandDB(String str) {
         this.str = str;
     }
 

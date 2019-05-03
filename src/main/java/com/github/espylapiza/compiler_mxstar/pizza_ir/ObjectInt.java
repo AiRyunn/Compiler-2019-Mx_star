@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class ObjectInt extends ObjectConstant {
-    private Integer value;
+    public Integer value;
 
     public ObjectInt(Func belong, String name, TypeInt type, Integer value) {
         super(belong, name, type);

@@ -1,9 +1,10 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class ParamList extends ProgramFragment {
+public class ParamList extends ProgramFragment implements Iterable<Object> {
     private List<Object> params;
 
     public ParamList() {
@@ -28,6 +29,10 @@ public class ParamList extends ProgramFragment {
         return params;
     }
 
+    public Object get(int n) {
+        return params.get(n);
+    }
+
     public int count() {
         return params.size();
     }
@@ -42,5 +47,10 @@ public class ParamList extends ProgramFragment {
             }
         }
         return true;
+    }
+
+    @Override
+    public Iterator<Object> iterator() {
+        return params.iterator();
     }
 }

@@ -14,6 +14,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
@@ -21,7 +22,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectID;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -42,6 +43,16 @@ public class PizzaIRBuilder {
         LOGGER.info("visit parse tree");
         Mx_starParseTreeVisitor visitor = new Mx_starParseTreeVisitor(ir);
         parser.accept(visitor);
+
+        Func mainFunc = ir.funcList.get(FuncAddr.createGlobalFuncAddr("main"));
+        Scope mainScope = mainFunc.getScps().get(0);
+
+        mainScope.addInstruction(new InstCall(FuncAddr.createFuncAddr("main"), new ArrayList<>()));
+
+        ObjectInt obj = new ObjectInt(null, null, null, 0);
+        mainScope.addInstruction(new InstRet(obj));
+
+        System.out.println(ir.funcList);
     }
 
     /**
@@ -53,8 +64,8 @@ public class PizzaIRBuilder {
 
     private void registerBuiltinFunc() {
         Arrays.asList(
-                new Func(FuncAddr.createGlobalFuncAddr("__init__"), "__init__",
-                        ir.typeTable.get("void"), new ParamList()),
+                new Func(FuncAddr.createGlobalFuncAddr("main"), "main", ir.typeTable.get("void"),
+                        new ParamList()),
                 new FuncExtern(FuncAddr.createGlobalFuncAddr("printf"), "printf",
                         ir.typeTable.get("void"),
                         new ParamList(
@@ -88,26 +99,29 @@ public class PizzaIRBuilder {
         Object param0 = new Object(print, "str", (TypeString) ir.typeTable.get("string"));
         print.allocateVariable(param0);
         Scope scp = new Scope(ScopeType.FUNC, "print");
-        scp.addInstruction(new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
-                Arrays.asList((Object) new ObjectString(print, null,
-                        (TypeString) ir.typeTable.get("string"), "%s"), param0)));
+        scp.addInstruction(
+                new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
+                        Arrays.asList(
+                                (Object) new ObjectString(print, null,
+                                        (TypeString) ir.typeTable.get("string"), "\"%s\""),
+                                param0)));
         print.getScps().add(scp);
         return print;
     }
 
     private Func getPrintln() {
-        Func print =
-                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
-                        new ParamList(new Object(null, "rhs", ir.typeTable.get("string"))));
-        Object param0 = new Object(print, "str", (TypeString) ir.typeTable.get("string"));
+        Object param0 = new Object(null, "str", (TypeString) ir.typeTable.get("string"));
+        Func print = new Func(FuncAddr.createFuncAddr("println"), "println",
+                ir.typeTable.get("void"), new ParamList(param0));
         print.allocateVariable(param0);
-        Scope scp = new Scope(ScopeType.FUNC, "println");
+        Scope scp = new Scope(ScopeType.FUNC, "_println");
         scp.addInstruction(
                 new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
                         Arrays.asList(
                                 (Object) new ObjectString(print, null,
-                                        (TypeString) ir.typeTable.get("string"), "%s\\n"),
+                                        (TypeString) ir.typeTable.get("string"), "\"%s\\n\""),
                                 param0)));
+        scp.addInstruction(new InstRet());
         print.getScps().add(scp);
         return print;
     }
@@ -316,7 +330,11 @@ class FuncBuilder {
     }
 
     Scope newScope(ScopeType type) {
-        return new Scope(type, func.getAddr() + "." + type.toString() + "_" + (counter++));
+        if (type == ScopeType.FUNC) {
+            return new Scope(type, func.getAddr().toString());
+        } else {
+            return new Scope(type, func.getAddr() + "." + type.toString() + "_" + (counter++));
+        }
     }
 
     void pushScope(Scope scp) {

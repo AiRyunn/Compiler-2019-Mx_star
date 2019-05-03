@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class InstRet extends InstBaseJump {
-    private Object obj;
+    public Object obj;
 
     public InstRet() {
         super();
@@ -14,6 +14,10 @@ public final class InstRet extends InstBaseJump {
 
     @Override
     public String toString() {
-        return "ret " + obj;
+        if (obj == null) {
+            return "ret";
+        } else {
+            return "ret " + obj;
+        }
     }
 }

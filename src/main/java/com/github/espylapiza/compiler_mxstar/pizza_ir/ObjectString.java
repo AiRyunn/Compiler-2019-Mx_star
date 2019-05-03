@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class ObjectString extends ObjectConstant {
-    private String value;
+    public String value;
 
     public ObjectString(Func belong, String name, TypeString type, String value) {
         super(belong, name, type);
@@ -10,6 +10,6 @@ public final class ObjectString extends ObjectConstant {
 
     @Override
     public String toString() {
-        return "\"" + value + "\"";
+        return value;
     }
 }
