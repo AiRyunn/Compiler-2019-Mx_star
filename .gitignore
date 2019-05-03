@@ -3,7 +3,7 @@ testing/
 .vscode/
 
 /source.*
-/target.*
-/target
+target.*
+target
 
 *.class
