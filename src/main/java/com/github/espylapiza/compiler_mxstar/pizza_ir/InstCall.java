@@ -7,6 +7,11 @@ public final class InstCall extends InstBaseCall {
     private FuncAddr addr;
     public List<Object> params;
 
+    @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
+    }
+
     /**
      * 
      * @param addr

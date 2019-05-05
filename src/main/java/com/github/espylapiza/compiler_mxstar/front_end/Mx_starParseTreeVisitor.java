@@ -72,11 +72,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitProgram(Mx_starParser.ProgramContext ctx) {
         LOGGER.info("TYPE_DECLARATION");
         state = VisitState.TYPE_DECLARATION;
-        ctx.programSection().forEach(ch -> ch.accept(this));
+        ctx.programSection().forEach(ch -> visit(ch));
 
         LOGGER.info("DECLARATION");
         state = VisitState.DECLARATION;
-        ctx.programSection().forEach(ch -> ch.accept(this));
+        ctx.programSection().forEach(ch -> visit(ch));
 
         mainFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("main"));
         if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt)
@@ -84,17 +84,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        // Scope mainScope = mainFunc.getScps().get(0);
-
-        // mainScope.addInstruction(
-        //         new InstRet(FuncAddr.createGlobalFuncAddr("_init"), new ArrayList<>()));
-
         manager.enter(initFunc);
         manager.pushScope(manager.newScope(ScopeType.FUNC));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
         state = VisitState.SEMANTIC_ANALYSIS;
-        ctx.programSection().forEach(ch -> ch.accept(this));
+        ctx.programSection().forEach(ch -> visit(ch));
 
         manager.addInstruction(new InstRet());
         manager.popScope();

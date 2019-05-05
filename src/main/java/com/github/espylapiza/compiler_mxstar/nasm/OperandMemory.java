@@ -12,11 +12,11 @@ public class OperandMemory extends Operand {
     @Override
     public String toString() {
         if (offset > 0) {
-            return "[ " + reg.name + " + " + String.valueOf(offset) + " ]";
+            return "qword [ " + reg.name + " + " + String.valueOf(offset) + " ]";
         } else if (offset < 0) {
-            return "[ " + reg.name + " - " + String.valueOf(-offset) + " ]";
+            return "qword [ " + reg.name + " - " + String.valueOf(-offset) + " ]";
         } else {
-            return "[ " + reg.name + " ]";
+            return "qword [ " + reg.name + " ]";
         }
     }
 }

@@ -68,7 +68,7 @@ public class RegisterAllocator {
                 put(obj, operand);
             }
         }
-        stackSize = (8 * (top + 1) + 15) / 16 * 16;
+        stackSize = (8 * top + 15) / 16 * 16;
     }
 
     private void put(Object object, Operand operand) {

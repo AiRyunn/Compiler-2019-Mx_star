@@ -2,10 +2,15 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 import java.util.Arrays;
 
-public class PizzaIR {
+public class PizzaIR implements PizzaIRPart {
     public TypeTable typeTable = new TypeTable();
     public ClassList classList = new ClassList();
     public FuncList funcList = new FuncList();
+
+    @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
+    }
 
     public PizzaIR() {
         registerBuiltinClass();
@@ -120,4 +125,6 @@ public class PizzaIR {
         classList.add(c_method);
         typeTable.add(t_method);
     }
+
+
 }

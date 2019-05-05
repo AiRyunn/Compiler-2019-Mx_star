@@ -3,13 +3,18 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Func extends Domain {
+public class Func extends Domain implements PizzaIRPart {
     private final FuncAddr addr;
     private final String name;
     private final Type rtype;
     private final VarList varList = new VarList();
     private final List<Scope> scps = new ArrayList<Scope>();
     private ParamList params;
+
+    @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
+    }
 
     /**
      * @return the addr
