@@ -11,6 +11,6 @@ public class InstructionDB extends Instruction {
 
     @Override
     public String toString() {
-        return name + "\t\t" + src.toString();
+        return String.format("%-30s%s", name, src.toString());
     }
 }

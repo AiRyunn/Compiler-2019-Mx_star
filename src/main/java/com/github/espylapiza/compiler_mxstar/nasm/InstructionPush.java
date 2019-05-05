@@ -10,6 +10,6 @@ public class InstructionPush extends Instruction {
 
     @Override
     public String toString() {
-        return name + "\t\t" + src;
+        return String.format("%-30s%s", name, src);
     }
 }

@@ -85,6 +85,10 @@ public class Func extends Domain {
 
     @Override
     public String toString() {
+        if (scps.isEmpty()) {
+            return "";
+        }
+
         String result = "func " + getAddr() + " (\n";
         for (int i = 0; i < params.count(); i++) {
             result += "\t" + params.get(i) + ": " + params.get(i).type.getName() + "\n";

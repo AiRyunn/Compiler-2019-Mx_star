@@ -3,7 +3,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 import java.util.List;
 
 public final class InstCall extends InstBaseCall {
-    Object dst;
+    public Object dst;
     private FuncAddr addr;
     public List<Object> params;
 

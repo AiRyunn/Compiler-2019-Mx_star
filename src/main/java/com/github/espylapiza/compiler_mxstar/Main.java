@@ -17,36 +17,53 @@ public class Main {
 
     private static Compiler createCompiler(String[] args) {
         InputStream istream = System.in;
-        OutputStream ostream = System.out;
+        OutputStream asmOstream = System.out;
+        OutputStream irOstream = null;
 
-        boolean debugMode = false;
+        boolean debugMode = false, semantic = false;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
 
-            if (arg.equals("-o") || arg.equals("--output")) {
-                i++;
-                try {
-                    ostream = new FileOutputStream(args[i], false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.exit(-1);
-                }
-            } else if (arg.equals("--debug")) {
-                debugMode = true;
-            } else {
-                try {
-                    istream = new FileInputStream(args[i]);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.exit(-1);
-                }
+            switch (arg) {
+                case "--debug":
+                    debugMode = true;
+                    break;
+                case "--semantic":
+                    semantic = true;
+                    break;
+                case "-o":
+                case "--output":
+                    i++;
+                    try {
+                        asmOstream = new FileOutputStream(args[i], false);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.exit(-1);
+                    }
+                    break;
+                case "--ir":
+                    i++;
+                    try {
+                        irOstream = new FileOutputStream(args[i], false);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.exit(-1);
+                    }
+                    break;
+                default:
+                    try {
+                        istream = new FileInputStream(args[i]);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.exit(-1);
+                    }
             }
         }
 
         configLogger(debugMode);
 
-        return new Compiler(istream, ostream);
+        return new Compiler(semantic, istream, asmOstream, irOstream);
     }
 
     private static void configLogger(boolean debugMode) {
@@ -56,7 +73,7 @@ public class Main {
         if (debugMode) {
             level = Level.FINE;
         } else {
-            level = Level.INFO;
+            level = Level.SEVERE;
         }
 
         Logger rootLogger = LogManager.getLogManager().getLogger("");

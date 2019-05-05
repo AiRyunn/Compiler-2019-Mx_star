@@ -64,7 +64,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     Mx_starParseTreeVisitor(PizzaIR ir) {
         this.ir = ir;
-        initFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("main"));
+        initFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("_init"));
         arrayClass = getClassByName("__array__");
     }
 
@@ -78,11 +78,16 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         state = VisitState.DECLARATION;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
-        mainFunc = getFuncByAddr(FuncAddr.createFuncAddr("main"));
+        mainFunc = getFuncByAddr(FuncAddr.createGlobalFuncAddr("main"));
         if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt)
                 || mainFunc.getParams().count() != 0) {
             assert false;
         }
+
+        // Scope mainScope = mainFunc.getScps().get(0);
+
+        // mainScope.addInstruction(
+        //         new InstRet(FuncAddr.createGlobalFuncAddr("_init"), new ArrayList<>()));
 
         manager.enter(initFunc);
         manager.pushScope(manager.newScope(ScopeType.FUNC));
@@ -91,6 +96,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         state = VisitState.SEMANTIC_ANALYSIS;
         ctx.programSection().forEach(ch -> ch.accept(this));
 
+        manager.addInstruction(new InstRet());
         manager.popScope();
         manager.exit();
 
@@ -263,7 +269,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
 
             manager.addInstruction(new InstRet());
-
             manager.popScope();
             manager.exit();
         }
@@ -280,7 +285,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName(ctx.type().getText());
-        FuncAddr addr = FuncAddr.createMethodAddr(owner, name);
+        FuncAddr addr;
+        if (owner == null && name.equals("main")) {
+            addr = FuncAddr.createGlobalFuncAddr(name);
+        } else {
+            addr = FuncAddr.createMethodAddr(owner, name);
+        }
 
         Func func;
         if (state == VisitState.DECLARATION) {
@@ -302,14 +312,19 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         func.setParams(params);
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             manager.enter(func);
-            manager.pushScope(manager.newScope(ScopeType.FUNC));
+            Scope scope = manager.newScope(ScopeType.FUNC);
+            manager.pushScope(scope);
+
+            if (func == mainFunc) {
+                scope.addInstruction(
+                        new InstCall(FuncAddr.createGlobalFuncAddr("_init"), new ArrayList<>()));
+            }
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
             }
 
             manager.addInstruction(new InstRet());
-
             manager.popScope();
             manager.exit();
         }

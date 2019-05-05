@@ -8,12 +8,12 @@ public class FuncAddr {
     }
 
     /**
-     * Create a func addr from string.
-     * @param str
+     * Create a func addr by func's name..
+     * @param strFunc
      * @return FuncAddr Object
      */
-    public static FuncAddr createGlobalFuncAddr(String str) {
-        return new FuncAddr(str);
+    public static FuncAddr createGlobalFuncAddr(String strFunc) {
+        return new FuncAddr(strFunc);
     }
 
     /**
@@ -22,7 +22,7 @@ public class FuncAddr {
      * @return FuncAddr Object
      */
     public static FuncAddr createFuncAddr(String strFunc) {
-        return createGlobalFuncAddr("_" + strFunc);
+        return new FuncAddr("_MS_" + strFunc);
     }
 
     /**
@@ -35,7 +35,7 @@ public class FuncAddr {
         if (class1 == null) {
             return createFuncAddr(strFunc);
         } else {
-            return createGlobalFuncAddr("~." + class1.getName() + "." + strFunc);
+            return createFuncAddr(class1.getName() + "." + strFunc);
         }
     }
 

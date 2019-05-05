@@ -2,16 +2,16 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionMov extends Instruction {
     private static final String name = "mov";
-    Operand src;
     Operand dst;
+    Operand src;
 
-    public InstructionMov(Operand src, Operand dst) {
-        this.src = src;
+    public InstructionMov(Operand dst, Operand src) {
         this.dst = dst;
+        this.src = src;
     }
 
     @Override
     public String toString() {
-        return name + "\t\t" + src + ", " + dst;
+        return String.format("%-30s%s, %s", name, dst, src);
     }
 }

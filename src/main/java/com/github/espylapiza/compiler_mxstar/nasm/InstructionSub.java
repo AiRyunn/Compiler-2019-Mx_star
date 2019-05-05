@@ -12,6 +12,6 @@ public class InstructionSub extends Instruction {
 
     @Override
     public String toString() {
-        return name + "\t\t" + dst + ", " + imm;
+        return String.format("%-30s%s", name, dst + ", " + imm);
     }
 }

@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.logging.Logger;
 import org.antlr.v4.runtime.tree.ParseTree;
 import com.github.espylapiza.compiler_mxstar.optimizers.PizzaIROptimizer;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.back_end.NASMTranslator;
 import com.github.espylapiza.compiler_mxstar.front_end.ParserBuilder;
 import com.github.espylapiza.compiler_mxstar.front_end.PizzaIRBuilder;
@@ -13,12 +14,17 @@ import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 public class Compiler {
     private final static Logger LOGGER = Logger.getLogger(Compiler.class.getName());
 
+    // TODO: Mx_starParams
+    boolean semantic;
     InputStream istream;
-    OutputStream ostream;
+    OutputStream asmOstream;
+    OutputStream irOstream;
 
-    Compiler(InputStream istream, OutputStream ostream) {
+    Compiler(boolean semantic, InputStream istream, OutputStream asmOstream,
+            OutputStream irOstream) {
         this.istream = istream;
-        this.ostream = ostream;
+        this.asmOstream = asmOstream;
+        this.irOstream = irOstream;
     }
 
     void compile() {
@@ -29,9 +35,20 @@ public class Compiler {
             LOGGER.info("build PizzaIR...");
             PizzaIRBuilder builder = new PizzaIRBuilder();
             builder.fromMxStarParser(parser);
+            PizzaIR ir = builder.getIR();
+
+            // TODO: Printer
+            if (irOstream != null) {
+                irOstream.write(ir.funcList.toString().getBytes());
+                irOstream.close();
+            }
+
+            if (semantic) {
+                return;
+            }
 
             LOGGER.info("optimize PizzaIR...");
-            PizzaIROptimizer optimizer = new PizzaIROptimizer(builder.getIR());
+            PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
             optimizer.optimize();
 
             LOGGER.info("translate to NASM...");
@@ -39,8 +56,8 @@ public class Compiler {
             NASM nasm = translator.getNASM();
 
             // TODO: Printer
-            ostream.write(nasm.toString().getBytes());
-            ostream.close();
+            asmOstream.write(nasm.toString().getBytes());
+            asmOstream.close();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);

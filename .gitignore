@@ -1,9 +1,6 @@
 bin/
 testing/
 .vscode/
-
-/source.*
-target.*
-target
+output/*
 
 *.class

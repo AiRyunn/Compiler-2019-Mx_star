@@ -7,6 +7,10 @@ public class OperandDBAddr extends Operand {
         this.addr = addr;
     }
 
+    public OperandDBAddr(Label label) {
+        this.addr = label.toString();
+    }
+
     @Override
     public String toString() {
         return addr;

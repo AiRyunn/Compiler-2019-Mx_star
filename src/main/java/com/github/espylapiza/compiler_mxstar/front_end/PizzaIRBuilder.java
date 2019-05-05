@@ -1,6 +1,5 @@
 package com.github.espylapiza.compiler_mxstar.front_end;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Stack;
@@ -9,21 +8,15 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.TypeString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -43,16 +36,6 @@ public class PizzaIRBuilder {
         LOGGER.info("visit parse tree");
         Mx_starParseTreeVisitor visitor = new Mx_starParseTreeVisitor(ir);
         parser.accept(visitor);
-
-        Func mainFunc = ir.funcList.get(FuncAddr.createGlobalFuncAddr("main"));
-        Scope mainScope = mainFunc.getScps().get(0);
-
-        mainScope.addInstruction(new InstCall(FuncAddr.createFuncAddr("main"), new ArrayList<>()));
-
-        ObjectInt obj = new ObjectInt(null, null, null, 0);
-        mainScope.addInstruction(new InstRet(obj));
-
-        System.out.println(ir.funcList);
     }
 
     /**
@@ -64,66 +47,22 @@ public class PizzaIRBuilder {
 
     private void registerBuiltinFunc() {
         Arrays.asList(
-                new Func(FuncAddr.createGlobalFuncAddr("main"), "main", ir.typeTable.get("void"),
+                new Func(FuncAddr.createGlobalFuncAddr("_init"), "_init", ir.typeTable.get("void"),
                         new ParamList()),
-                new FuncExtern(FuncAddr.createGlobalFuncAddr("printf"), "printf",
-                        ir.typeTable.get("void"),
-                        new ParamList(
-                                Arrays.asList(new Object(null, "str", ir.typeTable.get("string")),
-                                        new Object(null, "str", ir.typeTable.get("string"))))),
-                new FuncExtern(FuncAddr.createGlobalFuncAddr("itoa"), "itoa",
-                        ir.typeTable.get("string"),
-                        new ParamList(new Object(null, "rhs", ir.typeTable.get("int")))),
                 new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
-                        new ParamList(new Object(null, "rhs", ir.typeTable.get("string")))),
-                // new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
-                //         new ParamList(ir.typeTable.get("string"))),
-                getPrintln(),
+                        new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
+                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
+                        new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
                 new Func(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
                         new ParamList()),
                 new Func(FuncAddr.createFuncAddr("getString"), "getString",
                         ir.typeTable.get("string"), new ParamList()),
                 new Func(FuncAddr.createFuncAddr("toString"), "toString",
                         ir.typeTable.get("string"),
-                        new ParamList(new Object(null, "rhs", ir.typeTable.get("int")))))
+                        new ParamList(new Object(null, "num", ir.typeTable.get("int")))))
                 .forEach(func -> {
                     ir.funcList.addFunc(func);
                 });
-
-
-    }
-
-    private Func getPrint() {
-        Func print = new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
-                new ParamList(new Object(null, "rhs", ir.typeTable.get("string"))));
-        Object param0 = new Object(print, "str", (TypeString) ir.typeTable.get("string"));
-        print.allocateVariable(param0);
-        Scope scp = new Scope(ScopeType.FUNC, "print");
-        scp.addInstruction(
-                new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
-                        Arrays.asList(
-                                (Object) new ObjectString(print, null,
-                                        (TypeString) ir.typeTable.get("string"), "\"%s\""),
-                                param0)));
-        print.getScps().add(scp);
-        return print;
-    }
-
-    private Func getPrintln() {
-        Object param0 = new Object(null, "str", (TypeString) ir.typeTable.get("string"));
-        Func print = new Func(FuncAddr.createFuncAddr("println"), "println",
-                ir.typeTable.get("void"), new ParamList(param0));
-        print.allocateVariable(param0);
-        Scope scp = new Scope(ScopeType.FUNC, "_println");
-        scp.addInstruction(
-                new InstCall(FuncAddr.createGlobalFuncAddr("printf"),
-                        Arrays.asList(
-                                (Object) new ObjectString(print, null,
-                                        (TypeString) ir.typeTable.get("string"), "\"%s\\n\""),
-                                param0)));
-        scp.addInstruction(new InstRet());
-        print.getScps().add(scp);
-        return print;
     }
 }
 
