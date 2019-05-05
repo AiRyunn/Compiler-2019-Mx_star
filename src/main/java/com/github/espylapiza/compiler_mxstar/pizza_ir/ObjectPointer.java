@@ -22,12 +22,22 @@ public final class ObjectPointer extends Object {
     //     return result;
     // }
 
-    @Override
-    public String toString() {
+    public String addr() {
         if (belong == null) {
+            assert false;
             return id.toString();
         } else {
             return belong.getAddr() + "." + id;
+        }
+    }
+
+    @Override
+    public String toString() {
+        if (belong == null) {
+            assert false;
+            return "[ " + id.toString() + " ]";
+        } else {
+            return "[ " + belong.getAddr() + "." + id + " ]";
         }
     }
 }

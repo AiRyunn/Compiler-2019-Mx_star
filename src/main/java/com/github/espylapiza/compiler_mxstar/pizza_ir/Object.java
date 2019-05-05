@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class Object extends ProgramFragment {
     public FuncDefinition belong;
-    public final String name;
+    public String name;
     public final Type type;
     protected ObjectID id;
 

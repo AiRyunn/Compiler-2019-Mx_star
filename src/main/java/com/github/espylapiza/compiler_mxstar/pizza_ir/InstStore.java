@@ -17,6 +17,6 @@ public final class InstStore extends Inst {
 
     @Override
     public String toString() {
-        return "[ " + dst + " ] = " + src;
+        return dst + " = " + src;
     }
 }

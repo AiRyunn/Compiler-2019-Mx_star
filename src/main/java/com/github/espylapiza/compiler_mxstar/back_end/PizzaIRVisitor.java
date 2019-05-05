@@ -3,6 +3,7 @@ package com.github.espylapiza.compiler_mxstar.back_end;
 import java.util.Arrays;
 import java.util.List;
 import com.github.espylapiza.compiler_mxstar.nasm.DirectiveExtern;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionAdd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionCall;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionMov;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionPop;
@@ -91,26 +92,33 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(InstCall inst) {
-        switch (inst.func.getAddr().toString()) {
-            case "_MS_int.__add__":
-                break;
-            default:
-                int index = 0;
-                for (Object param : inst.params) {
-                    Operand operand = allocator.get(param);
-                    if (index < 6) {
-                        nasm.sectionText.addItem(new InstructionMov(regParams.get(index), operand));
-                    } else {
-                        nasm.sectionText.addItem(new InstructionPush(operand));
-                    }
-                    index++;
+        if (inst.func instanceof FuncBuiltin) {
+            if (inst.params.count() == 1) {
+                // unary operator
+                addUnaryOperator(inst.func, allocator.get(inst.dst),
+                        allocator.get(inst.params.get(0)));
+            } else {
+                // binary operator
+                addBinaryOperator(inst.func, allocator.get(inst.dst),
+                        allocator.get(inst.params.get(0)), allocator.get(inst.params.get(1)));
+            }
+        } else {
+            int index = 0;
+            for (Object param : inst.params) {
+                Operand operand = allocator.get(param);
+                if (index < 6) {
+                    nasm.sectionText.addItem(new InstructionMov(regParams.get(index), operand));
+                } else {
+                    nasm.sectionText.addItem(new InstructionPush(operand));
                 }
-                nasm.sectionText.addItem(
-                        new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
-                if (inst.dst != null) {
-                    nasm.sectionText
-                            .addItem(new InstructionMov(allocator.get(inst.dst), RegisterSet.rax));
-                }
+                index++;
+            }
+            nasm.sectionText.addItem(
+                    new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
+            if (inst.dst != null) {
+                nasm.sectionText
+                        .addItem(new InstructionMov(allocator.get(inst.dst), RegisterSet.rax));
+            }
         }
     }
 
@@ -141,6 +149,23 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     @Override
     public void visit(Scope scope) {
         System.out.println("Displaying Inst.");
+    }
+
+    private void addUnaryOperator(Func func, Operand dst, Operand src) {
+        //nasm.sectionText.addItem(new InstructionSub(RegisterSet.rsp, stackSize));
+    }
+
+    private void addBinaryOperator(Func func, Operand dst, Operand lhs, Operand rhs) {
+        switch (func.getAddr().toString()) {
+            case "_MS_int.__add__":
+                nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, lhs));
+                nasm.sectionText.addItem(new InstructionAdd(RegisterSet.rax, rhs));
+                break;
+            default:
+                assert false;
+                break;
+        }
+        nasm.sectionText.addItem(new InstructionAdd(dst, RegisterSet.rax));
     }
 
     private void addDirectiveExtern(String strFunc) {

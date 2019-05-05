@@ -657,7 +657,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        Object obj = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), name, type));
+        Object obj = allocateVariable(new Object(trace.getCurrentFunc(), name, type));
         defineVar(obj);
 
         return obj;
@@ -687,10 +687,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), name, type));
-        defineVar(dst);
+        // Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), name, type));
+        // defineVar(dst);
 
-        manager.addInstruction(new InstStore((ObjectPointer) dst, src));
+        // manager.addInstruction(new InstStore((ObjectPointer) dst, src));
+        src.name = name;
+        defineVar(src);
 
         return null;
     }
@@ -714,7 +716,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        manager.addInstruction(new InstStore((ObjectPointer) dst, src));
+        if (dst instanceof ObjectPointer) {
+            manager.addInstruction(new InstStore((ObjectPointer) dst, src));
+        }
+
 
         return null;
     }
@@ -743,7 +748,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitIdentifierLvalue(Mx_starParser.IdentifierLvalueContext ctx) {
         String name = ctx.Identifier().getText();
 
-        ObjectPointer src = (ObjectPointer) trace.getVar(name);
+        Object src = (Object) trace.getVar(name);
         FuncExtra func = trace.getCurrentFunc();
 
         if (src != null && src.belong == func) {
@@ -756,7 +761,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             if (class1.hasVariable(name)) {
                 // member variable
                 ObjectPointer dst = new ObjectPointer(func, null, class1.getVarType(name));
-                manager.addInstruction(new InstMember(dst, src, name));
+                manager.addInstruction(new InstMember(dst, (ObjectPointer) src, name));
                 return dst;
             }
             if (class1.hasMethod(name)) {
@@ -977,7 +982,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitSubscriptLvalue(Mx_starParser.SubscriptLvalueContext ctx) {
-        ObjectPointer array = (ObjectPointer) visit(ctx.array);
+        Object array = (Object) visit(ctx.array);
 
         Type type = array.type;
         if (!(type instanceof TypeArray)) {
@@ -1001,7 +1006,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitSubscriptObject(Mx_starParser.SubscriptObjectContext ctx) {
-        ObjectPointer array = (ObjectPointer) visit(ctx.array);
+        Object array = (Object) visit(ctx.array);
 
         Type type = array.type;
         if (!(type instanceof TypeArray)) {
