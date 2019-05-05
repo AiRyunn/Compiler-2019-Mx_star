@@ -11,8 +11,7 @@ import com.github.espylapiza.compiler_mxstar.nasm.OperandInt;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandMemory;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandString;
 import com.github.espylapiza.compiler_mxstar.nasm.RegisterSet;
-import com.github.espylapiza.compiler_mxstar.nasm.SectionItem;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectConstant;
@@ -34,7 +33,7 @@ public class RegisterAllocator {
         return stackSize;
     }
 
-    void naiveAllocate(NASM nasm, Func func) {
+    void naiveAllocate(NASM nasm, FuncExtra func) {
         int index = 0, top = 0; // 1 base
         for (Object obj : func.getParams()) {
             index++;
@@ -57,11 +56,12 @@ public class RegisterAllocator {
                     } else if (obj instanceof ObjectString) {
                         OperandString operandStr = new OperandString(((ObjectString) obj).value);
                         Label label = Label.newDB();
-                        nasm.sectionData
-                                .addItem(new SectionItem(label, new InstructionDB(operandStr)));
+                        nasm.sectionData.addItem(label);
+                        nasm.sectionData.addItem(new InstructionDB(operandStr));
                         operand = new OperandDBAddr(label);
+                    } else {
+                        operand = null;
                     }
-                    operand = null;
                 } else {
                     operand = new OperandMemory(RegisterSet.rbp, -8 * (++top));
                 }

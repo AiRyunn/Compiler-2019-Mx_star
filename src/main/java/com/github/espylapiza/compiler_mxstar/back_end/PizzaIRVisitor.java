@@ -15,10 +15,11 @@ import com.github.espylapiza.compiler_mxstar.nasm.Operand;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandFuncAddr;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandRegister;
 import com.github.espylapiza.compiler_mxstar.nasm.RegisterSet;
-import com.github.espylapiza.compiler_mxstar.nasm.SectionItem;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
@@ -43,7 +44,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(PizzaIR ir) {
-        Func initFunc = ir.funcList.get(FuncAddr.createGlobalFuncAddr("_init"));
+        FuncExtra initFunc = (FuncExtra) ir.funcList.get(FuncAddr.createGlobalFuncAddr("_init"));
         // TODO: process global variables here
 
         for (Func func : ir.funcList) {
@@ -51,37 +52,33 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
                 addDirectiveExtern(func.getAddr().toString());
                 continue;
             }
-            if (func.getScps().isEmpty()) {
+            if (func instanceof FuncBuiltin) {
                 continue;
             }
 
-            beAccept(func);;
+            beAccept((FuncExtra) func);
         }
     }
 
     @Override
-    public void visit(Func func) {
+    public void visit(FuncExtra func) {
         allocator.naiveAllocate(nasm, func);
 
         int stackSize = allocator.getStackSize();
         int index;
         for (Scope scp : func.getScps()) {
-            nasm.sectionText.addItem(new SectionItem(new Label(scp.getLabel()), null));
+            nasm.sectionText.addItem(new Label(scp.getLabel()));
             if (scp.getType() == ScopeType.FUNC) {
                 // enter the func
-                nasm.sectionText
-                        .addItem(new SectionItem(null, new InstructionPush(RegisterSet.rbp)));
-                nasm.sectionText.addItem(new SectionItem(null,
-                        new InstructionMov(RegisterSet.rbp, RegisterSet.rsp)));
-                nasm.sectionText.addItem(
-                        new SectionItem(null, new InstructionSub(RegisterSet.rsp, stackSize)));
+                nasm.sectionText.addItem(new InstructionPush(RegisterSet.rbp));
+                nasm.sectionText.addItem(new InstructionMov(RegisterSet.rbp, RegisterSet.rsp));
+                nasm.sectionText.addItem(new InstructionSub(RegisterSet.rsp, stackSize));
 
                 index = 0;
                 for (Object obj : func.getParams()) {
                     if (index < 6) {
                         Operand operand = allocator.get(obj);
-                        nasm.sectionText.addItem(new SectionItem(null,
-                                new InstructionMov(operand, regParams.get(index))));
+                        nasm.sectionText.addItem(new InstructionMov(operand, regParams.get(index)));
                     }
                     index++;
                 }
@@ -94,48 +91,50 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(InstCall inst) {
-        int index = 0;
-        for (Object param : inst.params) {
-            Operand operand = allocator.get(param);
-            if (index < 6) {
+        switch (inst.func.getAddr().toString()) {
+            case "_MS_int.__add__":
+                break;
+            default:
+                int index = 0;
+                for (Object param : inst.params) {
+                    Operand operand = allocator.get(param);
+                    if (index < 6) {
+                        nasm.sectionText.addItem(new InstructionMov(regParams.get(index), operand));
+                    } else {
+                        nasm.sectionText.addItem(new InstructionPush(operand));
+                    }
+                    index++;
+                }
                 nasm.sectionText.addItem(
-                        new SectionItem(null, new InstructionMov(regParams.get(index), operand)));
-            } else {
-                nasm.sectionText.addItem(new SectionItem(null, new InstructionPush(operand)));
-            }
-            index++;
-        }
-        nasm.sectionText.addItem(new SectionItem(null,
-                new InstructionCall(new OperandFuncAddr(inst.getAddr().toString()))));
-        if (inst.dst != null) {
-            nasm.sectionText.addItem(new SectionItem(null,
-                    new InstructionMov(allocator.get(inst.dst), RegisterSet.rax)));
+                        new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
+                if (inst.dst != null) {
+                    nasm.sectionText
+                            .addItem(new InstructionMov(allocator.get(inst.dst), RegisterSet.rax));
+                }
         }
     }
 
     @Override
     public void visit(InstRet inst) {
         if (inst.obj != null) {
-            nasm.sectionText.addItem(new SectionItem(null,
-                    new InstructionMov(RegisterSet.rax, allocator.get(inst.obj))));
+            nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, allocator.get(inst.obj)));
         }
-        nasm.sectionText.addItem(
-                new SectionItem(null, new InstructionMov(RegisterSet.rsp, RegisterSet.rbp)));
-        nasm.sectionText.addItem(new SectionItem(null, new InstructionPop(RegisterSet.rbp)));
-        nasm.sectionText.addItem(new SectionItem(null, new InstructionRet()));
+        nasm.sectionText.addItem(new InstructionMov(RegisterSet.rsp, RegisterSet.rbp));
+        nasm.sectionText.addItem(new InstructionPop(RegisterSet.rbp));
+        nasm.sectionText.addItem(new InstructionRet());
     }
 
     @Override
     public void visit(InstStore inst) {
-        nasm.sectionText.addItem(new SectionItem(null,
-                new InstructionMov(allocator.get(inst.dst), allocator.get(inst.src))));
+        nasm.sectionText
+                .addItem(new InstructionMov(allocator.get(inst.dst), allocator.get(inst.src)));
     }
 
     @Override
     public void visit(Inst inst) {
         if (inst instanceof Inst) {
             System.out.println(inst.getClass());
-            // assert false;
+            assert false;
         }
     }
 

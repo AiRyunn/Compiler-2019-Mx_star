@@ -22,6 +22,7 @@ public class Compiler {
 
     Compiler(boolean semantic, InputStream istream, OutputStream asmOstream,
             OutputStream irOstream) {
+        this.semantic = semantic;
         this.istream = istream;
         this.asmOstream = asmOstream;
         this.irOstream = irOstream;

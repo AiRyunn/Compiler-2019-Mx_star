@@ -1,11 +1,20 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-import java.util.List;
-
 public final class InstCall extends InstBaseCall {
     public Object dst;
-    private FuncAddr addr;
-    public List<Object> params;
+    public Func func;
+    public ParamList params;
+
+    /**
+     * 
+     * @param dst
+     * @param addr
+     * @param params
+     */
+    public InstCall(Object dst, Func func, ParamList params) {
+        this(func, params);
+        this.dst = dst;
+    }
 
     @Override
     public void accept(PizzaIRPartBaseVisitor visitor) {
@@ -17,35 +26,10 @@ public final class InstCall extends InstBaseCall {
      * @param addr
      * @param params
      */
-    public InstCall(FuncAddr addr, List<Object> params) {
+    public InstCall(Func func, ParamList params) {
         super();
-        this.setAddr(addr);
+        this.func = func;
         this.params = params;
-    }
-
-    /**
-     * @return the addr
-     */
-    public FuncAddr getAddr() {
-        return addr;
-    }
-
-    /**
-     * @param addr the addr to set
-     */
-    public void setAddr(FuncAddr addr) {
-        this.addr = addr;
-    }
-
-    /**
-     * 
-     * @param dst
-     * @param addr
-     * @param params
-     */
-    public InstCall(Object dst, FuncAddr addr, List<Object> params) {
-        this(addr, params);
-        this.dst = dst;
     }
 
     @Override
@@ -54,7 +38,7 @@ public final class InstCall extends InstBaseCall {
         if (dst != null) {
             result += dst + " = ";
         }
-        result += "call " + getAddr();
+        result += "call " + func.getAddr();
         for (Object param : params) {
             result += " " + param;
         }

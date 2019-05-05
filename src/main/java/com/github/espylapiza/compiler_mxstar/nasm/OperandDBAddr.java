@@ -8,7 +8,7 @@ public class OperandDBAddr extends Operand {
     }
 
     public OperandDBAddr(Label label) {
-        this.addr = label.toString();
+        this.addr = label.getName();
     }
 
     @Override

@@ -6,7 +6,7 @@ import java.util.Map;
 public final class Class extends Domain implements Cloneable {
     private final String name;
     private Map<String, Type> memVar = new HashMap<String, Type>();
-    private Map<String, Func> memMtd = new HashMap<String, Func>();
+    private Map<String, FuncDefinition> memMtd = new HashMap<String, FuncDefinition>();
 
     /**
      * 
@@ -42,7 +42,7 @@ public final class Class extends Domain implements Cloneable {
         memVar.put(name, type);
     }
 
-    public void addMethod(Func func) {
+    public void addMethod(FuncDefinition func) {
         if (hasVariable(func.getName())) {
             assert false;
         }
@@ -56,7 +56,7 @@ public final class Class extends Domain implements Cloneable {
         return memVar.get(member);
     }
 
-    public Func getMethod(String member) {
+    public FuncDefinition getMethod(String member) {
         return memMtd.get(member);
     }
 }

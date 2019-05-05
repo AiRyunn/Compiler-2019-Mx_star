@@ -19,7 +19,6 @@ public class NASMTranslator {
 
         PizzaIRVisitor visitor = new PizzaIRVisitor(nasm);
         ir.accept(visitor);
-        // addSections(ir);
     }
 
     /**

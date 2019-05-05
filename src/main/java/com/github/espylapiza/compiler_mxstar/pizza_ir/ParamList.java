@@ -16,6 +16,12 @@ public class ParamList extends ProgramFragment implements Iterable<Object> {
         params.add(obj);
     }
 
+    public ParamList(Object obj1, Object obj2) {
+        params = new ArrayList<Object>();
+        params.add(obj1);
+        params.add(obj2);
+    }
+
     public ParamList(List<Object> objs) {
         params = objs;
     }

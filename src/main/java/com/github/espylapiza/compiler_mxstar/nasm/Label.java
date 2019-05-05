@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class Label {
+public class Label extends SectionItem {
     private final String name;
     private static int db_index = 0;
 
@@ -12,8 +12,12 @@ public class Label {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public String toString() {
-        return name;
+        return name + ":";
     }
 }

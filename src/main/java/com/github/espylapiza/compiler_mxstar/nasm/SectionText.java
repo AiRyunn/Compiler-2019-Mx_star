@@ -19,7 +19,7 @@ public class SectionText extends Section {
     public String toString() {
         String result = super.getDeclaration();
         for (SectionItem item : items) {
-            result += item.toString();
+            result += item.toString() + "\n";
         }
         return result;
     }

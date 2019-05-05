@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class ObjectPointer extends Object {
 
-    public ObjectPointer(Func belong, String name, Type type) {
+    public ObjectPointer(FuncDefinition belong, String name, Type type) {
         super(belong, name, type);
     }
 

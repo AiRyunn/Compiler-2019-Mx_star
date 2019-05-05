@@ -6,12 +6,14 @@ import java.util.Stack;
 import java.util.logging.Logger;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
@@ -47,17 +49,18 @@ public class PizzaIRBuilder {
 
     private void registerBuiltinFunc() {
         Arrays.asList(
-                new Func(FuncAddr.createGlobalFuncAddr("_init"), "_init", ir.typeTable.get("void"),
-                        new ParamList()),
-                new Func(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
+                new FuncExtra(FuncAddr.createGlobalFuncAddr("_init"), "_init",
+                        ir.typeTable.get("void"), new ParamList()),
+                new FuncBuiltin(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new Func(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
+                new FuncBuiltin(FuncAddr.createFuncAddr("println"), "println",
+                        ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new Func(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
-                        new ParamList()),
-                new Func(FuncAddr.createFuncAddr("getString"), "getString",
+                new FuncBuiltin(FuncAddr.createFuncAddr("getInt"), "getInt",
+                        ir.typeTable.get("int"), new ParamList()),
+                new FuncBuiltin(FuncAddr.createFuncAddr("getString"), "getString",
                         ir.typeTable.get("string"), new ParamList()),
-                new Func(FuncAddr.createFuncAddr("toString"), "toString",
+                new FuncBuiltin(FuncAddr.createFuncAddr("toString"), "toString",
                         ir.typeTable.get("string"),
                         new ParamList(new Object(null, "num", ir.typeTable.get("int")))))
                 .forEach(func -> {
@@ -81,7 +84,7 @@ class DomainTrace {
     private final static Logger LOGGER = Logger.getLogger(DomainTrace.class.getName());
 
     private Class currentClass;
-    private Func currentFunc;
+    private FuncExtra currentFunc;
 
     private Integer depth = 0;
     private Stack<VarAndDepth> varStack = new Stack<VarAndDepth>();
@@ -111,7 +114,7 @@ class DomainTrace {
         return currentClass;
     }
 
-    Func getCurrentFunc() {
+    FuncExtra getCurrentFunc() {
         return currentFunc;
     }
 
@@ -119,8 +122,8 @@ class DomainTrace {
         depth++;
         if (dom instanceof Class) {
             currentClass = (Class) dom;
-        } else if (dom instanceof Func) {
-            currentFunc = (Func) dom;
+        } else if (dom instanceof FuncExtra) {
+            currentFunc = (FuncExtra) dom;
         }
         doms.add(dom);
     }
@@ -136,7 +139,7 @@ class DomainTrace {
         Domain dom = doms.pop();
         if (dom instanceof Class) {
             currentClass = null;
-        } else if (dom instanceof Func) {
+        } else if (dom instanceof FuncExtra) {
             currentFunc = null;
         }
     }
@@ -180,7 +183,7 @@ class ScopeManager {
 
     private Stack<FuncBuilder> funcStack = new Stack<FuncBuilder>();
 
-    void enter(Func func) {
+    void enter(FuncExtra func) {
         LOGGER.fine("enterFunc: " + func.getAddr());
         funcStack.add(new FuncBuilder(func));
     }
@@ -228,11 +231,11 @@ class FuncBuilder {
         }
     }
 
-    Func func;
+    FuncExtra func;
     private Stack<ScopeWithStatus> scpStack = new Stack<ScopeWithStatus>();
     private int counter = 0;
 
-    FuncBuilder(Func func) {
+    FuncBuilder(FuncExtra func) {
         this.func = func;
     }
 
