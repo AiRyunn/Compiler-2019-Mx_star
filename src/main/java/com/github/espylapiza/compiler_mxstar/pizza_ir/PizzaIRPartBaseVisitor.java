@@ -18,4 +18,8 @@ public abstract class PizzaIRPartBaseVisitor {
     public abstract void visit(InstRet inst);
 
     public abstract void visit(InstStore inst);
+
+    public abstract void visit(InstBr inst);
+
+    public abstract void visit(InstJump inst);
 }

@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class InstJump extends InstBaseJump {
-    Scope to;
+    public Scope scp;
 
     InstJump() {
         super();
@@ -9,11 +9,16 @@ public final class InstJump extends InstBaseJump {
 
     public InstJump(Scope to) {
         super();
-        this.to = to;
+        this.scp = to;
+    }
+
+    @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
     }
 
     @Override
     public String toString() {
-        return "jump " + to.getLabel();
+        return "jump " + scp.getLabel();
     }
 }

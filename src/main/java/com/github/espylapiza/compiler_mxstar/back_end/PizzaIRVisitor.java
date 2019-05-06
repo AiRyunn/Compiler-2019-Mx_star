@@ -13,6 +13,8 @@ import com.github.espylapiza.compiler_mxstar.nasm.InstructionDec;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionIdiv;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionImul;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionInc;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionJmp;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionJz;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionMov;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionNot;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionOr;
@@ -28,6 +30,7 @@ import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetle;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetne;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionShl;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionSub;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionTest;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionXor;
 import com.github.espylapiza.compiler_mxstar.nasm.Label;
 import com.github.espylapiza.compiler_mxstar.nasm.NASM;
@@ -42,7 +45,9 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstStore;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIRPartBaseVisitor;
@@ -161,6 +166,19 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
         } else {
             nasm.sectionText.addItem(new InstructionMov(dst, src));
         }
+    }
+
+    @Override
+    public void visit(InstBr inst) {
+        nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, allocator.get(inst.obj)));
+        nasm.sectionText.addItem(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
+        nasm.sectionText.addItem(new InstructionJz(inst.scpIfFalse));
+        nasm.sectionText.addItem(new InstructionJmp(inst.scpIfTrue));
+    }
+
+    @Override
+    public void visit(InstJump inst) {
+        nasm.sectionText.addItem(new InstructionJmp(inst.scp));
     }
 
     @Override
@@ -340,7 +358,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     }
 
     private void addDirectiveExtern(String strFunc) {
-        nasm.addDirective(new DirectiveExtern(strFunc));
+        // nasm.addDirective(new DirectiveExtern(strFunc));
     }
 
     private void addInstruction(Instruction instruction) {

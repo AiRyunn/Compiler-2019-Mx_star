@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import org.antlr.v4.runtime.tree.ParseTree;
 import com.github.espylapiza.compiler_mxstar.optimizers.PizzaIROptimizer;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
-import com.github.espylapiza.compiler_mxstar.back_end.NASMTranslator;
+import com.github.espylapiza.compiler_mxstar.back_end.NASMTransformer;
 import com.github.espylapiza.compiler_mxstar.front_end.ParserBuilder;
 import com.github.espylapiza.compiler_mxstar.front_end.PizzaIRBuilder;
 import com.github.espylapiza.compiler_mxstar.nasm.NASM;
@@ -53,7 +53,7 @@ public class Compiler {
             optimizer.optimize();
 
             LOGGER.info("translate to NASM...");
-            NASMTranslator translator = new NASMTranslator(optimizer.getIR());
+            NASMTransformer translator = new NASMTransformer(optimizer.getIR());
             NASM nasm = translator.getNASM();
 
             // TODO: Printer

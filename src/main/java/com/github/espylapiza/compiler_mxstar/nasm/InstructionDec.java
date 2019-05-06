@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionDec extends Instruction {
-    private static final String name = "inc";
+    private static final String name = "dec";
     Operand src;
 
     public InstructionDec(Operand src) {

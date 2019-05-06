@@ -484,7 +484,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        manager.addInstruction(new InstBr(obj, scpLoop, scpEndLoop));
+        manager.addInstruction(new InstBr(obj, scpLoopBody, scpEndLoop));
 
         manager.popScope();
         manager.pushScope(scpLoopBody);

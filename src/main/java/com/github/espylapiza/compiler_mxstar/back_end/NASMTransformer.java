@@ -5,15 +5,14 @@ import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 
 
-public class NASMTranslator {
+public class NASMTransformer {
     private NASM nasm;
-
 
     /**
      * 
      * @param ir
      */
-    public NASMTranslator(PizzaIR ir) {
+    public NASMTransformer(PizzaIR ir) {
         nasm = new NASM();
         nasm.addDirective(new DirectiveGlobal("main"));
 

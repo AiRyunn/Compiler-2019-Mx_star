@@ -1,8 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class InstBr extends InstBaseJump {
-    Object obj;
-    Scope scpIfTrue, scpIfFalse;
+    public Object obj;
+    public Scope scpIfTrue;
+    public Scope scpIfFalse;
 
     InstBr() {
         super();
@@ -19,6 +20,11 @@ public final class InstBr extends InstBaseJump {
         this.obj = obj;
         this.scpIfTrue = scpIfTrue;
         this.scpIfFalse = scpIfFalse;
+    }
+
+    @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
     }
 
     @Override

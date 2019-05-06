@@ -5,7 +5,7 @@ public class Label extends SectionItem {
     private static int db_index = 0;
 
     public static Label newDB() {
-        return new Label("db_" + String.valueOf(db_index));
+        return new Label("db_" + String.valueOf(db_index++));
     }
 
     public Label(String name) {
