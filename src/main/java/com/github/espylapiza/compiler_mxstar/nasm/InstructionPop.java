@@ -10,6 +10,6 @@ public class InstructionPop extends Instruction {
 
     @Override
     public String toString() {
-        return String.format("%-30s%s", name, src.toString());
+        return String.format("%-8s%-8s%s", "", name, src.toString());
     }
 }

@@ -3,17 +3,37 @@ package com.github.espylapiza.compiler_mxstar.back_end;
 import java.util.Arrays;
 import java.util.List;
 import com.github.espylapiza.compiler_mxstar.nasm.DirectiveExtern;
+import com.github.espylapiza.compiler_mxstar.nasm.Instruction;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionAdd;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionAnd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionCall;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionCmp;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionCqo;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionDec;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionIdiv;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionImul;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionInc;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionMov;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionNot;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionOr;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionPop;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionPush;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionRet;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSar;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSete;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetg;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetge;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetl;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetle;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionSetne;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionShl;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionSub;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionXor;
 import com.github.espylapiza.compiler_mxstar.nasm.Label;
 import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 import com.github.espylapiza.compiler_mxstar.nasm.Operand;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandFuncAddr;
+import com.github.espylapiza.compiler_mxstar.nasm.OperandMemory;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandRegister;
 import com.github.espylapiza.compiler_mxstar.nasm.RegisterSet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
@@ -134,8 +154,13 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(InstStore inst) {
-        nasm.sectionText
-                .addItem(new InstructionMov(allocator.get(inst.dst), allocator.get(inst.src)));
+        Operand dst = allocator.get(inst.dst), src = allocator.get(inst.src);
+        if (src instanceof OperandMemory) {
+            nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, src));
+            nasm.sectionText.addItem(new InstructionMov(dst, RegisterSet.rax));
+        } else {
+            nasm.sectionText.addItem(new InstructionMov(dst, src));
+        }
     }
 
     @Override
@@ -151,24 +176,174 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
         System.out.println("Displaying Inst.");
     }
 
-    private void addUnaryOperator(Func func, Operand dst, Operand src) {
-        //nasm.sectionText.addItem(new InstructionSub(RegisterSet.rsp, stackSize));
+    private void addUnaryOperator(Func func, Operand dst, Operand op) {
+        switch (func.getAddr().toString()) {
+            case "_MS_bool.__lgcnot__":
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionNot(RegisterSet.rax));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__pos__":
+                break;
+            case "_MS_int.__neg__":
+                addInstruction(new InstructionXor(RegisterSet.rax, RegisterSet.rax));
+                addInstruction(new InstructionSub(RegisterSet.rax, op));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__bitinv__":
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionNot(RegisterSet.rax));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__preinc__":
+                addInstruction(new InstructionInc(op));
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__predec__":
+                addInstruction(new InstructionDec(op));
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__postinc__":
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                addInstruction(new InstructionInc(op));
+                break;
+            case "_MS_int.__postdec__":
+                addInstruction(new InstructionMov(RegisterSet.rax, op));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                addInstruction(new InstructionDec(op));
+                break;
+            default:
+                assert false;
+        }
     }
 
     private void addBinaryOperator(Func func, Operand dst, Operand lhs, Operand rhs) {
         switch (func.getAddr().toString()) {
+            case "_MS_bool.__lgcand__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_bool.__lgcor__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionOr(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_bool.__eq__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSete(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_bool.__ne__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetne(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
             case "_MS_int.__add__":
-                nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, lhs));
-                nasm.sectionText.addItem(new InstructionAdd(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionAdd(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__sub__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionSub(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__mul__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionImul(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__div__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCqo());
+                addInstruction(new InstructionIdiv(rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__mod__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCqo());
+                addInstruction(new InstructionIdiv(rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rdx));
+                break;
+            case "_MS_int.__shl__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
+                addInstruction(new InstructionShl(RegisterSet.rax, RegisterSet.cl));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__shr__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
+                addInstruction(new InstructionSar(RegisterSet.rax, RegisterSet.cl));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__and__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__xor__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionXor(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__or__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionOr(RegisterSet.rax, rhs));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__lt__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetl(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__gt__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetg(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__le__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetle(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__ge__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetge(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__eq__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSete(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+                break;
+            case "_MS_int.__ne__":
+                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+                addInstruction(new InstructionSetne(RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
                 break;
             default:
                 assert false;
-                break;
         }
-        nasm.sectionText.addItem(new InstructionAdd(dst, RegisterSet.rax));
     }
 
     private void addDirectiveExtern(String strFunc) {
         nasm.addDirective(new DirectiveExtern(strFunc));
+    }
+
+    private void addInstruction(Instruction instruction) {
+        nasm.sectionText.addItem(instruction);
     }
 }

@@ -9,6 +9,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
@@ -51,16 +52,16 @@ public class PizzaIRBuilder {
         Arrays.asList(
                 new FuncExtra(FuncAddr.createGlobalFuncAddr("_init"), "_init",
                         ir.typeTable.get("void"), new ParamList()),
-                new FuncBuiltin(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
+                new FuncExtern(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new FuncBuiltin(FuncAddr.createFuncAddr("println"), "println",
+                new FuncExtern(FuncAddr.createFuncAddr("println"), "println",
                         ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new FuncBuiltin(FuncAddr.createFuncAddr("getInt"), "getInt",
-                        ir.typeTable.get("int"), new ParamList()),
-                new FuncBuiltin(FuncAddr.createFuncAddr("getString"), "getString",
+                new FuncExtern(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
+                        new ParamList()),
+                new FuncExtern(FuncAddr.createFuncAddr("getString"), "getString",
                         ir.typeTable.get("string"), new ParamList()),
-                new FuncBuiltin(FuncAddr.createFuncAddr("toString"), "toString",
+                new FuncExtern(FuncAddr.createFuncAddr("toString"), "toString",
                         ir.typeTable.get("string"),
                         new ParamList(new Object(null, "num", ir.typeTable.get("int")))))
                 .forEach(func -> {
@@ -95,6 +96,9 @@ class DomainTrace {
     }
 
     void addVar(Object variable) {
+        if (variable.name == null) {
+            assert false;
+        }
         LOGGER.fine("allocate variable: " + variable.type + " " + variable.name);
         varStack.add(new VarAndDepth(variable, depth));
     }

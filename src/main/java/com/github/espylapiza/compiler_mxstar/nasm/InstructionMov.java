@@ -12,6 +12,6 @@ public class InstructionMov extends Instruction {
 
     @Override
     public String toString() {
-        return String.format("%-30s%s, %s", name, dst, src);
+        return String.format("%-8s%-8s%s, %s", "", name, dst, src);
     }
 }

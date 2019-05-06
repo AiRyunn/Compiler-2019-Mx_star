@@ -18,9 +18,9 @@ public class InstructionAdd extends Instruction {
     @Override
     public String toString() {
         if (src == null) {
-            return String.format("%-30s%s", name, dst + ", " + imm);
+            return String.format("%-8s%-8s%s", "", name, dst + ", " + imm);
         } else {
-            return String.format("%-30s%s", name, dst + ", " + src);
+            return String.format("%-8s%-8s%s", "", name, dst + ", " + src);
         }
     }
 }

@@ -52,9 +52,6 @@ public class Compiler {
             PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
             optimizer.optimize();
 
-            // FIXME
-            System.exit(0);
-
             LOGGER.info("translate to NASM...");
             NASMTranslator translator = new NASMTranslator(optimizer.getIR());
             NASM nasm = translator.getNASM();

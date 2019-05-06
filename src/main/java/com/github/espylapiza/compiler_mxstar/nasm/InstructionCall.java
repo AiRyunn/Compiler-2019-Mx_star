@@ -11,6 +11,6 @@ public class InstructionCall extends Instruction {
 
     @Override
     public String toString() {
-        return String.format("%-30s%s", name, addr.toString());
+        return String.format("%-8s%-8s%s", "", name, addr.toString());
     }
 }

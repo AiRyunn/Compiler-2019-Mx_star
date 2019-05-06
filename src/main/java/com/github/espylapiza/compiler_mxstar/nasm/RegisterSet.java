@@ -18,4 +18,8 @@ public class RegisterSet {
     public static final OperandRegister64Bit r13 = new OperandRegister64Bit("r13");
     public static final OperandRegister64Bit r14 = new OperandRegister64Bit("r14");
     public static final OperandRegister64Bit r15 = new OperandRegister64Bit("r15");
+
+    // al cl
+    public static final OperandRegister8Bit al = new OperandRegister8Bit("al");
+    public static final OperandRegister8Bit cl = new OperandRegister8Bit("cl");
 }

@@ -1,10 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class InstructionRet extends Instruction {
-    private static final String name = "ret";
-
-    public InstructionRet() {
-    }
+public class InstructionCqo extends Instruction {
+    private static final String name = "cqo";
 
     @Override
     public String toString() {

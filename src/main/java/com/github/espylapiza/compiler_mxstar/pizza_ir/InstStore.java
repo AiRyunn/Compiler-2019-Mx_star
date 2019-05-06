@@ -1,7 +1,7 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public final class InstStore extends Inst {
-    public ObjectPointer dst;
+    public Object dst;
     public Object src;
 
     @Override
@@ -9,7 +9,7 @@ public final class InstStore extends Inst {
         visitor.visit(this);
     }
 
-    public InstStore(ObjectPointer dst, Object src) {
+    public InstStore(Object dst, Object src) {
         super();
         this.dst = dst;
         this.src = src;

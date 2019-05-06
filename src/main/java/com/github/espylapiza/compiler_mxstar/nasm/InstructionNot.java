@@ -1,10 +1,10 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class InstructionPush extends Instruction {
-    private static final String name = "push";
+public class InstructionNot extends Instruction {
+    private static final String name = "not";
     Operand src;
 
-    public InstructionPush(Operand src) {
+    public InstructionNot(Operand src) {
         this.src = src;
     }
 

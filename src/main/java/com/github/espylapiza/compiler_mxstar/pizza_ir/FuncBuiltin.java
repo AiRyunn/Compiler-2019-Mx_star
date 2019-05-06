@@ -11,4 +11,9 @@ public class FuncBuiltin extends FuncDefinition {
     public FuncBuiltin(FuncAddr addr, String name, Type rtype, ParamList params) {
         super(addr, name, rtype, params);
     }
+
+    @Override
+    public String toString() {
+        return "";
+    }
 }

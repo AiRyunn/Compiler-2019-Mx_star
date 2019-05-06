@@ -1,16 +1,16 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class InstructionSub extends Instruction {
-    private static final String name = "sub";
+public class InstructionXor extends Instruction {
+    private static final String name = "xor";
     Operand dst, src;
     int imm;
 
-    public InstructionSub(Operand dst, int imm) {
+    public InstructionXor(Operand dst, int imm) {
         this.dst = dst;
         this.imm = imm;
     }
 
-    public InstructionSub(Operand dst, Operand src) {
+    public InstructionXor(Operand dst, Operand src) {
         this.dst = dst;
         this.src = src;
     }

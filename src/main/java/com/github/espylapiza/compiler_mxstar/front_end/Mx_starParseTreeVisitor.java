@@ -7,7 +7,7 @@ import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.ConstantContex
 import com.github.espylapiza.compiler_mxstar.parser.Mx_starParser.StatementContext;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectFunction;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectPointer;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectReference;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncDefinition;
@@ -248,8 +248,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         trace.enter(func);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            defineVar(allocateVariable(new ObjectPointer(func, "this",
-                    getTypeByName(trace.getCurrentClass().getName()))));
+            defineVar(allocateVariable(
+                    new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
+                    false);
         }
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
@@ -298,8 +299,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         trace.enter(func);
 
         if (state == VisitState.SEMANTIC_ANALYSIS && owner != null) {
-            defineVar(allocateVariable(new ObjectPointer(func, "this",
-                    getTypeByName(trace.getCurrentClass().getName()))));
+            defineVar(allocateVariable(
+                    new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
+                    false);
         }
 
         ParamList params = (ParamList) visit(ctx.paramListDefinition());
@@ -658,7 +660,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         Object obj = allocateVariable(new Object(trace.getCurrentFunc(), name, type));
-        defineVar(obj);
+        defineVar(obj, false);
 
         return obj;
     }
@@ -687,12 +689,17 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        // Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), name, type));
-        // defineVar(dst);
+        Object dst;
+        // if (src.type instanceof TypeNull || src.name != null) {
+        //     dst = allocateVariable(new Object(trace.getCurrentFunc(), name, type));
+        // } else {
+        //     src.name = name;
+        //     dst = src;
+        // }
 
-        // manager.addInstruction(new InstStore((ObjectPointer) dst, src));
-        src.name = name;
-        defineVar(src);
+        dst = allocateVariable(new Object(trace.getCurrentFunc(), name, type));
+        defineVar(dst, false);
+        manager.addInstruction(new InstStore(dst, src));
 
         return null;
     }
@@ -716,10 +723,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
         }
 
-        if (dst instanceof ObjectPointer) {
-            manager.addInstruction(new InstStore((ObjectPointer) dst, src));
-        }
-
+        manager.addInstruction(new InstStore(dst, src));
 
         return null;
     }
@@ -760,8 +764,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             Class class1 = trace.getCurrentClass();
             if (class1.hasVariable(name)) {
                 // member variable
-                ObjectPointer dst = new ObjectPointer(func, null, class1.getVarType(name));
-                manager.addInstruction(new InstMember(dst, (ObjectPointer) src, name));
+                ObjectReference dst = new ObjectReference(func, null, class1.getVarType(name));
+                manager.addInstruction(new InstMember(dst, src, name));
                 return dst;
             }
             if (class1.hasMethod(name)) {
@@ -795,7 +799,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             Class class1 = trace.getCurrentClass();
             if (class1.hasVariable(name)) {
                 // member variable
-                return new ObjectPointer(currentFunc, name, class1.getVarType(name));
+                return new ObjectReference(currentFunc, name, class1.getVarType(name));
             }
             if (class1.hasMethod(name)) {
                 // member method
@@ -857,7 +861,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         // TODO: alloc size, syntactic sugar new: Object[size][size]
-        Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), null, type));
+        Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
         manager.addInstruction(new InstAlloc(dst, null));
 
         return dst;
@@ -898,12 +902,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) {
-        ObjectPointer src;
-
-        src = (ObjectPointer) visit(ctx.lvalue());
+        Object src = (Object) visit(ctx.lvalue());
 
         String name = ctx.Identifier().getText();
-
         Type type = src.type.getTypeClass().getVarType(name);
 
         if (type == null) {
@@ -911,8 +912,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        ObjectPointer dst = (ObjectPointer) allocateVariable(
-                new ObjectPointer(trace.getCurrentFunc(), null, type));
+        ObjectReference dst = (ObjectReference) allocateVariable(
+                new ObjectReference(trace.getCurrentFunc(), null, type));
         manager.addInstruction(new InstMember(dst, src, name));
 
         return dst;
@@ -930,8 +931,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (class1.hasVariable(name)) {
             type = class1.getVarType(name);
 
-            Object dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), null, type));
-            manager.addInstruction(new InstMember((ObjectPointer) dst, (ObjectPointer) src, name));
+            ObjectReference dst = (ObjectReference) allocateVariable(
+                    new ObjectReference(trace.getCurrentFunc(), null, type));
+            manager.addInstruction(new InstMember(dst, src, name));
             return dst;
         }
 
@@ -971,7 +973,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (rtype instanceof TypeVoid) {
             dst = null;
         } else if (rtype instanceof Pointer) {
-            dst = allocateVariable(new ObjectPointer(trace.getCurrentFunc(), null, rtype));
+            dst = allocateVariable(new ObjectReference(trace.getCurrentFunc(), null, rtype));
         } else {
             dst = allocateVariable(new Object(trace.getCurrentFunc(), null, rtype));
         }
@@ -998,8 +1000,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        Object dst = allocateVariable(new ObjectPointer(array.belong, null, type));
-        manager.addInstruction(new InstOffset((ObjectPointer) dst, array, sub));
+        Object dst = allocateVariable(new ObjectReference(array.belong, null, type));
+        manager.addInstruction(new InstOffset((ObjectReference) dst, array, sub));
 
         return dst;
     }
@@ -1022,8 +1024,8 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        Object dst = allocateVariable(new ObjectPointer(array.belong, null, type));
-        manager.addInstruction(new InstOffset((ObjectPointer) dst, array, sub));
+        Object dst = allocateVariable(new ObjectReference(array.belong, null, type));
+        manager.addInstruction(new InstOffset((ObjectReference) dst, array, sub));
 
         return dst;
     }
@@ -1230,12 +1232,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         return obj;
     }
 
-    private void defineVar(Object obj) {
+    private void defineVar(Object obj, boolean shadowing) {
         if (state != VisitState.SEMANTIC_ANALYSIS) {
             return;
         }
 
-        if (!trace.canAllocate(obj.name)) {
+        if (!shadowing && !trace.canAllocate(obj.name)) {
             assert false;
         }
         trace.addVar(obj);
