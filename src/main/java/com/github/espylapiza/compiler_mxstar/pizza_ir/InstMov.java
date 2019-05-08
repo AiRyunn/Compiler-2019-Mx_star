@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public final class InstStore extends Inst {
+public final class InstMov extends Inst {
     public Object dst;
     public Object src;
 
@@ -9,7 +9,7 @@ public final class InstStore extends Inst {
         visitor.visit(this);
     }
 
-    public InstStore(Object dst, Object src) {
+    public InstMov(Object dst, Object src) {
         super();
         this.dst = dst;
         this.src = src;
@@ -17,6 +17,6 @@ public final class InstStore extends Inst {
 
     @Override
     public String toString() {
-        return "[ " + dst + " ] = " + src;
+        return dst + " = " + src;
     }
 }

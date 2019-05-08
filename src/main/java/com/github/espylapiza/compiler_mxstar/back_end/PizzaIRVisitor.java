@@ -2,8 +2,6 @@ package com.github.espylapiza.compiler_mxstar.back_end;
 
 import java.util.Arrays;
 import java.util.List;
-import com.github.espylapiza.compiler_mxstar.nasm.DirectiveExtern;
-import com.github.espylapiza.compiler_mxstar.nasm.Instruction;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionAdd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionAnd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionCall;
@@ -36,22 +34,30 @@ import com.github.espylapiza.compiler_mxstar.nasm.Label;
 import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 import com.github.espylapiza.compiler_mxstar.nasm.Operand;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandFuncAddr;
-import com.github.espylapiza.compiler_mxstar.nasm.OperandMemory;
+import com.github.espylapiza.compiler_mxstar.nasm.OperandInt;
+import com.github.espylapiza.compiler_mxstar.nasm.OperandMem;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandRegister;
 import com.github.espylapiza.compiler_mxstar.nasm.RegisterSet;
+import com.github.espylapiza.compiler_mxstar.nasm.SectionItem;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAlloc;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstLoad;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstMov;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.InstOffset;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstStore;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIRPartBaseVisitor;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
@@ -93,18 +99,18 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
         int stackSize = allocator.getStackSize();
         int index;
         for (Scope scp : func.getScps()) {
-            nasm.sectionText.addItem(new Label(scp.getLabel()));
+            addInstruction(new Label(scp.getLabel()));
             if (scp.getType() == ScopeType.FUNC) {
                 // enter the func
-                nasm.sectionText.addItem(new InstructionPush(RegisterSet.rbp));
-                nasm.sectionText.addItem(new InstructionMov(RegisterSet.rbp, RegisterSet.rsp));
-                nasm.sectionText.addItem(new InstructionSub(RegisterSet.rsp, stackSize));
+                addInstruction(new InstructionPush(RegisterSet.rbp));
+                addInstruction(new InstructionMov(RegisterSet.rbp, RegisterSet.rsp));
+                addInstruction(new InstructionSub(RegisterSet.rsp, stackSize));
 
                 index = 0;
                 for (Object obj : func.getParams()) {
                     if (index < 6) {
-                        Operand operand = allocator.get(obj);
-                        nasm.sectionText.addItem(new InstructionMov(operand, regParams.get(index)));
+                        Operand operand = getOperand(obj);
+                        addInstruction(new InstructionMov(operand, regParams.get(index)));
                     }
                     index++;
                 }
@@ -120,29 +126,27 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
         if (inst.func instanceof FuncBuiltin) {
             if (inst.params.count() == 1) {
                 // unary operator
-                addUnaryOperator(inst.func, allocator.get(inst.dst),
-                        allocator.get(inst.params.get(0)));
+                addUnaryOperator(inst.func, getOperand(inst.dst), getOperand(inst.params.get(0)));
             } else {
                 // binary operator
-                addBinaryOperator(inst.func, allocator.get(inst.dst),
-                        allocator.get(inst.params.get(0)), allocator.get(inst.params.get(1)));
+                addBinaryOperator(inst.func, getOperand(inst.dst), getOperand(inst.params.get(0)),
+                        getOperand(inst.params.get(1)));
             }
         } else {
             int index = 0;
             for (Object param : inst.params) {
-                Operand operand = allocator.get(param);
+                Operand operand = getOperand(param);
                 if (index < 6) {
-                    nasm.sectionText.addItem(new InstructionMov(regParams.get(index), operand));
+                    addInstruction(new InstructionMov(regParams.get(index), operand));
                 } else {
-                    nasm.sectionText.addItem(new InstructionPush(operand));
+                    addInstruction(new InstructionPush(operand));
                 }
                 index++;
             }
-            nasm.sectionText.addItem(
+            addInstruction(
                     new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
             if (inst.dst != null) {
-                nasm.sectionText
-                        .addItem(new InstructionMov(allocator.get(inst.dst), RegisterSet.rax));
+                addInstruction(new InstructionMov(getOperand(inst.dst), RegisterSet.rax));
             }
         }
     }
@@ -150,35 +154,76 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     @Override
     public void visit(InstRet inst) {
         if (inst.obj != null) {
-            nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, allocator.get(inst.obj)));
+            addInstruction(new InstructionMov(RegisterSet.rax, getOperand(inst.obj)));
         }
-        nasm.sectionText.addItem(new InstructionMov(RegisterSet.rsp, RegisterSet.rbp));
-        nasm.sectionText.addItem(new InstructionPop(RegisterSet.rbp));
-        nasm.sectionText.addItem(new InstructionRet());
+        addInstruction(new InstructionMov(RegisterSet.rsp, RegisterSet.rbp));
+        addInstruction(new InstructionPop(RegisterSet.rbp));
+        addInstruction(new InstructionRet());
+    }
+
+    @Override
+    public void visit(InstMov inst) {
+        Operand dst = getOperand(inst.dst), src = getOperand(inst.src);
+        if (dst instanceof OperandRegister) {
+            addInstruction(new InstructionMov(dst, src));
+        } else {
+            addInstruction(new InstructionMov(RegisterSet.rax, src));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+        }
     }
 
     @Override
     public void visit(InstStore inst) {
-        Operand dst = allocator.get(inst.dst), src = allocator.get(inst.src);
-        if (src instanceof OperandMemory) {
-            nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, src));
-            nasm.sectionText.addItem(new InstructionMov(dst, RegisterSet.rax));
+        Operand dst = getOperand(inst.dst), src = getOperand(inst.src);
+        if (src instanceof OperandMem) {
+            OperandRegister src_reg = RegisterSet.rdx;
+            addInstruction(new InstructionMov(src_reg, src));
+            src = src_reg;
+        }
+        if (dst instanceof OperandRegister) {
+            addInstruction(new InstructionMov(new OperandMem((OperandRegister) dst, 0), src));
         } else {
-            nasm.sectionText.addItem(new InstructionMov(dst, src));
+            addInstruction(new InstructionMov(RegisterSet.rax, dst));
+            addInstruction(new InstructionMov(new OperandMem(RegisterSet.rax, 0), src));
         }
     }
 
     @Override
     public void visit(InstBr inst) {
-        nasm.sectionText.addItem(new InstructionMov(RegisterSet.rax, allocator.get(inst.obj)));
-        nasm.sectionText.addItem(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
-        nasm.sectionText.addItem(new InstructionJz(inst.scpIfFalse));
-        nasm.sectionText.addItem(new InstructionJmp(inst.scpIfTrue));
+        addInstruction(new InstructionMov(RegisterSet.rax, getOperand(inst.obj)));
+        addInstruction(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
+        addInstruction(new InstructionJz(inst.scpIfFalse));
+        addInstruction(new InstructionJmp(inst.scpIfTrue));
     }
 
     @Override
     public void visit(InstJump inst) {
-        nasm.sectionText.addItem(new InstructionJmp(inst.scp));
+        addInstruction(new InstructionJmp(inst.scp));
+    }
+
+    @Override
+    public void visit(InstAlloc inst) {
+        addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(inst.size)));
+        addInstruction(new InstructionInc(RegisterSet.rdi));
+        addInstruction(new InstructionImul(RegisterSet.rdi, 8));
+        addInstruction(new InstructionCall(new OperandFuncAddr("malloc")));
+        addInstruction(new InstructionMov(getOperand(inst.dst), RegisterSet.rax));
+    }
+
+    @Override
+    public void visit(InstOffset inst) {
+        addInstruction(new InstructionMov(RegisterSet.rdx, getOperand(inst.offset)));
+        addInstruction(new InstructionImul(RegisterSet.rdx, 8));
+        addInstruction(new InstructionMov(RegisterSet.rax, getOperand(inst.src)));
+        addInstruction(new InstructionAdd(RegisterSet.rax, RegisterSet.rdx));
+        addInstruction(new InstructionMov(getOperand(inst.dst), RegisterSet.rax));
+    }
+
+    @Override
+    public void visit(InstLoad inst) {
+        addInstruction(new InstructionMov(RegisterSet.rax, getOperand(inst.src)));
+        addInstruction(new InstructionMov(RegisterSet.rax, new OperandMem(RegisterSet.rax, 0)));
+        addInstruction(new InstructionMov(getOperand(inst.dst), RegisterSet.rax));
     }
 
     @Override
@@ -361,7 +406,17 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
         // nasm.addDirective(new DirectiveExtern(strFunc));
     }
 
-    private void addInstruction(Instruction instruction) {
-        nasm.sectionText.addItem(instruction);
+    private void addInstruction(SectionItem item) {
+        nasm.sectionText.addItem(item);
+    }
+
+    private Operand getOperand(Object obj) {
+        if (obj instanceof ObjectInt) {
+            return new OperandInt(((ObjectInt) obj).value);
+        } else if (obj instanceof ObjectBool) {
+            return new OperandInt(((ObjectBool) obj).value);
+        } else {
+            return allocator.get(obj);
+        }
     }
 }

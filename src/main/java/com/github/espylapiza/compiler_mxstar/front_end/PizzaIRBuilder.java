@@ -197,7 +197,7 @@ class ScopeManager {
     }
 
     void addInstruction(Inst inst) {
-        LOGGER.fine("addInstruction: " + inst.toString());
+        //        LOGGER.fine("addInstruction: " + inst.toString());
         funcStack.lastElement().addInstruction(inst);
     }
 

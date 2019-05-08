@@ -1,11 +1,11 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class InstOffset extends Inst {
-    ObjectReference dst;
-    Object src;
-    Object offset;
+    public Object dst;
+    public Object src;
+    public Object offset;
 
-    public InstOffset(ObjectReference dst, Object src, Object offset) {
+    public InstOffset(Object dst, Object src, Object offset) {
         super();
         this.dst = dst;
         this.src = src;
@@ -13,7 +13,12 @@ public class InstOffset extends Inst {
     }
 
     @Override
+    public void accept(PizzaIRPartBaseVisitor visitor) {
+        visitor.visit(this);
+    }
+
+    @Override
     public String toString() {
-        return dst.addr() + " = " + src + " offset " + offset;
+        return dst + " = " + src + " offset " + offset;
     }
 }

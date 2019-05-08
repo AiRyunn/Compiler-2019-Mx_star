@@ -1,12 +1,13 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class InstAlloc extends Inst {
+public class InstLoad extends Inst {
     public Object dst;
-    public Object size;
+    public Object src;
 
-    public InstAlloc(Object dst, Object size) {
+    public InstLoad(Object dst, Object src) {
+        super();
         this.dst = dst;
-        this.size = size;
+        this.src = src;
     }
 
     @Override
@@ -16,6 +17,6 @@ public class InstAlloc extends Inst {
 
     @Override
     public String toString() {
-        return dst + " = alloc " + size;
+        return dst + " = [ " + src + " ]";
     }
 }

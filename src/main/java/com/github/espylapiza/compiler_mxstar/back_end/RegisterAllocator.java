@@ -8,7 +8,7 @@ import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 import com.github.espylapiza.compiler_mxstar.nasm.Operand;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandDBAddr;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandInt;
-import com.github.espylapiza.compiler_mxstar.nasm.OperandMemory;
+import com.github.espylapiza.compiler_mxstar.nasm.OperandMem;
 import com.github.espylapiza.compiler_mxstar.nasm.OperandString;
 import com.github.espylapiza.compiler_mxstar.nasm.RegisterSet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
@@ -20,7 +20,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 
 // (8 * (top + 1) + 15) / 16 * 16
 public class RegisterAllocator {
-    Map<Object, Operand> maddr = new HashMap<Object, Operand>();
+    private Map<Object, Operand> maddr = new HashMap<Object, Operand>();
     private int stackSize;
 
     RegisterAllocator() {
@@ -38,10 +38,10 @@ public class RegisterAllocator {
         for (Object obj : func.getParams()) {
             index++;
             if (index <= 6) {
-                Operand operand = new OperandMemory(RegisterSet.rbp, -8 * (++top));
+                Operand operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
                 put(obj, operand);
             } else {
-                put(obj, new OperandMemory(RegisterSet.rbp, 8 * (index - 6) + 16));
+                put(obj, new OperandMem(RegisterSet.rbp, 8 * (index - 6) + 16));
             }
         }
 
@@ -63,7 +63,7 @@ public class RegisterAllocator {
                         operand = null;
                     }
                 } else {
-                    operand = new OperandMemory(RegisterSet.rbp, -8 * (++top));
+                    operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
                 }
                 put(obj, operand);
             }
@@ -75,16 +75,12 @@ public class RegisterAllocator {
         maddr.put(object, operand);
     }
 
-    boolean exists(Object object) {
-        return maddr.containsKey(object);
+    boolean exists(Object obj) {
+        return maddr.containsKey(obj);
     }
 
     Operand get(Object object) {
-        if (object instanceof ObjectInt) {
-            return new OperandInt(((ObjectInt) object).value);
-        } else if (object instanceof ObjectBool) {
-            return new OperandInt(((ObjectBool) object).value);
-        }
-        return maddr.get(object);
+        Operand result = maddr.get(object);
+        return result;
     }
 }
