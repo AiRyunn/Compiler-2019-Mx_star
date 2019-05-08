@@ -5,8 +5,11 @@ public class OperandString extends Operand {
 
     public OperandString(String str) {
         str = str.substring(1, str.length() - 1);
-        str = "`" + str + "`";
-        this.str = str + ", 0";
+
+        int len = str.length();
+        str = String.valueOf(len / 256 / 256 / 256) + ", " + String.valueOf(len / 256 / 256 % 256)
+                + ", " + String.valueOf(len / 256 % 256) + ", " + String.valueOf(len % 256) + ", "
+                + "`" + str + "`" + ", 0";
     }
 
     @Override

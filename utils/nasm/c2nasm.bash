@@ -32,6 +32,6 @@ sed -i -n '/SECTION .eh_frame/q;p' "$NASM_FILE"
 sed -i 's/;.*//g' "$NASM_FILE"
 sed -i 's/^M//g' "$NASM_FILE"
 sed -i 's/\s\+$//g' "$NASM_FILE"
-# sed -i 's/align=1//g' "$NASM_FILE"
+sed -i 's/align=1//g' "$NASM_FILE"
 rm "$O_FILE"
 cat $NASM_FILE

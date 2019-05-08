@@ -59,4 +59,8 @@ public final class Class extends Domain implements Cloneable {
     public FuncDefinition getMethod(String member) {
         return memMtd.get(member);
     }
+
+    public int getSize() {
+        return memVar.size() * 8;
+    }
 }

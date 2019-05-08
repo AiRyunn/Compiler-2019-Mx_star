@@ -3,6 +3,7 @@ package com.github.espylapiza.compiler_mxstar.back_end;
 import java.util.HashMap;
 import java.util.Map;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionDB;
+import com.github.espylapiza.compiler_mxstar.nasm.InstructionResq;
 import com.github.espylapiza.compiler_mxstar.nasm.Label;
 import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 import com.github.espylapiza.compiler_mxstar.nasm.Operand;
@@ -71,6 +72,14 @@ public class RegisterAllocator {
         stackSize = (8 * top + 15) / 16 * 16;
     }
 
+    public void bssAllocate(NASM nasm, FuncExtra initFunc) {
+        for (Object obj : initFunc.getDefinedVariables()) {
+            nasm.sectionBSS.addItem(new InstructionResq(obj.name));
+            Operand operand = new OperandMem(obj.name, 0);
+            put(obj, operand);
+        }
+    }
+
     private void put(Object object, Operand operand) {
         maddr.put(object, operand);
     }
@@ -83,4 +92,5 @@ public class RegisterAllocator {
         Operand result = maddr.get(object);
         return result;
     }
+
 }

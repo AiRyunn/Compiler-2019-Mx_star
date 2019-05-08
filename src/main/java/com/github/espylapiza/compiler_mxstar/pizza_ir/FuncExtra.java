@@ -74,8 +74,8 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
         result += "\tvar: (\n";
         for (int i = params.count(); i < varList.count(); i++) {
             if (varList.get(i).name != null) {
-                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + ", "
-                        + varList.get(i).name + "\n";
+                result += "\t\t" + varList.get(i) + ": " + varList.get(i).type.getName() + ", " + varList.get(i).name
+                        + "\n";
             }
         }
         result += "\t), (\n";
@@ -95,6 +95,16 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
             result += scp.toString();
         }
         result += "}";
+        return result;
+    }
+
+    public VarList getDefinedVariables() {
+        VarList result = new VarList();
+        for (int i = 0; i < varList.count(); i++) {
+            if (varList.get(i).name != null) {
+                result.add(varList.get(i));
+            }
+        }
         return result;
     }
 }

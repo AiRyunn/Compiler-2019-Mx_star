@@ -65,10 +65,11 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
 public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     private NASM nasm;
 
-    private final List<OperandRegister> regParams = Arrays.asList(RegisterSet.rdi, RegisterSet.rsi,
-            RegisterSet.rdx, RegisterSet.rcx, RegisterSet.r8, RegisterSet.r9);
+    private final List<OperandRegister> regParams = Arrays.asList(RegisterSet.rdi, RegisterSet.rsi, RegisterSet.rdx,
+            RegisterSet.rcx, RegisterSet.r8, RegisterSet.r9);
 
-    private RegisterAllocator allocator = new RegisterAllocator();
+    private RegisterAllocator allocatorGlobal = new RegisterAllocator();
+    private RegisterAllocator allocator;
 
     PizzaIRVisitor(NASM nasm) {
         this.nasm = nasm;
@@ -78,6 +79,8 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     public void visit(PizzaIR ir) {
         FuncExtra initFunc = (FuncExtra) ir.funcList.get(FuncAddr.createGlobalFuncAddr("_init"));
         // TODO: process global variables here
+
+        allocatorGlobal.bssAllocate(nasm, initFunc);
 
         for (Func func : ir.funcList) {
             if (func instanceof FuncExtern) {
@@ -94,6 +97,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(FuncExtra func) {
+        allocator = allocatorGlobal;
         allocator.naiveAllocate(nasm, func);
 
         int stackSize = allocator.getStackSize();
@@ -143,8 +147,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
                 }
                 index++;
             }
-            addInstruction(
-                    new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
+            addInstruction(new InstructionCall(new OperandFuncAddr(inst.func.getAddr().toString())));
             if (inst.dst != null) {
                 addInstruction(new InstructionMov(getOperand(inst.dst), RegisterSet.rax));
             }
@@ -230,7 +233,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     public void visit(Inst inst) {
         if (inst instanceof Inst) {
             System.out.println(inst.getClass());
-            assert false;
+            // assert false;
         }
     }
 
@@ -241,164 +244,164 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     private void addUnaryOperator(Func func, Operand dst, Operand op) {
         switch (func.getAddr().toString()) {
-            case "_MS_bool.__lgcnot__":
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionNot(RegisterSet.rax));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__pos__":
-                break;
-            case "_MS_int.__neg__":
-                addInstruction(new InstructionXor(RegisterSet.rax, RegisterSet.rax));
-                addInstruction(new InstructionSub(RegisterSet.rax, op));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__bitinv__":
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionNot(RegisterSet.rax));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__preinc__":
-                addInstruction(new InstructionInc(op));
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__predec__":
-                addInstruction(new InstructionDec(op));
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__postinc__":
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                addInstruction(new InstructionInc(op));
-                break;
-            case "_MS_int.__postdec__":
-                addInstruction(new InstructionMov(RegisterSet.rax, op));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                addInstruction(new InstructionDec(op));
-                break;
-            default:
-                assert false;
+        case "_MS_bool.__lgcnot__":
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionNot(RegisterSet.rax));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__pos__":
+            break;
+        case "_MS_int.__neg__":
+            addInstruction(new InstructionXor(RegisterSet.rax, RegisterSet.rax));
+            addInstruction(new InstructionSub(RegisterSet.rax, op));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__bitinv__":
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionNot(RegisterSet.rax));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__preinc__":
+            addInstruction(new InstructionInc(op));
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__predec__":
+            addInstruction(new InstructionDec(op));
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__postinc__":
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            addInstruction(new InstructionInc(op));
+            break;
+        case "_MS_int.__postdec__":
+            addInstruction(new InstructionMov(RegisterSet.rax, op));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            addInstruction(new InstructionDec(op));
+            break;
+        default:
+            assert false;
         }
     }
 
     private void addBinaryOperator(Func func, Operand dst, Operand lhs, Operand rhs) {
         switch (func.getAddr().toString()) {
-            case "_MS_bool.__lgcand__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_bool.__lgcor__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionOr(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_bool.__eq__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSete(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_bool.__ne__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetne(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__add__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionAdd(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__sub__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionSub(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__mul__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionImul(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__div__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCqo());
-                addInstruction(new InstructionIdiv(rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__mod__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCqo());
-                addInstruction(new InstructionIdiv(rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rdx));
-                break;
-            case "_MS_int.__shl__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
-                addInstruction(new InstructionShl(RegisterSet.rax, RegisterSet.cl));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__shr__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
-                addInstruction(new InstructionSar(RegisterSet.rax, RegisterSet.cl));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__and__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__xor__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionXor(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__or__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionOr(RegisterSet.rax, rhs));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__lt__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetl(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__gt__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetg(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__le__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetle(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__ge__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetge(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__eq__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSete(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            case "_MS_int.__ne__":
-                addInstruction(new InstructionMov(RegisterSet.rax, lhs));
-                addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
-                addInstruction(new InstructionSetne(RegisterSet.al));
-                addInstruction(new InstructionMov(dst, RegisterSet.rax));
-                break;
-            default:
-                assert false;
+        case "_MS_bool.__lgcand__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_bool.__lgcor__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionOr(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_bool.__eq__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSete(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_bool.__ne__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetne(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__add__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionAdd(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__sub__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionSub(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__mul__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionImul(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__div__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCqo());
+            addInstruction(new InstructionIdiv(rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__mod__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCqo());
+            addInstruction(new InstructionIdiv(rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rdx));
+            break;
+        case "_MS_int.__shl__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
+            addInstruction(new InstructionShl(RegisterSet.rax, RegisterSet.cl));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__shr__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rcx, rhs));
+            addInstruction(new InstructionSar(RegisterSet.rax, RegisterSet.cl));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__and__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionAnd(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__xor__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionXor(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__or__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionOr(RegisterSet.rax, rhs));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__lt__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetl(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__gt__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetg(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__le__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetle(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__ge__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetge(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__eq__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSete(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_int.__ne__":
+            addInstruction(new InstructionMov(RegisterSet.rax, lhs));
+            addInstruction(new InstructionCmp(RegisterSet.rax, rhs));
+            addInstruction(new InstructionSetne(RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        default:
+            assert false;
         }
     }
 

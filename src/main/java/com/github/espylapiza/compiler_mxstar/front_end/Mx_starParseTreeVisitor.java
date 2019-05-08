@@ -53,7 +53,6 @@ enum VisitState {
     TYPE_DECLARATION, DECLARATION, SEMANTIC_ANALYSIS
 }
 
-
 class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     private final static Logger LOGGER = Logger.getLogger(Mx_starParseTreeVisitor.class.getName());
 
@@ -84,8 +83,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         ctx.programSection().forEach(ch -> visit(ch));
 
         mainFunc = (FuncExtra) getFuncByAddr(FuncAddr.createGlobalFuncAddr("main"));
-        if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt)
-                || mainFunc.getParams().count() != 0) {
+        if (mainFunc == null || !(mainFunc.getRtype() instanceof TypeInt) || mainFunc.getParams().count() != 0) {
             assert false;
         }
 
@@ -109,13 +107,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitProgramVariableDeclarationStatement(
             Mx_starParser.ProgramVariableDeclarationStatementContext ctx) {
         switch (state) {
-            case TYPE_DECLARATION:
-                break;
-            case DECLARATION:
-                break;
-            case SEMANTIC_ANALYSIS:
-                visit(ctx.variableDeclarationStatement());
-                break;
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
+            break;
+        case SEMANTIC_ANALYSIS:
+            visit(ctx.variableDeclarationStatement());
+            break;
         }
         return null;
     }
@@ -124,13 +122,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitProgramVariableDefinitionStatement(
             Mx_starParser.ProgramVariableDefinitionStatementContext ctx) {
         switch (state) {
-            case TYPE_DECLARATION:
-                break;
-            case DECLARATION:
-                break;
-            case SEMANTIC_ANALYSIS:
-                visit(ctx.variableDefinitionStatement());
-                break;
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
+            break;
+        case SEMANTIC_ANALYSIS:
+            visit(ctx.variableDefinitionStatement());
+            break;
         }
         return null;
     }
@@ -141,17 +139,17 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String name = ctx.classDefinitionStatement().Identifier().getText();
 
         switch (state) {
-            case TYPE_DECLARATION:
-                Class class1 = new Class(name);
-                ir.classList.add(class1);
-                ir.typeTable.add(new TypeCustomClass(name, class1));
-                break;
-            case DECLARATION:
-            case SEMANTIC_ANALYSIS:
-                trace.enter(getClassByName(name));
-                ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
-                trace.exit();
-                break;
+        case TYPE_DECLARATION:
+            Class class1 = new Class(name);
+            ir.classList.add(class1);
+            ir.typeTable.add(new TypeCustomClass(name, class1));
+            break;
+        case DECLARATION:
+        case SEMANTIC_ANALYSIS:
+            trace.enter(getClassByName(name));
+            ctx.classDefinitionStatement().classMember().forEach(ch -> ch.accept(this));
+            trace.exit();
+            break;
         }
 
         return null;
@@ -161,15 +159,15 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitProgramFunctionDefinitionStatement(
             Mx_starParser.ProgramFunctionDefinitionStatementContext ctx) {
         switch (state) {
-            case TYPE_DECLARATION:
-                break;
-            case DECLARATION:
-                FuncExtra func = (FuncExtra) visit(ctx.functionDefinitionStatement());
-                ir.funcList.addFunc(func);
-                break;
-            case SEMANTIC_ANALYSIS:
-                visit(ctx.functionDefinitionStatement());
-                break;
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
+            FuncExtra func = (FuncExtra) visit(ctx.functionDefinitionStatement());
+            ir.funcList.addFunc(func);
+            break;
+        case SEMANTIC_ANALYSIS:
+            visit(ctx.functionDefinitionStatement());
+            break;
         }
         return null;
     }
@@ -180,18 +178,16 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitClassVariableDeclarationStatement(
             Mx_starParser.ClassVariableDeclarationStatementContext ctx) {
         switch (state) {
-            case TYPE_DECLARATION:
-                break;
-            case DECLARATION:
-                String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier()
-                        .getText();
-                Type type = getTypeByName(
-                        ctx.variableDeclarationStatement().variableDeclaration().type().getText());
-                trace.getCurrentClass().addVariable(name, type);
-                break;
-            case SEMANTIC_ANALYSIS:
-                visit(ctx.variableDeclarationStatement());
-                break;
+        case TYPE_DECLARATION:
+            break;
+        case DECLARATION:
+            String name = ctx.variableDeclarationStatement().variableDeclaration().Identifier().getText();
+            Type type = getTypeByName(ctx.variableDeclarationStatement().variableDeclaration().type().getText());
+            trace.getCurrentClass().addVariable(name, type);
+            break;
+        case SEMANTIC_ANALYSIS:
+            visit(ctx.variableDeclarationStatement());
+            break;
         }
         return null;
     }
@@ -235,8 +231,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     ////////////////////////////// Function //////////////////////////////
 
     @Override
-    public ProgramFragment visitConstructionFunctionStatement(
-            Mx_starParser.ConstructionFunctionStatementContext ctx) {
+    public ProgramFragment visitConstructionFunctionStatement(Mx_starParser.ConstructionFunctionStatementContext ctx) {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName("void");
@@ -253,8 +248,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         trace.enter(func);
 
         if (state == VisitState.SEMANTIC_ANALYSIS) {
-            defineVar(allocateVariable(
-                    new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
+            defineVar(allocateVariable(new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
                     false);
         }
 
@@ -281,8 +275,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitFunctionDefinitionStatement(
-            Mx_starParser.FunctionDefinitionStatementContext ctx) {
+    public ProgramFragment visitFunctionDefinitionStatement(Mx_starParser.FunctionDefinitionStatementContext ctx) {
         Class owner = trace.getCurrentClass();
         String name = ctx.Identifier().getText();
         Type rtype = getTypeByName(ctx.type().getText());
@@ -304,8 +297,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         trace.enter(func);
 
         if (state == VisitState.SEMANTIC_ANALYSIS && owner != null) {
-            defineVar(allocateVariable(
-                    new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
+            defineVar(allocateVariable(new Object(func, "this", getTypeByName(trace.getCurrentClass().getName()))),
                     false);
         }
 
@@ -382,8 +374,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitVariableAssignmentStatement(
-            Mx_starParser.VariableAssignmentStatementContext ctx) {
+    public ProgramFragment visitVariableAssignmentStatement(Mx_starParser.VariableAssignmentStatementContext ctx) {
         return visit(ctx.variableAssignment());
     }
 
@@ -404,8 +395,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitStmtConditionStatement(
-            Mx_starParser.StmtConditionStatementContext ctx) {
+    public ProgramFragment visitStmtConditionStatement(Mx_starParser.StmtConditionStatementContext ctx) {
         return visit(ctx.conditionStatement());
     }
 
@@ -415,8 +405,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitStmtCompoundStatement(
-            Mx_starParser.StmtCompoundStatementContext ctx) {
+    public ProgramFragment visitStmtCompoundStatement(Mx_starParser.StmtCompoundStatementContext ctx) {
         return visit(ctx.compoundStatement());
     }
 
@@ -551,20 +540,17 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitForCdt1VariableDeclaration(
-            Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
+    public ProgramFragment visitForCdt1VariableDeclaration(Mx_starParser.ForCdt1VariableDeclarationContext ctx) {
         return visit(ctx.variableDeclaration());
     }
 
     @Override
-    public ProgramFragment visitForCdt1VariableDefinition(
-            Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
+    public ProgramFragment visitForCdt1VariableDefinition(Mx_starParser.ForCdt1VariableDefinitionContext ctx) {
         return visit(ctx.variableDefinition());
     }
 
     @Override
-    public ProgramFragment visitForCdt1VariableAssignment(
-            Mx_starParser.ForCdt1VariableAssignmentContext ctx) {
+    public ProgramFragment visitForCdt1VariableAssignment(Mx_starParser.ForCdt1VariableAssignmentContext ctx) {
         return visit(ctx.variableAssignment());
     }
 
@@ -574,8 +560,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitForCdt3VariableAssignment(
-            Mx_starParser.ForCdt3VariableAssignmentContext ctx) {
+    public ProgramFragment visitForCdt3VariableAssignment(Mx_starParser.ForCdt3VariableAssignmentContext ctx) {
         return visit(ctx.variableAssignment());
     }
 
@@ -630,15 +615,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitVariableDeclarationStatement(
-            Mx_starParser.VariableDeclarationStatementContext ctx) {
+    public ProgramFragment visitVariableDeclarationStatement(Mx_starParser.VariableDeclarationStatementContext ctx) {
         visit(ctx.variableDeclaration());
         return null;
     }
 
     @Override
-    public ProgramFragment visitVariableDefinitionStatement(
-            Mx_starParser.VariableDefinitionStatementContext ctx) {
+    public ProgramFragment visitVariableDefinitionStatement(Mx_starParser.VariableDefinitionStatementContext ctx) {
         visit(ctx.variableDefinition());
         return null;
     }
@@ -815,8 +798,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             }
             if (class1.hasMethod(name)) {
                 // member method
-                return new ObjectFunction(class1.getMethod(name), currentFunc, name,
-                        getTypeByName("__method__"));
+                return new ObjectFunction(class1.getMethod(name), currentFunc, name, getTypeByName("__method__"));
             }
         }
 
@@ -883,65 +865,64 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         FuncDefinition funcAdd = getTypeByName("int").getTypeClass().getMethod("__add__"),
                 funcLt = getTypeByName("int").getTypeClass().getMethod("__lt__");
 
-        Object size =
-                allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("int")));
-        manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(0),
-                new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
-        manager.addInstruction(new InstAlloc(dst, size));
+        if (subscripts.isEmpty()) {
+            Object size = allocateVariable(
+                    new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), type.getTypeClass().getSize()));
+            manager.addInstruction(new InstAlloc(dst, size));
+        } else {
+            Object size = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
+            manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(0),
+                    new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 1))));
+            manager.addInstruction(new InstAlloc(dst, size));
 
-        Object[] subs = new Object[subscripts.size() - 1];
-        Scope[] scpLoops = new Scope[subscripts.size() - 1];
+            Object[] subs = new Object[subscripts.size() - 1];
+            Scope[] scpLoops = new Scope[subscripts.size() - 1];
 
-        Object last = dst;
-        for (int i = 0; i < subscripts.size() - 1; i++) {
-            subs[i] = allocateVariable(
-                    new Object(trace.getCurrentFunc(), null, getTypeByName("int")));
-            manager.addInstruction(new InstMov(subs[i],
-                    new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 0)));
+            Object last = dst;
+            for (int i = 0; i < subscripts.size() - 1; i++) {
+                subs[i] = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
+                manager.addInstruction(
+                        new InstMov(subs[i], new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 0)));
 
-            Scope scpLoopBody, scpEndLoop;
+                Scope scpLoopBody, scpEndLoop;
 
-            scpLoops[i] = manager.newScope(ScopeType.LOOP);
-            scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
-            scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
+                scpLoops[i] = manager.newScope(ScopeType.LOOP);
+                scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
+                scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
-            manager.addInstruction(new InstJump(scpLoops[i]));
-            manager.popScope();
-            manager.pushScope(scpEndLoop);
-            manager.pushScope(scpLoops[i]);
+                manager.addInstruction(new InstJump(scpLoops[i]));
+                manager.popScope();
+                manager.pushScope(scpEndLoop);
+                manager.pushScope(scpLoops[i]);
 
-            Object condition =
-                    allocateVariable(new Object(currentFunc, null, getTypeByName("bool")));
-            manager.addInstruction(
-                    new InstCall(condition, funcLt, new ParamList(subs[i], subscripts.get(i))));
-            manager.addInstruction(new InstBr(condition, scpLoopBody, scpEndLoop));
+                Object condition = allocateVariable(new Object(currentFunc, null, getTypeByName("bool")));
+                manager.addInstruction(new InstCall(condition, funcLt, new ParamList(subs[i], subscripts.get(i))));
+                manager.addInstruction(new InstBr(condition, scpLoopBody, scpEndLoop));
 
-            manager.popScope();
-            manager.pushScope(scpLoopBody);
+                manager.popScope();
+                manager.pushScope(scpLoopBody);
 
-            size = allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("int")));
-            manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(i),
-                    new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
+                size = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
+                manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(i),
+                        new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
 
-            Object addr = allocateVariable(
-                    new Object(currentFunc, null, ((TypeArray) last.type).getSubType()));
-            manager.addInstruction(new InstOffset(addr, last, subs[i]));
+                Object addr = allocateVariable(new Object(currentFunc, null, ((TypeArray) last.type).getSubType()));
+                manager.addInstruction(new InstOffset(addr, last, subs[i]));
 
-            Object next = allocateVariable(
-                    new Object(currentFunc, null, ((TypeArray) last.type).getSubType()));
+                Object next = allocateVariable(new Object(currentFunc, null, ((TypeArray) last.type).getSubType()));
 
-            manager.addInstruction(new InstAlloc(next, size));
-            manager.addInstruction(new InstStore(addr, next));
-            last = next;
+                manager.addInstruction(new InstAlloc(next, size));
+                manager.addInstruction(new InstStore(addr, next));
+                last = next;
+            }
+
+            for (int i = 0; i < subscripts.size() - 1; i++) {
+                manager.addInstruction(new InstCall(subs[i], funcAdd,
+                        new ParamList(subs[i], new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
+                manager.addInstruction(new InstJump(scpLoops[i]));
+                manager.popScope();
+            }
         }
-
-        for (int i = 0; i < subscripts.size() - 1; i++) {
-            manager.addInstruction(new InstCall(subs[i], funcAdd, new ParamList(subs[i],
-                    new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
-            manager.addInstruction(new InstJump(scpLoops[i]));
-            manager.popScope();
-        }
-
         return dst;
     }
 
@@ -954,16 +935,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             obj = new ObjectNull(trace.getCurrentFunc(), null, (TypeNull) getTypeByName("null"));
         } else if (constant instanceof Mx_starParser.LogicalConstantContext) {
             Boolean value = constant.getText().equals("true");
-            obj = new ObjectBool(trace.getCurrentFunc(), null, (TypeBool) getTypeByName("bool"),
-                    value);
+            obj = new ObjectBool(trace.getCurrentFunc(), null, (TypeBool) getTypeByName("bool"), value);
         } else if (constant instanceof Mx_starParser.IntegerConstantContext) {
             Integer value = Integer.parseInt(constant.getText());
-            obj = new ObjectInt(trace.getCurrentFunc(), null, (TypeInt) getTypeByName("int"),
-                    value);
+            obj = new ObjectInt(trace.getCurrentFunc(), null, (TypeInt) getTypeByName("int"), value);
         } else if (constant instanceof Mx_starParser.StringLiteralContext) {
             String value = constant.getText();
-            obj = new ObjectString(trace.getCurrentFunc(), null,
-                    (TypeString) getTypeByName("string"), value);
+            obj = new ObjectString(trace.getCurrentFunc(), null, (TypeString) getTypeByName("string"), value);
         } else {
             assert false;
             return null;
@@ -1029,8 +1007,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitFunctionReturnObject(
-            Mx_starParser.FunctionReturnObjectContext ctx) {
+    public ProgramFragment visitFunctionReturnObject(Mx_starParser.FunctionReturnObjectContext ctx) {
         ObjectFunction obj = (ObjectFunction) visit(ctx.object());
 
         Func func = obj.func;
@@ -1064,8 +1041,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         Object array = (Object) visit(ctx.array);
         if (array instanceof ObjectPtr) {
-            Object array_load =
-                    allocateVariable(new Object(funcCurrentFunc, null, ((TypeArray) array.type)));
+            Object array_load = allocateVariable(new Object(funcCurrentFunc, null, ((TypeArray) array.type)));
             manager.addInstruction(new InstLoad(array_load, ((ObjectPtr) array).obj));
             array = array_load;
         }
@@ -1087,11 +1063,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Func funcAdd = getTypeByName("int").getTypeClass().getMethod("__add__");
 
         Object sub_1 = allocateVariable(new Object(array.belong, null, sub.type));
-        manager.addInstruction(new InstCall(sub_1, funcAdd, new ParamList(sub,
-                new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), 1))));
+        manager.addInstruction(new InstCall(sub_1, funcAdd,
+                new ParamList(sub, new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), 1))));
 
-        Object dst = allocateVariable(
-                new Object(funcCurrentFunc, null, ((TypeArray) array.type).getSubType()));
+        Object dst = allocateVariable(new Object(funcCurrentFunc, null, ((TypeArray) array.type).getSubType()));
         manager.addInstruction(new InstOffset(dst, array, sub_1));
 
         return new ObjectPtr(dst);
@@ -1119,11 +1094,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Func funcAdd = getTypeByName("int").getTypeClass().getMethod("__add__");
 
         Object sub_1 = allocateVariable(new Object(array.belong, null, sub.type));
-        manager.addInstruction(new InstCall(sub_1, funcAdd, new ParamList(sub,
-                new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), 1))));
+        manager.addInstruction(new InstCall(sub_1, funcAdd,
+                new ParamList(sub, new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), 1))));
 
-        Object dst = allocateVariable(
-                new Object(funcCurrentFunc, null, ((TypeArray) array.type).getSubType()));
+        Object dst = allocateVariable(new Object(funcCurrentFunc, null, ((TypeArray) array.type).getSubType()));
         manager.addInstruction(new InstOffset(dst, array, sub_1));
         manager.addInstruction(new InstLoad(dst, dst));
 
@@ -1136,27 +1110,27 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String method = null;
 
         switch (op) {
-            case "++":
-                method = "__preinc__";
-                break;
-            case "--":
-                method = "__predec__";
-                break;
-            case "+":
-                method = "__pos__";
-                break;
-            case "-":
-                method = "__neg__";
-                break;
-            case "!":
-                method = "__lgcnot__";
-                break;
-            case "~":
-                method = "__bitinv__";
-                break;
-            default:
-                assert false;
-                return null;
+        case "++":
+            method = "__preinc__";
+            break;
+        case "--":
+            method = "__predec__";
+            break;
+        case "+":
+            method = "__pos__";
+            break;
+        case "-":
+            method = "__neg__";
+            break;
+        case "!":
+            method = "__lgcnot__";
+            break;
+        case "~":
+            method = "__bitinv__";
+            break;
+        default:
+            assert false;
+            return null;
         }
 
         Object obj;
@@ -1190,8 +1164,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     @Override
-    public ProgramFragment visitBinaryOperatorObject(
-            Mx_starParser.BinaryOperatorObjectContext ctx) {
+    public ProgramFragment visitBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
         Type type;
         Object lhs = (Object) visit(ctx.object(0));
         Type typel = lhs.type;
@@ -1202,81 +1175,81 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String op = ctx.op.getText();
         String method = "";
         switch (op) {
-            case "*":
-                method = "__mul__";
-                break;
-            case "/":
-                method = "__div__";
-                break;
-            case "%":
-                method = "__mod__";
-                break;
-            case "+":
-                method = "__add__";
-                break;
-            case "-":
-                method = "__sub__";
-                break;
-            case "<<":
-                method = "__shl__";
-                break;
-            case ">>":
-                method = "__shr__";
-                break;
-            case "<":
-                method = "__lt__";
-                break;
-            case ">":
-                method = "__gt__";
-                break;
-            case "<=":
-                method = "__le__";
-                break;
-            case ">=":
-                method = "__ge__";
-                break;
-            case "==":
-                method = "__eq__";
-                if (typel instanceof TypeNull || typer instanceof TypeNull) {
-                    if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
-                        assert false;
-                    }
-                    type = getTypeByName("bool");
-                    Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
-                    return dst;
-                    // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+        case "*":
+            method = "__mul__";
+            break;
+        case "/":
+            method = "__div__";
+            break;
+        case "%":
+            method = "__mod__";
+            break;
+        case "+":
+            method = "__add__";
+            break;
+        case "-":
+            method = "__sub__";
+            break;
+        case "<<":
+            method = "__shl__";
+            break;
+        case ">>":
+            method = "__shr__";
+            break;
+        case "<":
+            method = "__lt__";
+            break;
+        case ">":
+            method = "__gt__";
+            break;
+        case "<=":
+            method = "__le__";
+            break;
+        case ">=":
+            method = "__ge__";
+            break;
+        case "==":
+            method = "__eq__";
+            if (typel instanceof TypeNull || typer instanceof TypeNull) {
+                if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
+                    assert false;
                 }
-                break;
-            case "!=":
-                method = "__ne__";
-                if (typel instanceof TypeNull || typer instanceof TypeNull) {
-                    if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
-                        assert false;
-                    }
-                    type = getTypeByName("bool");
-                    Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
-                    // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
-                    return dst;
+                type = getTypeByName("bool");
+                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
+                return dst;
+                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+            }
+            break;
+        case "!=":
+            method = "__ne__";
+            if (typel instanceof TypeNull || typer instanceof TypeNull) {
+                if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
+                    assert false;
                 }
-                break;
-            case "&":
-                method = "__bitand__";
-                break;
-            case "|":
-                method = "__bitor__";
-                break;
-            case "^":
-                method = "__bitxor__";
-                break;
-            case "&&":
-                method = "__lgcand__";
-                break;
-            case "||":
-                method = "__lgcor__";
-                break;
-            default:
-                assert false;
-                return null;
+                type = getTypeByName("bool");
+                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
+                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                return dst;
+            }
+            break;
+        case "&":
+            method = "__bitand__";
+            break;
+        case "|":
+            method = "__bitor__";
+            break;
+        case "^":
+            method = "__bitxor__";
+            break;
+        case "&&":
+            method = "__lgcand__";
+            break;
+        case "||":
+            method = "__lgcor__";
+            break;
+        default:
+            assert false;
+            return null;
         }
 
         FuncDefinition func = lhs.type.getTypeClass().getMethod(method);
