@@ -16,11 +16,11 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncDefinition;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstAlloc;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstCall;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.InstMember;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstMov;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstOffset;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstLoad;
@@ -758,11 +758,19 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         if (!trace.isGlobal()) {
             Class class1 = trace.getCurrentClass();
+
             if (class1.hasVariable(name)) {
                 // member variable
-                Object dst = new Object(func, null, class1.getVarType(name));
-                manager.addInstruction(new InstMember(dst, src, name));
-                return dst;
+                FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
+
+                Object thisObj = trace.getVar("this");
+
+                Object dst = allocateVariable(new Object(funcCurrentFunc, null, class1.getVarType(name)));
+                int index = thisObj.type.getTypeClass().getVarIndex(name);
+                manager.addInstruction(new InstOffset(dst, thisObj,
+                        new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), index)));
+
+                return new ObjectPtr(dst);
             }
             if (class1.hasMethod(name)) {
                 assert false;
@@ -875,7 +883,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         Object dst = allocateVariable(new Object(currentFunc, null, type));
 
         FuncDefinition funcAdd = getTypeByName("int").getTypeClass().getMethod("__add__"),
-                funcLt = getTypeByName("int").getTypeClass().getMethod("__lt__");
+                funcLe = getTypeByName("int").getTypeClass().getMethod("__le__");
 
         if (subscripts.isEmpty()) {
             Object size = allocateVariable(
@@ -886,6 +894,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(0),
                     new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 1))));
             manager.addInstruction(new InstAlloc(dst, size));
+            manager.addInstruction(new InstStore(dst, subscripts.get(0)));
 
             Object[] subs = new Object[subscripts.size() - 1];
             Scope[] scpLoops = new Scope[subscripts.size() - 1];
@@ -894,7 +903,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             for (int i = 0; i < subscripts.size() - 1; i++) {
                 subs[i] = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
                 manager.addInstruction(
-                        new InstMov(subs[i], new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 0)));
+                        new InstMov(subs[i], new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 1)));
 
                 Scope scpLoopBody, scpEndLoop;
 
@@ -908,7 +917,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 manager.pushScope(scpLoops[i]);
 
                 Object condition = allocateVariable(new Object(currentFunc, null, getTypeByName("bool")));
-                manager.addInstruction(new InstCall(condition, funcLt, new ParamList(subs[i], subscripts.get(i))));
+                manager.addInstruction(new InstCall(condition, funcLe, new ParamList(subs[i], subscripts.get(i))));
                 manager.addInstruction(new InstBr(condition, scpLoopBody, scpEndLoop));
 
                 manager.popScope();
@@ -924,6 +933,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 Object next = allocateVariable(new Object(currentFunc, null, ((TypeArray) last.type).getSubType()));
 
                 manager.addInstruction(new InstAlloc(next, size));
+                manager.addInstruction(new InstStore(next, subscripts.get(i)));
                 manager.addInstruction(new InstStore(addr, next));
                 last = next;
             }
@@ -970,7 +980,14 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitMemberLvalue(Mx_starParser.MemberLvalueContext ctx) {
+        FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
+
         Object src = (Object) visit(ctx.lvalue());
+        if (src instanceof ObjectPtr) {
+            Object array_load = allocateVariable(new Object(funcCurrentFunc, null, src.type));
+            manager.addInstruction(new InstLoad(array_load, ((ObjectPtr) src).obj));
+            src = array_load;
+        }
 
         String name = ctx.Identifier().getText();
         Type type = src.type.getTypeClass().getVarType(name);
@@ -979,8 +996,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
             return null;
         }
-
-        FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
 
         Object dst = allocateVariable(new Object(funcCurrentFunc, null, type));
         int index = src.type.getTypeClass().getVarIndex(name);
@@ -1302,10 +1317,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
                     assert false;
                 }
-                type = getTypeByName("bool");
-                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
+                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("bool")));
+                FuncBuiltin func = (FuncBuiltin) getFuncByAddr(FuncAddr.createFuncAddr("addrEq"));
+                manager.addInstruction(new InstCall(dst, func, new ParamList(lhs, rhs)));
                 return dst;
-                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
             }
             break;
         case "!=":
@@ -1314,9 +1329,9 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 if (!(typel instanceof NullComparable && typer instanceof NullComparable)) {
                     assert false;
                 }
-                type = getTypeByName("bool");
-                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
-                // code.addInstruction(new InstCall(id, type, new Vector<ObjectID>(Arrays.asList(lhs.id, rhs.id))));
+                Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("bool")));
+                FuncBuiltin func = (FuncBuiltin) getFuncByAddr(FuncAddr.createFuncAddr("addrNe"));
+                manager.addInstruction(new InstCall(dst, func, new ParamList(lhs, rhs)));
                 return dst;
             }
             break;
@@ -1350,7 +1365,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         type = func.getRtype();
 
-        // TODO: a && b
         Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
         manager.addInstruction(new InstCall(dst, func, new ParamList(lhs, rhs)));
 
@@ -1378,6 +1392,10 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     }
 
     private Object allocateVariable(Object obj) {
+        if (state != VisitState.SEMANTIC_ANALYSIS) {
+            return obj;
+        }
+
         FuncExtra func = trace.getCurrentFunc();
         if (func == null) {
             func = (FuncExtra) initFunc;

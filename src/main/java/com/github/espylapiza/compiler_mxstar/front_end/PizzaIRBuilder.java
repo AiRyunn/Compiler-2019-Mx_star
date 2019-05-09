@@ -8,6 +8,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Class;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Domain;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtra;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncAddr;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncBuiltin;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.FuncExtern;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Inst;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstBaseJump;
@@ -49,26 +50,26 @@ public class PizzaIRBuilder {
 
     private void registerBuiltinFunc() {
         Arrays.asList(
-                new FuncExtra(FuncAddr.createGlobalFuncAddr("_init"), "_init",
-                        ir.typeTable.get("void"), new ParamList()),
+                new FuncExtra(FuncAddr.createGlobalFuncAddr("_init"), "_init", ir.typeTable.get("void"),
+                        new ParamList()),
                 new FuncExtern(FuncAddr.createFuncAddr("print"), "print", ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new FuncExtern(FuncAddr.createFuncAddr("println"), "println",
-                        ir.typeTable.get("void"),
+                new FuncExtern(FuncAddr.createFuncAddr("println"), "println", ir.typeTable.get("void"),
                         new ParamList(new Object(null, "str", ir.typeTable.get("string")))),
-                new FuncExtern(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"),
+                new FuncExtern(FuncAddr.createFuncAddr("getInt"), "getInt", ir.typeTable.get("int"), new ParamList()),
+                new FuncExtern(FuncAddr.createFuncAddr("getString"), "getString", ir.typeTable.get("string"),
                         new ParamList()),
-                new FuncExtern(FuncAddr.createFuncAddr("getString"), "getString",
-                        ir.typeTable.get("string"), new ParamList()),
-                new FuncExtern(FuncAddr.createFuncAddr("toString"), "toString",
-                        ir.typeTable.get("string"),
-                        new ParamList(new Object(null, "num", ir.typeTable.get("int")))))
+                new FuncExtern(FuncAddr.createFuncAddr("toString"), "toString", ir.typeTable.get("string"),
+                        new ParamList(new Object(null, "num", ir.typeTable.get("int")))),
+                new FuncBuiltin(FuncAddr.createFuncAddr("addrEq"), "addrEq", ir.typeTable.get("bool"),
+                        new ParamList(new Object(null, "lhs", null), new Object(null, "rhs", null))),
+                new FuncBuiltin(FuncAddr.createFuncAddr("addrNe"), "addrEq", ir.typeTable.get("bool"),
+                        new ParamList(new Object(null, "lhs", null), new Object(null, "rhs", null))))
                 .forEach(func -> {
                     ir.funcList.addFunc(func);
                 });
     }
 }
-
 
 class DomainTrace {
     private class VarAndDepth {
@@ -103,8 +104,7 @@ class DomainTrace {
     }
 
     Object getVar(String name) {
-        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it
-                .hasPrevious();) {
+        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
             VarAndDepth pre = it.previous();
             if (pre.variable.name != null && pre.variable.name.equals(name)) {
                 return pre.variable;
@@ -166,8 +166,7 @@ class DomainTrace {
     }
 
     boolean canAllocate(String name) {
-        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it
-                .hasPrevious();) {
+        for (ListIterator<VarAndDepth> it = varStack.listIterator(varStack.size()); it.hasPrevious();) {
             VarAndDepth pre = it.previous();
             if (pre.depth < depth) {
                 break;
@@ -179,7 +178,6 @@ class DomainTrace {
         return true;
     }
 }
-
 
 class ScopeManager {
     private final static Logger LOGGER = Logger.getLogger(ScopeManager.class.getName());
@@ -222,7 +220,6 @@ class ScopeManager {
     }
 }
 
-
 class FuncBuilder {
     private class ScopeWithStatus {
         final Scope scope;
@@ -256,8 +253,7 @@ class FuncBuilder {
         if (scpStack.lastElement().dead) {
             return;
         }
-        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it
-                .hasPrevious();) {
+        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
             ScopeWithStatus pre = it.previous();
             if (pre.scope.getType() == ScopeType.ENDLOOP) {
                 scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));

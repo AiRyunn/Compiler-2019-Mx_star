@@ -28,14 +28,14 @@ public class PizzaIR implements PizzaIRPart {
         Class c_bool = new Class("bool");
         TypeBool t_bool = new TypeBool("bool", c_bool);
         Arrays.asList("__lgcnot__").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_bool, method), method,
-                    t_bool, new ParamList());
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_bool, method), method, t_bool,
+                    new ParamList());
             c_bool.addMethod(func);
             funcList.addFunc(func);
         });
         Arrays.asList("__lgcand__", "__lgcor__", "__eq__", "__ne__").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_bool, method), method,
-                    t_bool, new ParamList(new Object(null, "rhs", t_bool)));
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_bool, method), method, t_bool,
+                    new ParamList(new Object(null, "rhs", t_bool)));
             c_bool.addMethod(func);
             funcList.addFunc(func);
         });
@@ -44,61 +44,58 @@ public class PizzaIR implements PizzaIRPart {
 
         Class c_int = new Class("int");
         TypeInt t_int = new TypeInt("int", c_int);
-        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__",
-                "__postdec__").forEach(method -> {
-                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method),
-                            method, t_int, new ParamList());
-                    c_int.addMethod(func);
-                    funcList.addFunc(func);
-                });
-        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__",
-                "__bitand__", "__bitxor__", "__bitor__").forEach(method -> {
-                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method),
-                            method, t_int, new ParamList(new Object(null, "rhs", t_int)));
-                    c_int.addMethod(func);
-                    funcList.addFunc(func);
-                });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__")
+        Arrays.asList("__pos__", "__neg__", "__bitinv__", "__preinc__", "__predec__", "__postinc__", "__postdec__")
                 .forEach(method -> {
-                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method),
-                            method, t_bool, new ParamList(new Object(null, "rhs", t_int)));
+                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method), method, t_int,
+                            new ParamList());
                     c_int.addMethod(func);
                     funcList.addFunc(func);
                 });
+        Arrays.asList("__add__", "__sub__", "__mul__", "__div__", "__mod__", "__shl__", "__shr__", "__bitand__",
+                "__bitxor__", "__bitor__").forEach(method -> {
+                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method), method, t_int,
+                            new ParamList(new Object(null, "rhs", t_int)));
+                    c_int.addMethod(func);
+                    funcList.addFunc(func);
+                });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_int, method), method, t_bool,
+                    new ParamList(new Object(null, "rhs", t_int)));
+            c_int.addMethod(func);
+            funcList.addFunc(func);
+        });
         classList.add(c_int);
         typeTable.add(t_int);
 
         Class c_string = new Class("string");
         TypeString t_string = new TypeString("string", c_string);
         Arrays.asList("__add__").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method,
-                    t_string, new ParamList(new Object(null, "rhs", t_string)));
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method, t_string,
+                    new ParamList(new Object(null, "rhs", t_string)));
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
-        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__")
-                .forEach(method -> {
-                    FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method),
-                            method, t_bool, new ParamList(new Object(null, "rhs", t_string)));
-                    c_string.addMethod(func);
-                    funcList.addFunc(func);
-                });
+        Arrays.asList("__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__ne__").forEach(method -> {
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method, t_bool,
+                    new ParamList(new Object(null, "rhs", t_string)));
+            c_string.addMethod(func);
+            funcList.addFunc(func);
+        });
         Arrays.asList("length", "parseInt").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method,
-                    t_int, new ParamList());
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method, t_int,
+                    new ParamList(), c_string);
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
         Arrays.asList("ord").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method,
-                    t_int, new ParamList(new Object(null, "rhs", t_int)));
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method, t_int,
+                    new ParamList(new Object(null, "rhs", t_int)), c_string);
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
         Arrays.asList("substring").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method,
-                    t_string,
-                    new ParamList(new Object(null, "rhs", t_int), new Object(null, "rhs", t_int)));
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_string, method), method, t_string,
+                    new ParamList(new Object(null, "rhs", t_int), new Object(null, "rhs", t_int)), c_string);
             c_string.addMethod(func);
             funcList.addFunc(func);
         });
@@ -107,8 +104,8 @@ public class PizzaIR implements PizzaIRPart {
 
         Class c_array = new Class("__array__");
         Arrays.asList("size").forEach(method -> {
-            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_array, method), method,
-                    t_int, new ParamList());
+            FuncBuiltin func = new FuncBuiltin(FuncAddr.createMethodAddr(c_array, method), method, t_int,
+                    new ParamList());
             c_array.addMethod(func);
             funcList.addFunc(func);
         });
@@ -124,6 +121,5 @@ public class PizzaIR implements PizzaIRPart {
         classList.add(c_method);
         typeTable.add(t_method);
     }
-
 
 }
