@@ -64,8 +64,8 @@ long long _string_ord(uchar *s, long long pos) { return (long long)s[pos + 4]; }
 uchar *_string_substring(uchar *s, long long left, long long right) {
     int len = right - left + 1;
     uchar *str = (uchar *)malloc(len + 5);
-    memcpy(str + 4, s + 4, sizeof(uchar) * (len));
-    str[right + 4 - 1] = '\0';
+    memcpy(str + 4, s + left + 4, sizeof(uchar) * (len));
+    str[len + 4] = '\0';
     str[3] = len / 256 / 256 / 256;
     str[2] = len / 256 / 256 % 256;
     str[1] = len / 256 % 256;

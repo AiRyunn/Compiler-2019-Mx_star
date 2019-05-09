@@ -342,15 +342,18 @@ _string_substring:
         mov     qword [rbp-8H], rax
         mov     eax, dword [rbp-0CH]
         cdqe
+        mov     rdx, qword [rbp-20H]
+        lea     rcx, [rdx+4H]
         mov     rdx, qword [rbp-18H]
-        lea     rsi, [rdx+4H]
+        lea     rsi, [rcx+rdx]
         mov     rdx, qword [rbp-8H]
         lea     rcx, [rdx+4H]
         mov     rdx, rax
         mov     rdi, rcx
         call    memcpy
-        mov     rax, qword [rbp-28H]
-        lea     rdx, [rax+3H]
+        mov     eax, dword [rbp-0CH]
+        cdqe
+        lea     rdx, [rax+4H]
         mov     rax, qword [rbp-8H]
         add     rax, rdx
         mov     byte [rax], 0
