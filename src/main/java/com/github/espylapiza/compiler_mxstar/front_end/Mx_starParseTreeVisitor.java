@@ -844,6 +844,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitNewObject(Mx_starParser.NewObjectContext ctx) {
+        // TODO: construction functions
         int cntLeftBracket = 0;
         int cntBracket = 0;
 

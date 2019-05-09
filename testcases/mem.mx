@@ -1,0 +1,50 @@
+Class A {
+	int num;
+	int[] array;
+	A() {
+		array = new int[10];
+	}
+	void method() {
+		num = 0;
+		num++;
+		this.num++;
+		
+		array[0] = 0;
+		array[0]++;
+		this.array[0]++;
+	}
+}
+
+void test_reference() {
+	int i;
+	int[] arr = new int[20];
+	for (i = 0; i < 10; i++) {
+		arr[i] = i;
+	}
+	
+	arr[0]++;
+	++arr[1];
+	arr[2]--;
+	--arr[3];
+	
+	arr[4] = arr[5]++;
+	
+	for (i = 0; i < 10; i++) {
+		println(toString(arr[i]));
+	}
+}
+
+void test_reference_class() {
+	A a = new A();
+	a.method();
+	
+	println(toString(a.num));
+	println(toString(a.array[0]));
+}
+
+int main() {
+	test_reference_array();
+	test_reference_class();
+	
+	return 0;
+}
