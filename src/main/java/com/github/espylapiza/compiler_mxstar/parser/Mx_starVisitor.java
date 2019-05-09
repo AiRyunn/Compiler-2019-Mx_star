@@ -1,4 +1,4 @@
-// Generated from Mx_star.g4 by ANTLR 4.7.1
+// Generated from /home/espylapiza/Documents/Lectures/Compiler/Compiler-2019-Mx_star/src/main/java/com/github/espylapiza/compiler_mxstar/parser/Mx_star.g4 by ANTLR 4.7.1
 
     package com.github.espylapiza.compiler_mxstar.parser;
 

@@ -30,7 +30,6 @@ public class NASM {
     }
 
     public void addDirective(Directive directive) {
-        // FIXME
         directives.add(directive);
     }
 }

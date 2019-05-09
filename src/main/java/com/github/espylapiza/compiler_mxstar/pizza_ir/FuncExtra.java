@@ -24,6 +24,18 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
     }
 
     /**
+     * Construct a func with params.
+     * @param addr
+     * @param name
+     * @param rtype
+     * @param params
+     * @param ownerClass
+     */
+    public FuncExtra(FuncAddr addr, String name, Type rtype, ParamList params, Class ownerClass) {
+        super(addr, name, rtype, params, ownerClass);
+    }
+
+    /**
      * @return the varList
      */
     public VarList getVarList() {

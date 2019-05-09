@@ -27,6 +27,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.InstLoad;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstRet;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.InstStore;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectMethod;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.NullComparable;
@@ -239,7 +240,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         FuncExtra func;
         if (state == VisitState.DECLARATION) {
-            func = new FuncExtra(addr, name, rtype, null);
+            func = new FuncExtra(addr, name, rtype, null, owner);
         } else {
             func = (FuncExtra) getFuncByAddr(addr);
         }
@@ -288,7 +289,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         FuncExtra func;
         if (state == VisitState.DECLARATION) {
-            func = new FuncExtra(addr, name, rtype, null);
+            func = new FuncExtra(addr, name, rtype, null, owner);
         } else {
             func = (FuncExtra) getFuncByAddr(addr);
         }
@@ -794,11 +795,23 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             Class class1 = trace.getCurrentClass();
             if (class1.hasVariable(name)) {
                 // member variable
-                return new Object(currentFunc, name, class1.getVarType(name));
+                FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
+
+                Object thisObj = trace.getVar("this");
+
+                Object dst = allocateVariable(new Object(funcCurrentFunc, null, class1.getVarType(name)));
+                int index = thisObj.type.getTypeClass().getVarIndex(name);
+                manager.addInstruction(new InstOffset(dst, thisObj,
+                        new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), index)));
+                manager.addInstruction(new InstLoad(dst, dst));
+
+                return dst;
             }
             if (class1.hasMethod(name)) {
                 // member method
-                return new ObjectFunction(class1.getMethod(name), currentFunc, name, getTypeByName("__method__"));
+                Object thisObj = trace.getVar("this");
+                return new ObjectMethod(class1.getMethod(name), currentFunc, name, getTypeByName("__method__"),
+                        thisObj);
             }
         }
 
@@ -858,7 +871,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             type = new TypeArray(type, arrayClass);
         }
 
-        // TODO: alloc size, syntactic sugar new: Object[size][size]
         FuncExtra currentFunc = trace.getCurrentFunc();
         Object dst = allocateVariable(new Object(currentFunc, null, type));
 
@@ -968,10 +980,14 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             return null;
         }
 
-        Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
-        manager.addInstruction(new InstMember(dst, src, name));
+        FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
 
-        return dst;
+        Object dst = allocateVariable(new Object(funcCurrentFunc, null, type));
+        int index = src.type.getTypeClass().getVarIndex(name);
+        manager.addInstruction(
+                new InstOffset(dst, src, new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), index)));
+
+        return new ObjectPtr(dst);
     }
 
     @Override
@@ -986,15 +1002,21 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         if (class1.hasVariable(name)) {
             type = class1.getVarType(name);
 
-            Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
-            manager.addInstruction(new InstMember(dst, src, name));
+            FuncDefinition funcCurrentFunc = trace.getCurrentFunc();
+
+            Object dst = allocateVariable(new Object(funcCurrentFunc, null, type));
+            int index = src.type.getTypeClass().getVarIndex(name);
+            manager.addInstruction(new InstOffset(dst, src,
+                    new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), index)));
+            manager.addInstruction(new InstLoad(dst, dst));
+
             return dst;
         }
 
         if (class1.hasMethod(name)) {
             type = getTypeByName("__method__");
 
-            return new ObjectFunction(class1.getMethod(name), trace.getCurrentFunc(), name, type);
+            return new ObjectMethod(class1.getMethod(name), trace.getCurrentFunc(), name, type, src);
         }
 
         assert false;
@@ -1030,7 +1052,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         } else {
             dst = allocateVariable(new Object(trace.getCurrentFunc(), null, rtype));
         }
-        manager.addInstruction(new InstCall(dst, func, params));
+
+        if (obj instanceof ObjectMethod) {
+            manager.addInstruction(new InstCall(dst, func, params, ((ObjectMethod) obj).who));
+        } else {
+            manager.addInstruction(new InstCall(dst, func, params));
+        }
 
         return dst;
     }
@@ -1106,15 +1133,32 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitUnaryOperatorObject(Mx_starParser.UnaryOperatorObjectContext ctx) {
-        String op = ctx.op.getText();
+        boolean isPre;
+        String op;
+        if (ctx.pre_op != null) {
+            op = ctx.pre_op.getText();
+            isPre = true;
+        } else {
+            op = ctx.post_op.getText();
+            isPre = false;
+        }
+
         String method = null;
 
         switch (op) {
         case "++":
-            method = "__preinc__";
+            if (isPre) {
+                method = "__preinc__";
+            } else {
+                method = "__postinc__";
+            }
             break;
         case "--":
-            method = "__predec__";
+            if (isPre) {
+                method = "__predec__";
+            } else {
+                method = "__postdec__";
+            }
             break;
         case "+":
             method = "__pos__";
@@ -1165,14 +1209,58 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitBinaryOperatorObject(Mx_starParser.BinaryOperatorObjectContext ctx) {
+        String op = ctx.op.getText();
+        Object lhs, rhs;
+        if (op.equals("&&") || op.equals("||")) {
+            Scope scpIfTrue, scpIfFalse, scpEndIf;
+
+            scpIfTrue = manager.newScope(ScopeType.IF);
+            scpIfFalse = manager.newScope(ScopeType.ELSE);
+            scpEndIf = manager.newScope(ScopeType.ENDIF);
+
+            Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("bool")));
+
+            lhs = (Object) visit(ctx.object(0));
+            if (op.equals("&&")) {
+                manager.addInstruction(new InstBr(lhs, scpIfTrue, scpIfFalse));
+                manager.popScope();
+                manager.pushScope(scpEndIf);
+
+                manager.pushScope(scpIfTrue);
+                rhs = (Object) visit(ctx.object(1));
+                manager.addInstruction(new InstMov(dst, rhs));
+                manager.popScope();
+
+                manager.pushScope(scpIfFalse);
+                manager.addInstruction(new InstMov(dst,
+                        new ObjectBool(trace.getCurrentFunc(), null, (TypeBool) getTypeByName("bool"), false)));
+                manager.popScope();
+            } else {
+                manager.addInstruction(new InstBr(lhs, scpIfTrue, scpIfFalse));
+                manager.popScope();
+                manager.pushScope(scpEndIf);
+
+                manager.pushScope(scpIfTrue);
+                manager.addInstruction(new InstMov(dst,
+                        new ObjectBool(trace.getCurrentFunc(), null, (TypeBool) getTypeByName("bool"), true)));
+                manager.popScope();
+
+                manager.pushScope(scpIfFalse);
+                rhs = (Object) visit(ctx.object(1));
+                manager.addInstruction(new InstMov(dst, rhs));
+                manager.popScope();
+            }
+
+            return dst;
+        }
+
         Type type;
-        Object lhs = (Object) visit(ctx.object(0));
+        lhs = (Object) visit(ctx.object(0));
         Type typel = lhs.type;
 
-        Object rhs = (Object) visit(ctx.object(1));
+        rhs = (Object) visit(ctx.object(1));
         Type typer = rhs.type;
 
-        String op = ctx.op.getText();
         String method = "";
         switch (op) {
         case "*":
@@ -1241,12 +1329,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         case "^":
             method = "__bitxor__";
             break;
-        case "&&":
-            method = "__lgcand__";
-            break;
-        case "||":
-            method = "__lgcor__";
-            break;
         default:
             assert false;
             return null;
@@ -1268,7 +1350,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         type = func.getRtype();
 
-        // TODO a && b
+        // TODO: a && b
         Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, type));
         manager.addInstruction(new InstCall(dst, func, new ParamList(lhs, rhs)));
 

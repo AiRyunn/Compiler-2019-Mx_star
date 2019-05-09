@@ -5,6 +5,7 @@ public class Func extends Domain {
     protected final String name;
     protected final Type rtype;
     protected ParamList params;
+    protected Class ownerClass;
 
     /**
      * Construct a func with params.
@@ -13,13 +14,28 @@ public class Func extends Domain {
      * @param rtype
      * @param params
      */
-    public Func(FuncAddr addr, String name, Type rtype, ParamList params) {
+    Func(FuncAddr addr, String name, Type rtype, ParamList params) {
         this.addr = addr;
         this.name = name;
         this.rtype = rtype;
         this.setParams(params);
     }
 
+    /**
+     * Construct a func with params.
+     * @param addr
+     * @param name
+     * @param rtype
+     * @param params
+     * @param ownerClass
+     */
+    Func(FuncAddr addr, String name, Type rtype, ParamList params, Class ownerClass) {
+        this.addr = addr;
+        this.name = name;
+        this.rtype = rtype;
+        this.setParams(params);
+        this.ownerClass = ownerClass;
+    }
 
     /**
      * @return the addr
@@ -56,4 +72,10 @@ public class Func extends Domain {
         this.params = params;
     }
 
+    /**
+     * @return the ownerClass
+     */
+    public Class getOwnerClass() {
+        return ownerClass;
+    }
 }

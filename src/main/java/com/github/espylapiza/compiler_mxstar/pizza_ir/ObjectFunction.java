@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public final class ObjectFunction extends Object {
+public class ObjectFunction extends Object {
     public Func func;
 
     public ObjectFunction(Func func, FuncDefinition belong, String name, Type type) {

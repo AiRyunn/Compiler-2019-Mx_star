@@ -14,14 +14,13 @@ import com.github.espylapiza.compiler_mxstar.nasm.NASM;
 public class Compiler {
     private final static Logger LOGGER = Logger.getLogger(Compiler.class.getName());
 
-    // TODO: Mx_starParams
+    // TODO: add class Mx_starParams
     boolean semantic;
     InputStream istream;
     OutputStream asmOstream;
     OutputStream irOstream;
 
-    Compiler(boolean semantic, InputStream istream, OutputStream asmOstream,
-            OutputStream irOstream) {
+    Compiler(boolean semantic, InputStream istream, OutputStream asmOstream, OutputStream irOstream) {
         this.semantic = semantic;
         this.istream = istream;
         this.asmOstream = asmOstream;
@@ -51,7 +50,7 @@ public class Compiler {
             LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
             optimizer.optimize();
-
+            // return;
             LOGGER.info("translate to NASM...");
             NASMTransformer translator = new NASMTransformer(optimizer.getIR());
             NASM nasm = translator.getNASM();

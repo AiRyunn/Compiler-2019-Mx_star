@@ -15,7 +15,7 @@ public class VarList implements Iterable<Object> {
         return varList.size();
     }
 
-    Object get(int index) {
+    public Object get(int index) {
         return varList.get(index);
     }
 

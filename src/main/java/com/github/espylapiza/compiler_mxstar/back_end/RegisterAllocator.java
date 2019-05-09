@@ -36,14 +36,23 @@ public class RegisterAllocator {
 
     void naiveAllocate(NASM nasm, FuncExtra func) {
         int index = 0, top = 0; // 1 base
-        for (Object obj : func.getParams()) {
+        int total = func.getParams().count();
+
+        if (func.getOwnerClass() != null) {
+            total++;
+            Operand operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
+            put(func.getVarList().get(0), operand);
             index++;
-            if (index <= 6) {
+        }
+
+        for (Object obj : func.getParams()) {
+            if (index < 6) {
                 Operand operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
                 put(obj, operand);
             } else {
-                put(obj, new OperandMem(RegisterSet.rbp, 8 * (index - 6) + 16));
+                put(obj, new OperandMem(RegisterSet.rbp, 8 * (total - index + 1)));
             }
+            index++;
         }
 
         for (Object obj : func.getVarList()) {
@@ -74,8 +83,8 @@ public class RegisterAllocator {
 
     public void bssAllocate(NASM nasm, FuncExtra initFunc) {
         for (Object obj : initFunc.getDefinedVariables()) {
-            nasm.sectionBSS.addItem(new InstructionResq(obj.name));
-            Operand operand = new OperandMem(obj.name, 0);
+            nasm.sectionBSS.addItem(new InstructionResq("$" + obj.name));
+            Operand operand = new OperandMem("$" + obj.name, 0);
             put(obj, operand);
         }
     }

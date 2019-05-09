@@ -109,11 +109,11 @@ object:
 	| '(' object ')'									# BracketObject
 	| object '(' paramList ')'							# FunctionReturnObject
 	| array = object '[' subscript = object ']'			# SubscriptObject
-	| lvalue op = ('++' | '--')							# UnaryOperatorObject
-	| <assoc = right> op = ('++' | '--') lvalue			# UnaryOperatorObject
-	| <assoc = right> op = '~' object					# UnaryOperatorObject
-	| <assoc = right> op = '!' object					# UnaryOperatorObject
-	| <assoc = right> op = ('+' | '-') object			# UnaryOperatorObject
+	| lvalue post_op = ('++' | '--')					# UnaryOperatorObject
+	| <assoc = right> pre_op = ('++' | '--') lvalue		# UnaryOperatorObject
+	| <assoc = right> pre_op = '~' object				# UnaryOperatorObject
+	| <assoc = right> pre_op = '!' object				# UnaryOperatorObject
+	| <assoc = right> pre_op = ('+' | '-') object		# UnaryOperatorObject
 	| op = New type (('[' object? ']')+ | ('(' ')')?)	# NewObject
 	| object op = ('*' | '/' | '%') object				# BinaryOperatorObject
 	| object op = ('+' | '-') object					# BinaryOperatorObject

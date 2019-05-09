@@ -4,6 +4,7 @@ public final class InstCall extends InstBaseCall {
     public Object dst;
     public Func func;
     public ParamList params;
+    public Object objThis;
 
     /**
      * 
@@ -14,6 +15,19 @@ public final class InstCall extends InstBaseCall {
     public InstCall(Object dst, Func func, ParamList params) {
         this(func, params);
         this.dst = dst;
+    }
+
+    /**
+     * 
+     * @param dst
+     * @param addr
+     * @param params
+     * @param objThis
+     */
+    public InstCall(Object dst, Func func, ParamList params, Object objThis) {
+        this(func, params);
+        this.dst = dst;
+        this.objThis = objThis;
     }
 
     @Override
@@ -39,6 +53,9 @@ public final class InstCall extends InstBaseCall {
             result += dst + " = ";
         }
         result += "call " + func.getAddr();
+        if (objThis != null) {
+            result += " " + objThis;
+        }
         for (Object param : params) {
             result += " " + param;
         }

@@ -7,9 +7,8 @@ public class OperandString extends Operand {
         str = str.substring(1, str.length() - 1);
 
         int len = str.length();
-        str = String.valueOf(len / 256 / 256 / 256) + ", " + String.valueOf(len / 256 / 256 % 256)
-                + ", " + String.valueOf(len / 256 % 256) + ", " + String.valueOf(len % 256) + ", "
-                + "`" + str + "`" + ", 0";
+        this.str = String.valueOf(len / 256 / 256 / 256) + ", " + String.valueOf(len / 256 / 256 % 256) + ", "
+                + String.valueOf(len / 256 % 256) + ", " + String.valueOf(len % 256) + ", " + "`" + str + "`" + ", 0";
     }
 
     @Override
