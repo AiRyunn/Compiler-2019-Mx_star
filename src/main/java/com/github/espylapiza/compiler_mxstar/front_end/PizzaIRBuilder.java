@@ -266,8 +266,13 @@ class FuncBuilder {
         if (scpStack.lastElement().dead) {
             return;
         }
-        scpStack.lastElement().scope.addInstruction(new InstJump(scpStack.lastElement().scope));
-        scpStack.lastElement().dead = true;
+        for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
+            ScopeWithStatus pre = it.previous();
+            if (pre.scope.getType() == ScopeType.LOOPTAIL) {
+                scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));
+                scpStack.lastElement().dead = true;
+            }
+        }
     }
 
     Scope newScope(ScopeType type) {

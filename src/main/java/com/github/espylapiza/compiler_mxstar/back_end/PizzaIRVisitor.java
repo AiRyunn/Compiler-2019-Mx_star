@@ -60,6 +60,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectPtr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
@@ -139,11 +140,20 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
                 addBuiltin0(inst.func, getOperand(inst.dst), getOperand(inst.objThis));
             } else if (inst.params.count() == 1) {
                 // unary operator
-                addBuiltin1(inst.func, getOperand(inst.dst), getOperand(inst.params.get(0)), getOperand(inst.objThis));
+                Object obj = inst.params.get(0);
+                if (obj instanceof ObjectPtr) {
+                    addInstruction(new InstructionMov(RegisterSet.r10, getOperand(((ObjectPtr) obj).obj)));
+                    addBuiltin1(inst.func, getOperand(inst.dst), new OperandMem(RegisterSet.r10, 0),
+                            getOperand(inst.objThis));
+                } else {
+                    addBuiltin1(inst.func, getOperand(inst.dst), getOperand(obj), getOperand(inst.objThis));
+                }
             } else if (inst.params.count() == 2) {
                 // binary operator
                 addBuiltin2(inst.func, getOperand(inst.dst), getOperand(inst.params.get(0)),
                         getOperand(inst.params.get(1)), getOperand(inst.objThis));
+            } else {
+                assert false;
             }
         } else {
             int cntPush = 0;
@@ -295,9 +305,18 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionMov(dst, RegisterSet.rax));
             break;
         case "_MS_bool.__lgcnot__":
-            addInstruction(new InstructionMov(RegisterSet.rax, op));
-            addInstruction(new InstructionNot(RegisterSet.rax));
-            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            if (op instanceof OperandInt) {
+                addInstruction(new InstructionMov(dst, new OperandInt(((OperandInt) op).getValue() == 0 ? 1 : 0)));
+            } else {
+                if (op instanceof OperandMem) {
+                    addInstruction(new InstructionMov(RegisterSet.rcx, op));
+                    op = RegisterSet.rcx;
+                }
+                addInstruction(new InstructionTest(op, op));
+                addInstruction(new InstructionSete(RegisterSet.al));
+                addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+                addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            }
             break;
         case "_MS_int.__pos__":
             break;
@@ -322,6 +341,9 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionMov(dst, RegisterSet.rax));
             break;
         case "_MS_int.__postinc__":
+            if (op == null) {
+                assert false;
+            }
             addInstruction(new InstructionMov(RegisterSet.rax, op));
             addInstruction(new InstructionMov(dst, RegisterSet.rax));
             addInstruction(new InstructionInc(op));
