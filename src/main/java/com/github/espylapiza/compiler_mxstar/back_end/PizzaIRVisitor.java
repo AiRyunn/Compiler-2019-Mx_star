@@ -390,6 +390,60 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionCall(new OperandFuncAddr("_string___add__")));
             addInstruction(new InstructionMov(dst, RegisterSet.rax));
             break;
+        case "_MS_string.__eq__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
+            addInstruction(new InstructionSete(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_string.__ne__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
+            addInstruction(new InstructionSetne(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_string.__lt__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
+            addInstruction(new InstructionSetl(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_string.__gt__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
+            addInstruction(new InstructionSetg(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_string.__le__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
+            addInstruction(new InstructionSetle(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
+        case "_MS_string.__ge__":
+            addInstruction(new InstructionMov(RegisterSet.rdi, lhs));
+            addInstruction(new InstructionMov(RegisterSet.rsi, rhs));
+            addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
+            addInstruction(new InstructionSetge(RegisterSet.al));
+            addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
+            addInstruction(new InstructionMov(dst, RegisterSet.rax));
+            break;
         case "_MS_bool.__lgcand__":
             addInstruction(new InstructionMov(RegisterSet.rax, lhs));
             addInstruction(new InstructionAnd(RegisterSet.rax, rhs));

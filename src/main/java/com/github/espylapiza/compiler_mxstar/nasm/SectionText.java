@@ -17,10 +17,12 @@ public class SectionText extends Section {
 
     @Override
     public String toString() {
-        String result = super.getDeclaration();
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.getDeclaration());
         for (SectionItem item : items) {
-            result += item.toString() + "\n";
+            sb.append(item.toString());
+            sb.append("\n");
         }
-        return result;
+        return sb.toString();
     }
 }

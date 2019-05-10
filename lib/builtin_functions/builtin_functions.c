@@ -50,11 +50,11 @@ long long _string_parseInt(uchar *str) {
     long long s = 1, r = 0;
     if (*str == '-') {
         s = -1;
-        str++;
+        ++str;
     }
     while ('0' <= *str && *str <= '9') {
         r = r * 10 + *str - '0';
-        str++;
+        ++str;
     }
     return s * r;
 }
@@ -88,4 +88,20 @@ uchar *_string___add__(uchar *lhs, uchar *rhs) {
     str[1] = (uchar)(len / 256 % 256);
     str[0] = (uchar)(len % 256);
     return str;
+}
+
+long long *_strcmp(uchar *lhs, uchar *rhs) {
+    lhs += 4;
+    rhs += 4;
+    while (*lhs == *rhs && *lhs != 0) {
+        ++lhs;
+        ++rhs;
+    }
+    if (*lhs < *rhs) {
+        return -1LL;
+    } else if (*lhs > *rhs) {
+        return 1LL;
+    } else {
+        return 0LL;
+    }
 }

@@ -26,38 +26,38 @@ public class Main {
             String arg = args[i];
 
             switch (arg) {
-                case "--debug":
-                    debugMode = true;
-                    break;
-                case "--semantic":
-                    semantic = true;
-                    break;
-                case "-o":
-                case "--output":
-                    i++;
-                    try {
-                        asmOstream = new FileOutputStream(args[i], false);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.exit(-1);
-                    }
-                    break;
-                case "--ir":
-                    i++;
-                    try {
-                        irOstream = new FileOutputStream(args[i], false);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.exit(-1);
-                    }
-                    break;
-                default:
-                    try {
-                        istream = new FileInputStream(args[i]);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.exit(-1);
-                    }
+            case "--debug":
+                debugMode = true;
+                break;
+            case "--semantic":
+                semantic = true;
+                break;
+            case "-o":
+            case "--output":
+                i++;
+                try {
+                    asmOstream = new FileOutputStream(args[i], false);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
+                break;
+            case "--ir":
+                i++;
+                try {
+                    irOstream = new FileOutputStream(args[i], false);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
+                break;
+            default:
+                try {
+                    istream = new FileInputStream(args[i]);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
             }
         }
 

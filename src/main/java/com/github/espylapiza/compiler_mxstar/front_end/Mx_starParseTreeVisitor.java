@@ -844,7 +844,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
     @Override
     public ProgramFragment visitNewObject(Mx_starParser.NewObjectContext ctx) {
-        // TODO: construction functions
         int cntLeftBracket = 0;
         int cntBracket = 0;
 
@@ -894,6 +893,14 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             Object size = allocateVariable(
                     new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), type.getTypeClass().getSize()));
             manager.addInstruction(new InstAlloc(dst, size));
+
+            if (type.getTypeClass().hasMethod(type.getName())) {
+                manager.addInstruction(
+                        new InstCall(null, type.getTypeClass().getMethod(type.getName()), new ParamList(), dst));
+                return dst;
+                // return new ObjectMethod(class1.getMethod(name), trace.getCurrentFunc(), name, type, src);
+                //   assert false;
+            }
         } else {
             Object size = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
             manager.addInstruction(new InstCall(size, funcAdd, new ParamList(subscripts.get(0),

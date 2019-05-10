@@ -18,15 +18,15 @@ public class NASM {
 
     @Override
     public String toString() {
-        String result = new String();
-        result += directives.toString();
-        result += "\n";
-        result += sectionText.toString();
-        result += "\n";
-        result += sectionData.toString();
-        result += "\n";
-        result += sectionBSS.toString();
-        return result;
+        StringBuilder sb = new StringBuilder();
+        sb.append(directives.toString());
+        sb.append("\n");
+        sb.append(sectionText.toString());
+        sb.append("\n");
+        sb.append(sectionData.toString());
+        sb.append("\n");
+        sb.append(sectionBSS.toString());
+        return sb.toString();
     }
 
     public void addDirective(Directive directive) {

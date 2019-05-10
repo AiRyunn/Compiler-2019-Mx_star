@@ -50,7 +50,7 @@ public class Compiler {
             LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
             optimizer.optimize();
-            // return;
+
             LOGGER.info("translate to NASM...");
             NASMTransformer translator = new NASMTransformer(optimizer.getIR());
             NASM nasm = translator.getNASM();
