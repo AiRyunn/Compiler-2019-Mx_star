@@ -27,16 +27,16 @@ uchar *_MS_getString() {
     return str;
 }
 
-int _MS_getInt() {
-    int var_int;
-    scanf("%d", &var_int);
+long long _MS_getInt() {
+    long long var_int;
+    scanf("%lld", &var_int);
     return var_int;
 }
 
-uchar *_MS_toString(int var_int) {
+uchar *_MS_toString(long long var_int) {
     uchar *str = (uchar *)malloc(16 * sizeof(uchar));
     // itoa(var_int, str, 10);
-    sprintf(str + 4, "%d", var_int);
+    sprintf(str + 4, "%lld", var_int);
     int len = strlen(str + 4);
     str[3] = len / 256 / 256 / 256;
     str[2] = len / 256 / 256 % 256;

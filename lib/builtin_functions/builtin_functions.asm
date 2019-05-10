@@ -172,9 +172,9 @@ _MS_getInt:
         mov     rax, qword [fs:abs 28H]
         mov     qword [rsp+8H], rax
         xor     eax, eax
-        lea     rsi, [rsp+4H]
+        mov     rsi, rsp
         call    __isoc99_scanf
-        mov     eax, dword [rsp+4H]
+        mov     rax, qword [rsp]
         mov     rdx, qword [rsp+8H]
 
 
@@ -193,12 +193,12 @@ ALIGN   16
 
 _MS_toString:
         push    r12
-        mov     r12d, edi
+        mov     r12, rdi
         mov     edi, 16
         push    rbp
         push    rbx
         call    malloc
-        mov     r8d, r12d
+        mov     r8, r12
         mov     edx, 12
         lea     rcx, [rel _LC1]
         lea     rbp, [rax+4H]
@@ -522,6 +522,6 @@ _LC0:
         db 25H, 73H, 00H
 
 _LC1:
-        db 25H, 64H, 00H
+        db 25H, 6CH, 6CH, 64H, 00H
 
 

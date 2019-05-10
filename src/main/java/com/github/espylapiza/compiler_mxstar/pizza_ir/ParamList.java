@@ -47,7 +47,12 @@ public class ParamList extends ProgramFragment implements Iterable<Object> {
             return false;
         }
         for (int i = 0; i < params.size(); i++) {
-            if (!params.get(i).type.equals(rhs.get().get(i).type)) {
+            Type typeActual = params.get(i).type, typeFormal = rhs.get().get(i).type;
+            if (typeActual instanceof TypeNull) {
+                if (!(typeFormal instanceof NullComparable)) {
+                    return false;
+                }
+            } else if (!params.get(i).type.equals(rhs.get().get(i).type)) {
                 return false;
             }
         }

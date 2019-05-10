@@ -462,15 +462,17 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
         trace.enter(new DomainLoop());
 
-        Scope scpLoop, scpLoopBody, scpEndLoop;
+        Scope scpLoop, scpLoopBody, scpLoopTail, scpEndLoop;
 
         scpLoop = manager.newScope(ScopeType.LOOP);
         scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
+        scpLoopTail = manager.newScope(ScopeType.LOOPTAIL);
         scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
 
         manager.addInstruction(new InstJump(scpLoop));
         manager.popScope();
         manager.pushScope(scpEndLoop);
+        manager.pushScope(scpLoopTail);
         manager.pushScope(scpLoop);
 
         Object obj = unwrap((Object) visit(ctx.object()));
@@ -486,6 +488,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
 
         visit(ctx.statement());
 
+        manager.popScope();
         manager.addInstruction(new InstJump(scpLoop));
         manager.popScope();
 
@@ -898,8 +901,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 manager.addInstruction(
                         new InstCall(null, type.getTypeClass().getMethod(type.getName()), new ParamList(), dst));
                 return dst;
-                // return new ObjectMethod(class1.getMethod(name), trace.getCurrentFunc(), name, type, src);
-                //   assert false;
             }
         } else {
             Object size = allocateVariable(new Object(currentFunc, null, getTypeByName("int")));
@@ -1030,7 +1031,6 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             int index = src.type.getTypeClass().getVarIndex(name);
             manager.addInstruction(new InstOffset(dst, src,
                     new ObjectInt(funcCurrentFunc, null, (TypeInt) getTypeByName("int"), index)));
-            // manager.addInstruction(new InstLoad(dst, dst));
 
             return new ObjectPtr(dst);
         }
