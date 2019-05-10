@@ -2,10 +2,11 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionSub extends Instruction {
     private static final String name = "sub";
-    Operand dst, src;
-    int imm;
+    public Operand dst;
+    Operand src;
+    public Integer imm;
 
-    public InstructionSub(Operand dst, int imm) {
+    public InstructionSub(Operand dst, Integer imm) {
         this.dst = dst;
         this.imm = imm;
     }

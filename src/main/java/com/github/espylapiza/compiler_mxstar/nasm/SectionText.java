@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SectionText extends Section {
-    private List<SectionItem> items;
+    public List<SectionItem> items;
 
     public SectionText() {
         super(".text");

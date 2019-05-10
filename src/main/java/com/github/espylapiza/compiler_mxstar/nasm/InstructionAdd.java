@@ -2,10 +2,11 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionAdd extends Instruction {
     private static final String name = "add";
-    Operand dst, src;
-    int imm;
+    public Operand dst;
+    Operand src;
+    public Integer imm;
 
-    public InstructionAdd(Operand dst, int imm) {
+    public InstructionAdd(Operand dst, Integer imm) {
         this.dst = dst;
         this.imm = imm;
     }

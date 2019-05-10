@@ -4,7 +4,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 
 public class InstructionJmp extends Instruction {
     private static final String name = "jmp";
-    Scope scp;
+    public Scope scp;
 
     public InstructionJmp(Scope scp) {
         this.scp = scp;

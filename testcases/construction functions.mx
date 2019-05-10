@@ -1,0 +1,22 @@
+class SomeClass {
+	int num;
+
+	SomeClass() {
+		num = 0;
+		num++;
+		this.num++;
+	}
+
+	void print() {
+		println("num = " + toString(num));
+	}
+}
+
+int main() {
+	SomeClass someObject = new SomeClass();
+	someObject.num++;
+	
+	someObject.print();
+	
+	return 0;
+}
