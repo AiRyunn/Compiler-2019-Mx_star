@@ -23,4 +23,12 @@ public class OperandInt extends Operand {
     public String toString() {
         return value.toString();
     }
+
+    @Override
+    public boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandInt) {
+            return value.equals(((OperandInt) rhs).value);
+        }
+        return false;
+    }
 }

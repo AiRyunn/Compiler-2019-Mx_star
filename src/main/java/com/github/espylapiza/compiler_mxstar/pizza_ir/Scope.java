@@ -14,6 +14,20 @@ public class Scope implements Iterable<Inst> {
         this.label = label;
     }
 
+    /**
+     * @return the insts
+     */
+    public List<Inst> getInsts() {
+        return insts;
+    }
+
+    /**
+     * @param insts the insts to set
+     */
+    public void setInsts(List<Inst> insts) {
+        this.insts = insts;
+    }
+
     public ScopeType getType() {
         return type;
     }
@@ -23,13 +37,13 @@ public class Scope implements Iterable<Inst> {
     }
 
     public void addInstruction(Inst inst) {
-        insts.add(inst);
+        getInsts().add(inst);
     }
 
     @Override
     public String toString() {
         String result = label + ":\n";
-        for (Inst inst : insts) {
+        for (Inst inst : getInsts()) {
             result += "\t" + inst.toString() + "\n";
         }
         return result;
@@ -37,6 +51,6 @@ public class Scope implements Iterable<Inst> {
 
     @Override
     public Iterator<Inst> iterator() {
-        return insts.iterator();
+        return getInsts().iterator();
     }
 }

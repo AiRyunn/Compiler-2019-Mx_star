@@ -11,4 +11,12 @@ public class OperandFuncAddr extends Operand {
     public String toString() {
         return addr;
     }
+
+    @Override
+    public boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandFuncAddr) {
+            return addr.equals(((OperandFuncAddr) rhs).addr);
+        }
+        return false;
+    }
 }

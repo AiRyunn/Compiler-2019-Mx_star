@@ -20,4 +20,12 @@ public class OperandString extends Operand {
     public String toString() {
         return str;
     }
+
+    @Override
+    public final boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandString) {
+            return str.equals(((OperandString) rhs).str);
+        }
+        return false;
+    }
 }

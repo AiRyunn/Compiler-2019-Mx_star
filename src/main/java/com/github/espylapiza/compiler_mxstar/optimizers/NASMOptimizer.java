@@ -37,20 +37,43 @@ public class NASMOptimizer {
 
             if (item0 instanceof InstructionAdd) {
                 InstructionAdd itemAdd = (InstructionAdd) item0;
-                if (itemAdd.imm != null && itemAdd.imm == 1) {
-                    item0 = new InstructionInc(itemAdd.dst);
+                if (itemAdd.imm != null) {
+                    if (itemAdd.imm == -1) {
+                        items.set(i, new InstructionDec(itemAdd.dst));
+                    } else if (itemAdd.imm == 0) {
+                        items.remove(i);
+                        i--;
+                    } else if (itemAdd.imm == 1) {
+                        items.set(i, new InstructionInc(itemAdd.dst));
+                    }
                 }
             } else if (item0 instanceof InstructionSub) {
                 InstructionSub itemSub = (InstructionSub) item0;
                 if (itemSub.imm != null && itemSub.imm == 1) {
-                    item0 = new InstructionDec(itemSub.dst);
+                    if (itemSub.imm == -1) {
+                        items.set(i, new InstructionInc(itemSub.dst));
+                    } else if (itemSub.imm == 0) {
+                        items.remove(i);
+                        i--;
+                    } else if (itemSub.imm == 1) {
+                        items.set(i, new InstructionDec(itemSub.dst));
+                    }
                 }
             } else if (item0 instanceof InstructionMov) {
                 InstructionMov itemMov = (InstructionMov) item0;
                 if (itemMov.dst instanceof OperandRegister && itemMov.src instanceof OperandInt) {
                     OperandInt src = (OperandInt) itemMov.src;
                     if (src.getValue() == 0) {
-                        item0 = new InstructionXor(itemMov.dst, itemMov.dst);
+                        items.set(i, new InstructionXor(itemMov.dst, itemMov.dst));
+                    }
+                } else if (itemMov.src.equals(itemMov.dst)) {
+                    items.remove(i);
+                    i--;
+                } else if (item1 instanceof InstructionMov) {
+                    InstructionMov itemMov1 = (InstructionMov) item1;
+                    if (itemMov.src.equals(itemMov1.dst) && itemMov.dst.equals(itemMov1.src)) {
+                        items.remove(i + 1);
+                        i--;
                     }
                 }
             } else if (item0 instanceof InstructionJmp && item1 instanceof Label) {

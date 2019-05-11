@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FuncExtra extends FuncDefinition implements PizzaIRPart {
-    private final VarList varList = new VarList();
+    private VarList varList = new VarList();
     private final List<Scope> scps = new ArrayList<Scope>();
 
     @Override
@@ -33,6 +33,10 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
      */
     public FuncExtra(FuncAddr addr, String name, Type rtype, ParamList params, Class ownerClass) {
         super(addr, name, rtype, params, ownerClass);
+    }
+
+    public void setVarList(VarList varList) {
+        this.varList = varList;
     }
 
     /**

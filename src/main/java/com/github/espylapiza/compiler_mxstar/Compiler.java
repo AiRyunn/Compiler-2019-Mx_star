@@ -39,12 +39,6 @@ public class Compiler {
             builder.fromMxStarParser(parser);
             PizzaIR ir = builder.getIR();
 
-            // TODO: Printer
-            if (irOstream != null) {
-                irOstream.write(ir.funcList.toString().getBytes());
-                irOstream.close();
-            }
-
             if (semantic) {
                 return;
             }
@@ -52,6 +46,12 @@ public class Compiler {
             LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
             optimizer.optimize();
+
+            // TODO: Printer
+            if (irOstream != null) {
+                irOstream.write(ir.funcList.toString().getBytes());
+                irOstream.close();
+            }
 
             LOGGER.info("translate to NASM...");
             NASMTransformer translator = new NASMTransformer(optimizer.getIR());

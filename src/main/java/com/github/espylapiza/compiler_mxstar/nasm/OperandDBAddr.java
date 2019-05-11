@@ -15,4 +15,12 @@ public class OperandDBAddr extends Operand {
     public String toString() {
         return addr;
     }
+
+    @Override
+    public boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandDBAddr) {
+            return addr.equals(((OperandDBAddr) rhs).addr);
+        }
+        return false;
+    }
 }

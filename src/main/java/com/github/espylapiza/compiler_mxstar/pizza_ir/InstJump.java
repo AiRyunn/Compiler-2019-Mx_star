@@ -1,6 +1,9 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public final class InstJump extends InstBaseJump {
+import java.util.Arrays;
+import java.util.List;
+
+public final class InstJump extends Inst implements InstBaseJump {
     public Scope scp;
 
     InstJump() {
@@ -20,5 +23,10 @@ public final class InstJump extends InstBaseJump {
     @Override
     public String toString() {
         return "jump " + scp.getLabel();
+    }
+
+    @Override
+    public List<Object> getObjects() {
+        return Arrays.asList();
     }
 }

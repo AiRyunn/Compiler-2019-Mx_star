@@ -11,4 +11,12 @@ public class OperandDB extends Operand {
     public String toString() {
         return str;
     }
+
+    @Override
+    public boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandDB) {
+            return str.equals(((OperandDB) rhs).str);
+        }
+        return false;
+    }
 }

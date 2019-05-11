@@ -4,17 +4,17 @@ public class OperandMem extends Operand {
     OperandRegister reg;
     int offset;
     String varName;
-    int width = 8;
+    int bits = 64;
 
     public OperandMem(OperandRegister reg, int offset) {
         this.reg = reg;
         this.offset = offset;
     }
 
-    public OperandMem(OperandRegister reg, int offset, int width) {
+    public OperandMem(OperandRegister reg, int offset, int bits) {
         this.reg = reg;
         this.offset = offset;
-        this.width = width;
+        this.bits = bits;
     }
 
     public OperandMem(String varName, int offset) {
@@ -26,9 +26,9 @@ public class OperandMem extends Operand {
     public String toString() {
         String name;
         String size = null;
-        if (width == 8) {
+        if (bits == 64) {
             size = "qword";
-        } else if (width == 4) {
+        } else if (bits == 32) {
             size = "dword";
         } else {
             assert false;
@@ -45,5 +45,18 @@ public class OperandMem extends Operand {
         } else {
             return size + " [ " + name + " ]";
         }
+    }
+
+    @Override
+    public boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandMem) {
+            if (varName == null) {
+                return reg == ((OperandMem) rhs).reg && offset == ((OperandMem) rhs).offset
+                        && ((OperandMem) rhs).varName == null;
+            }
+            return reg == ((OperandMem) rhs).reg && offset == ((OperandMem) rhs).offset
+                    && varName.equals(((OperandMem) rhs).varName);
+        }
+        return false;
     }
 }

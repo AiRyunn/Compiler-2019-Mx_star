@@ -11,4 +11,12 @@ public abstract class OperandRegister extends Operand {
     public String toString() {
         return name;
     }
+
+    @Override
+    public final boolean equals(java.lang.Object rhs) {
+        if (rhs instanceof OperandRegister) {
+            return getClass() == rhs.getClass() && name.equals(((OperandRegister) rhs).name);
+        }
+        return false;
+    }
 }

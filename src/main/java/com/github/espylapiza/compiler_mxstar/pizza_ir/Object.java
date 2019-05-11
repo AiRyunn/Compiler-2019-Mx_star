@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class Object extends ProgramFragment {
+public class Object extends ProgramFragment implements Cloneable {
     public FuncDefinition belong;
     public String name;
     public final Type type;
@@ -24,6 +24,9 @@ public class Object extends ProgramFragment {
     public String toString() {
         if (id == null) {
             return null;
+        }
+        if (belong == null && name != null) {
+            return "$" + name;
         }
         return id.toString();
     }

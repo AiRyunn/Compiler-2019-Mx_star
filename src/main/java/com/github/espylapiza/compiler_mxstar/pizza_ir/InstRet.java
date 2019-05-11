@@ -1,8 +1,10 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public final class InstRet extends InstBaseJump {
-    public Object obj;
+import java.util.Arrays;
+import java.util.List;
 
+public final class InstRet extends Inst implements InstBaseJump {
+    public Object obj;
 
     public InstRet() {
         super();
@@ -25,5 +27,10 @@ public final class InstRet extends InstBaseJump {
         } else {
             return "ret " + obj;
         }
+    }
+
+    @Override
+    public List<Object> getObjects() {
+        return Arrays.asList(obj);
     }
 }

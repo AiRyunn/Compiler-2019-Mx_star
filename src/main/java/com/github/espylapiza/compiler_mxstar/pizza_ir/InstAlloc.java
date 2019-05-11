@@ -1,11 +1,13 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class InstAlloc extends Inst {
-    public Object dst;
     public Object size;
 
     public InstAlloc(Object dst, Object size) {
-        this.dst = dst;
+        super(dst);
         this.size = size;
     }
 
@@ -17,5 +19,10 @@ public class InstAlloc extends Inst {
     @Override
     public String toString() {
         return dst + " = alloc " + size;
+    }
+
+    @Override
+    public List<Object> getObjects() {
+        return Arrays.asList(size);
     }
 }
