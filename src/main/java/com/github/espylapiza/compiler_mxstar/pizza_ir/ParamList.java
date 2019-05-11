@@ -38,6 +38,10 @@ public class ParamList extends ProgramFragment implements Iterable<Object> {
         return params.get(n);
     }
 
+    public Object set(int n, Object obj) {
+        return params.set(n, obj);
+    }
+
     public int count() {
         return params.size();
     }

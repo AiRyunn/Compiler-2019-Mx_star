@@ -206,7 +206,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(InstStore inst) {
-        Operand dst = getOperand(inst.dst), src = getOperand(inst.src);
+        Operand dst = getOperand(inst.addr), src = getOperand(inst.src);
         if (src instanceof OperandMem) {
             OperandRegister src_reg = RegisterSet.rdx;
             addInstruction(new InstructionMov(src_reg, src));
@@ -272,6 +272,9 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     }
 
     private void addBuiltin0(Func func, Operand dst, Operand opThis) {
+        if (dst == null) {
+            return;
+        }
         switch (func.getAddr().toString()) {
         case "_MS_string.parseInt":
             addInstruction(new InstructionMov(RegisterSet.rdi, opThis));
@@ -297,6 +300,20 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     }
 
     private void addBuiltin1(Func func, Operand dst, Operand op, Operand opThis) {
+        if (dst == null) {
+            switch (func.getAddr().toString()) {
+            case "_MS_int.__preinc__":
+            case "_MS_int.__postinc__":
+                addInstruction(new InstructionInc(op));
+                break;
+            case "_MS_int.__predec__":
+            case "_MS_int.__postdec__":
+                addInstruction(new InstructionDec(op));
+                break;
+            }
+            return;
+        }
+
         switch (func.getAddr().toString()) {
         case "_MS_string.ord":
             addInstruction(new InstructionMov(regParams.get(0), opThis));
@@ -359,6 +376,9 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     }
 
     private void addBuiltin2(Func func, Operand dst, Operand lhs, Operand rhs, Operand opThis) {
+        if (dst == null) {
+            return;
+        }
         if (lhs == null || rhs == null) {
             assert false;
         }

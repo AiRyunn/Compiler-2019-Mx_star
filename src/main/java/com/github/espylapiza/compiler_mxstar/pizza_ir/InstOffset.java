@@ -1,13 +1,11 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
 public class InstOffset extends Inst {
-    public Object dst;
     public Object src;
     public Object offset;
 
     public InstOffset(Object dst, Object src, Object offset) {
-        super();
-        this.dst = dst;
+        super(dst);
         this.src = src;
         this.offset = offset;
     }

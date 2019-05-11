@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.pizza_ir;
 
-public class Object extends ProgramFragment {
+public class Object extends ProgramFragment implements Cloneable {
     public FuncDefinition belong;
     public String name;
     public final Type type;
