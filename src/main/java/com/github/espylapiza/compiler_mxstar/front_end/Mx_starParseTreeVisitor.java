@@ -951,7 +951,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 last = next;
             }
 
-            for (int i = 0; i < subscripts.size() - 1; i++) {
+            for (int i = subscripts.size() - 2; i >= 0; i--) {
                 manager.addInstruction(new InstCall(subs[i], funcAdd,
                         new ParamList(subs[i], new ObjectInt(funcAdd, null, (TypeInt) getTypeByName("int"), 1))));
                 manager.addInstruction(new InstJump(scpLoops[i]));
