@@ -37,7 +37,11 @@ public class Scope implements Iterable<Inst> {
     }
 
     public void addInstruction(Inst inst) {
-        getInsts().add(inst);
+        insts.add(inst);
+    }
+
+    public Inst lastInstruction() {
+        return insts.get(insts.size() - 1);
     }
 
     @Override
@@ -53,4 +57,5 @@ public class Scope implements Iterable<Inst> {
     public Iterator<Inst> iterator() {
         return getInsts().iterator();
     }
+
 }

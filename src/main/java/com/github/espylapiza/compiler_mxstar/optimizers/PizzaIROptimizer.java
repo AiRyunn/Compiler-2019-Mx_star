@@ -35,17 +35,38 @@ public class PizzaIROptimizer {
 
     public void optimize() {
         constant_folding_and_propagation();
+        remove_useless_assignment();
     }
 
     public PizzaIR getIR() {
         return ir;
     }
 
+    private void remove_useless_assignment() {
+        for (Func func : ir.funcList) {
+            if (func instanceof FuncExtra) {
+                for (Scope scp : ((FuncExtra) func).getScps()) {
+                    List<Inst> insts = scp.getInsts();
+
+                    for (int i = 0; i < insts.size() - 1; i++) {
+                        Inst inst0 = insts.get(i), inst1 = insts.get(i + 1);
+                        if (inst0.dst != null && inst0.dst.name == null && inst1 instanceof InstMov) {
+                            if (inst0.dst.equals(((InstMov) inst1).src)) {
+                                inst0.dst = ((InstMov) inst1).dst;
+                                insts.remove(i + 1);
+                                i--;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void constant_folding_and_propagation() {
         for (Func func : ir.funcList) {
             if (func instanceof FuncExtra) {
                 do_function_constant_folding_and_propagation((FuncExtra) func);
-                register_allocate((FuncExtra) func);
             }
         }
     }
@@ -69,6 +90,7 @@ public class PizzaIROptimizer {
         }
 
         alter_variables(func, alter);
+        remove_useless_variables(func);
     }
 
     private Inst inst_folding(InstCall instCall, Map<Object, Object> alter) {
@@ -191,88 +213,82 @@ public class PizzaIROptimizer {
         return null;
     }
 
+    private void alter_variables(Scope scp, Map<Object, Object> alter) {
+        if (alter == null) {
+            return;
+        }
+        for (Inst inst : scp.getInsts()) {
+            if (inst instanceof InstAlloc) {
+                if (alter.containsKey(((InstAlloc) inst).size)) {
+                    ((InstAlloc) inst).size = alter.get(((InstAlloc) inst).size);
+                }
+            } else if (inst instanceof InstBr) {
+                if (alter.containsKey(((InstBr) inst).obj)) {
+                    ((InstBr) inst).obj = alter.get(((InstBr) inst).obj);
+                }
+            } else if (inst instanceof InstCall) {
+                for (int i = 0; i < ((InstCall) inst).params.count(); i++) {
+                    Object param = ((InstCall) inst).params.get(i);
+                    if (param instanceof ObjectPtr) {
+                        continue;
+                    }
+
+                    if (alter.containsKey(param)) {
+                        ((InstCall) inst).params.set(i, alter.get(param));
+                    }
+                }
+                if (alter.containsKey(((InstCall) inst).objThis)) {
+                    ((InstCall) inst).objThis = alter.get(((InstCall) inst).objThis);
+                }
+            } else if (inst instanceof InstLoad) {
+                if (alter.containsKey(((InstLoad) inst).src)) {
+                    ((InstLoad) inst).src = alter.get(((InstLoad) inst).src);
+                }
+            } else if (inst instanceof InstMov) {
+                if (alter.containsKey(((InstMov) inst).src)) {
+                    ((InstMov) inst).src = alter.get(((InstMov) inst).src);
+                }
+            } else if (inst instanceof InstOffset) {
+                if (alter.containsKey(((InstOffset) inst).src)) {
+                    ((InstOffset) inst).src = alter.get(((InstOffset) inst).src);
+                }
+                if (alter.containsKey(((InstOffset) inst).offset)) {
+                    ((InstOffset) inst).offset = alter.get(((InstOffset) inst).offset);
+                }
+            } else if (inst instanceof InstRet) {
+                if (alter.containsKey(((InstRet) inst).obj)) {
+                    ((InstRet) inst).obj = alter.get(((InstRet) inst).obj);
+                }
+            } else if (inst instanceof InstStore) {
+                if (alter.containsKey(((InstStore) inst).addr)) {
+                    ((InstStore) inst).addr = alter.get(((InstStore) inst).addr);
+                }
+                if (alter.containsKey(((InstStore) inst).src)) {
+                    ((InstStore) inst).src = alter.get(((InstStore) inst).src);
+                }
+            }
+        }
+    }
+
     private void alter_variables(FuncExtra func, Map<Object, Object> alter) {
         if (alter == null) {
-            alter = new HashMap<Object, Object>();
+            return;
         }
+        for (Scope scp : func.getScps()) {
+            alter_variables(scp, alter);
+        }
+    }
 
+    private void remove_useless_variables(FuncExtra func) {
         Set<Object> used = new HashSet<Object>();
 
         for (Scope scp : func.getScps()) {
             for (Inst inst : scp.getInsts()) {
-                if (inst instanceof InstAlloc) {
-                    if (alter.containsKey(((InstAlloc) inst).size)) {
-                        ((InstAlloc) inst).size = alter.get(((InstAlloc) inst).size);
-                    } else {
-                        used.add(((InstAlloc) inst).size);
+                for (Object obj : inst.getObjects()) {
+                    if (obj instanceof ObjectPtr) {
+                        obj = ((ObjectPtr) obj).obj;
                     }
-                } else if (inst instanceof InstBr) {
-                    if (alter.containsKey(((InstBr) inst).obj)) {
-                        ((InstBr) inst).obj = alter.get(((InstBr) inst).obj);
-                    } else {
-                        used.add(((InstBr) inst).obj);
-                    }
-                } else if (inst instanceof InstCall) {
-                    for (int i = 0; i < ((InstCall) inst).params.count(); i++) {
-                        Object obj = ((InstCall) inst).params.get(i);
-                        if (obj instanceof ObjectPtr) {
-                            // used.add(obj);
-                            obj = ((ObjectPtr) obj).obj;
-                            used.add(obj);
-                            continue;
-                        }
-
-                        if (alter.containsKey(obj)) {
-                            ((InstCall) inst).params.set(i, alter.get(obj));
-                        } else {
-                            used.add(obj);
-                        }
-                    }
-                    if (alter.containsKey(((InstCall) inst).objThis)) {
-                        ((InstCall) inst).objThis = alter.get(((InstCall) inst).objThis);
-                    } else {
-                        used.add(((InstCall) inst).objThis);
-                    }
-                } else if (inst instanceof InstLoad) {
-                    if (alter.containsKey(((InstLoad) inst).src)) {
-                        ((InstLoad) inst).src = alter.get(((InstLoad) inst).src);
-                    } else {
-                        used.add(((InstLoad) inst).src);
-                    }
-                } else if (inst instanceof InstMov) {
-                    if (alter.containsKey(((InstMov) inst).src)) {
-                        ((InstMov) inst).src = alter.get(((InstMov) inst).src);
-                    } else {
-                        used.add(((InstMov) inst).src);
-                    }
-                } else if (inst instanceof InstOffset) {
-                    if (alter.containsKey(((InstOffset) inst).src)) {
-                        ((InstOffset) inst).src = alter.get(((InstOffset) inst).src);
-                    } else {
-                        used.add(((InstOffset) inst).src);
-                    }
-                    if (alter.containsKey(((InstOffset) inst).offset)) {
-                        ((InstOffset) inst).offset = alter.get(((InstOffset) inst).offset);
-                    } else {
-                        used.add(((InstOffset) inst).offset);
-                    }
-                } else if (inst instanceof InstRet) {
-                    if (alter.containsKey(((InstRet) inst).obj)) {
-                        ((InstRet) inst).obj = alter.get(((InstRet) inst).obj);
-                    } else {
-                        used.add(((InstRet) inst).obj);
-                    }
-                } else if (inst instanceof InstStore) {
-                    if (alter.containsKey(((InstStore) inst).addr)) {
-                        ((InstStore) inst).addr = alter.get(((InstStore) inst).addr);
-                    } else {
-                        used.add(((InstStore) inst).addr);
-                    }
-                    if (alter.containsKey(((InstStore) inst).src)) {
-                        ((InstStore) inst).src = alter.get(((InstStore) inst).src);
-                    } else {
-                        used.add(((InstStore) inst).src);
-                    }
+                    used.add(obj);
                 }
             }
         }
@@ -318,28 +334,8 @@ public class PizzaIROptimizer {
                     used.add(inst.dst);
                 }
 
-                if (inst instanceof InstAlloc) {
-                    used.add(((InstAlloc) inst).size);
-                } else if (inst instanceof InstBr) {
-                    used.add(((InstBr) inst).obj);
-                } else if (inst instanceof InstCall) {
-                    for (int i = 0; i < ((InstCall) inst).params.count(); i++) {
-                        Object obj = ((InstCall) inst).params.get(i);
-                        used.add(obj);
-                    }
-                    used.add(((InstCall) inst).objThis);
-                } else if (inst instanceof InstLoad) {
-                    used.add(((InstLoad) inst).src);
-                } else if (inst instanceof InstMov) {
-                    used.add(((InstMov) inst).src);
-                } else if (inst instanceof InstOffset) {
-                    used.add(((InstOffset) inst).src);
-                    used.add(((InstOffset) inst).offset);
-                } else if (inst instanceof InstRet) {
-                    used.add(((InstRet) inst).obj);
-                } else if (inst instanceof InstStore) {
-                    used.add(((InstStore) inst).addr);
-                    used.add(((InstStore) inst).src);
+                for (Object obj : inst.getObjects()) {
+                    used.add(obj);
                 }
             }
         }
@@ -362,161 +358,5 @@ public class PizzaIROptimizer {
         }
 
         func.setVarList(varList);
-    }
-
-    private void register_allocate(FuncExtra func) {
-        // Map<Object, Integer> cnt = new HashMap<Object, Integer>();
-
-        // for (Scope scp : func.getScps()) {
-        //     List<Inst> insts = scp.getInsts();
-
-        //     for (int i = 0; i < insts.size(); i++) {
-        //         Inst inst1 = insts.get(i + 1);
-        //         Object dst0 = inst0.dst;
-
-        //         if (dst0 != null && dst0.name == null && !(inst1 instanceof InstStore)) {
-        //             boolean ok = false;
-
-        //             if (inst1 instanceof InstAlloc) {
-        //                 ok = ((InstAlloc) inst1).size == dst0;
-        //             } else if (inst1 instanceof InstBr) {
-        //                 ok = ((InstBr) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstCall) {
-        //                 for (int j = 0; j < ((InstCall) inst1).params.count(); j++) {
-        //                     Object obj = ((InstCall) inst1).params.get(j);
-        //                     ok |= obj == dst0;
-        //                 }
-        //                 ok |= ((InstCall) inst1).objThis == dst0;
-        //             } else if (inst1 instanceof InstLoad) {
-        //                 ok = ((InstLoad) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstMov) {
-        //                 ok = ((InstMov) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstOffset) {
-        //                 ok = ((InstOffset) inst1).src == dst0 || ((InstOffset) inst1).offset == dst0;
-        //             } else if (inst1 instanceof InstRet) {
-        //                 ok = ((InstRet) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstStore) {
-        //                 ok = ((InstStore) inst1).addr == dst0 || ((InstStore) inst1).src == dst0;
-        //             }
-        //         }
-        //     }
-        // }
-
-        // for (Scope scp : func.getScps()) {
-        //     List<Inst> insts = scp.getInsts();
-
-        //     for (int i = 0; i + 1 < insts.size(); i++) {
-        //         Inst inst0 = insts.get(i), inst1 = insts.get(i + 1);
-        //         Object dst0 = inst0.dst;
-
-        //         if (dst0 != null && dst0.name == null && !(inst1 instanceof InstStore)) {
-        //             boolean ok = false;
-
-        //             if (inst1 instanceof InstAlloc) {
-        //                 ok = ((InstAlloc) inst1).size == dst0;
-        //             } else if (inst1 instanceof InstBr) {
-        //                 ok = ((InstBr) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstCall) {
-        //                 for (int j = 0; j < ((InstCall) inst1).params.count(); j++) {
-        //                     Object obj = ((InstCall) inst1).params.get(j);
-        //                     ok |= obj == dst0;
-        //                 }
-        //                 ok |= ((InstCall) inst1).objThis == dst0;teger>();
-
-        // for (Scope scp : func.getScps()) {
-        //     List<Inst> insts = scp.getInsts();
-
-        //     for (int i = 0; i < insts.size(); i++) {
-        //         Inst inst1 = insts.get(i + 1);
-        //         Object dst0 = inst0.dst;
-
-        //         if (dst0 != null && dst0.name == null && !(inst1 instanceof InstStore)) {
-        //             boolean ok = false;
-
-        //             if (inst1 instanceof InstAlloc) {
-        //                 ok = ((InstAlloc) inst1).size == dst0;
-        //             } else if (inst1 instanceof InstBr) {
-        //                 ok = ((InstBr) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstCall) {
-        //                 for (int j = 0; j < ((InstCall) inst1).params.count(); j++) {
-        //                     Object obj = ((InstCall) inst1).params.get(j);
-        //                     ok |= obj == dst0;
-        //                 }
-        //                 ok |= ((InstCall) inst1).objThis == dst0;
-        //             } else if (inst1 instanceof InstLoad) {
-        //                 ok = ((InstLoad) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstMov) {
-        //                 ok = ((InstMov) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstOffset) {
-        //                 ok = ((InstOffset) inst1).src == dst0 || ((InstOffset) inst1).offset == dst0;
-        //             } else if (inst1 instanceof InstRet) {
-        //                 ok = ((InstRet) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstStore) {
-        //                 ok = ((InstStore) inst1).addr == dst0 || ((InstStore) inst1).src == dst0;
-        //             }
-        //         }
-        //     }
-        // }
-
-        // for (Scope scp : func.getScps()) {
-        //     List<Inst> insts = scp.getInsts();
-
-        //     for (int i = 0; i + 1 < insts.size(); i++) {
-        //         Inst inst0 = insts.get(i), inst1 = insts.get(i + 1);
-        //         Object dst0 = inst0.dst;
-
-        //         if (dst0 != null && dst0.name == null && !(inst1 instanceof InstStore)) {
-        //             boolean ok = false;
-
-        //             if (inst1 instanceof InstAlloc) {
-        //                 ok = ((InstAlloc) inst1).size == dst0;
-        //             } else if (inst1 instanceof InstBr) {
-        //                 ok = ((InstBr) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstCall) {
-        //                 for (int j = 0; j < ((InstCall) inst1).params.count(); j++) {
-        //                     Object obj = ((InstCall) inst1).params.get(j);
-        //                     ok |= obj == dst0;
-        //                 }
-        //                 ok |= ((InstCall) inst1).objThis == dst0;
-        //             } else if (inst1 instanceof InstLoad) {
-        //                 ok = ((InstLoad) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstMov) {
-        //                 ok = ((InstMov) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstOffset) {
-        //                 ok = ((InstOffset) inst1).src == dst0 || ((InstOffset) inst1).offset == dst0;
-        //             } else if (inst1 instanceof InstRet) {
-        //                 ok = ((InstRet) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstStore) {
-        //                 ok = ((InstStore) inst1).addr == dst0 || ((InstStore) inst1).src == dst0;
-        //             }
-
-        //             if (ok) {
-        //                 put(dst0, RegisterSet.rax);
-        //                 System.out.println(inst0);
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-        //             } else if (inst1 instanceof InstLoad) {
-        //                 ok = ((InstLoad) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstMov) {
-        //                 ok = ((InstMov) inst1).src == dst0;
-        //             } else if (inst1 instanceof InstOffset) {
-        //                 ok = ((InstOffset) inst1).src == dst0 || ((InstOffset) inst1).offset == dst0;
-        //             } else if (inst1 instanceof InstRet) {
-        //                 ok = ((InstRet) inst1).obj == dst0;
-        //             } else if (inst1 instanceof InstStore) {
-        //                 ok = ((InstStore) inst1).addr == dst0 || ((InstStore) inst1).src == dst0;
-        //             }
-
-        //             if (ok) {
-        //                 put(dst0, RegisterSet.rax);
-        //                 System.out.println(inst0);
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
     }
 }

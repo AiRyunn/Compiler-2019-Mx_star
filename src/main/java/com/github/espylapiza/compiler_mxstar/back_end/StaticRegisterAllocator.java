@@ -27,11 +27,18 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
 
 // (8 * (top + 1) + 15) / 16 * 16
-public class RegisterAllocator {
+
+abstract class RegisterAllocator {
+    abstract void cache(Object obj);
+
+    abstract Operand get(Object obj);
+}
+
+class StaticRegisterAllocator extends RegisterAllocator {
     private Map<Object, Operand> maddr = new HashMap<Object, Operand>();
     private int stackSize;
 
-    RegisterAllocator() {
+    StaticRegisterAllocator() {
     }
 
     /**
@@ -59,21 +66,6 @@ public class RegisterAllocator {
                 put(obj, operand);
             }
         }
-
-        // for (Object obj : func.getParams()) {
-        //     // if (index < 6) {
-        //     Operand operand;
-        //     if (exists(obj)) {
-        //         operand = get(obj);
-        //     } else {
-        //         operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
-        //     }
-        //     put(obj, operand);
-        //     // } else {
-        //     //     put(obj, new OperandMem(RegisterSet.rbp, 8 * (total - index + 1)));
-        //     // }
-        //     index++;
-        // }
 
         for (Object obj : func.getVarList()) {
             if (!exists(obj)) {
@@ -287,9 +279,15 @@ public class RegisterAllocator {
         return maddr.containsKey(obj);
     }
 
-    Operand get(Object object) {
-        Operand result = maddr.get(object);
+    @Override
+    Operand get(Object obj) {
+        Operand result = maddr.get(obj);
         return result;
+    }
+
+    @Override
+    void cache(Object obj) {
+
     }
 }
 
@@ -301,5 +299,24 @@ class Interval {
         this.l = l;
         this.r = r;
         this.obj = obj;
+    }
+}
+
+class DynamicRegisterAllocator extends RegisterAllocator {
+    NASM nasm;
+
+    DynamicRegisterAllocator(NASM nasm) {
+        this.nasm = nasm;
+    }
+
+    @Override
+    void cache(Object obj) {
+        // nasm.sectionText.addItem(new InstructionPush())
+
+    }
+
+    @Override
+    Operand get(Object obj) {
+        return null;
     }
 }

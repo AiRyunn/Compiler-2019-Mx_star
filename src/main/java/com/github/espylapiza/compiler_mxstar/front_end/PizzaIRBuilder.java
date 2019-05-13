@@ -195,8 +195,11 @@ class ScopeManager {
     }
 
     void addInstruction(Inst inst) {
-        //        LOGGER.fine("addInstruction: " + inst.toString());
         funcStack.lastElement().addInstruction(inst);
+    }
+
+    Inst lastInstruction() {
+        return funcStack.lastElement().lastInstruction();
     }
 
     void jumpBreak() {
@@ -237,6 +240,10 @@ class FuncBuilder {
 
     FuncBuilder(FuncExtra func) {
         this.func = func;
+    }
+
+    public Inst lastInstruction() {
+        return scpStack.lastElement().scope.lastInstruction();
     }
 
     void addInstruction(Inst inst) {

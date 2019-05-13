@@ -71,8 +71,8 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     private final List<OperandRegister> regParams = Arrays.asList(RegisterSet.rdi, RegisterSet.rsi, RegisterSet.rdx,
             RegisterSet.rcx, RegisterSet.r8, RegisterSet.r9);
 
-    private RegisterAllocator allocatorGlobal = new RegisterAllocator();
-    private RegisterAllocator allocator;
+    private StaticRegisterAllocator allocatorGlobal = new StaticRegisterAllocator();
+    private StaticRegisterAllocator allocator;
 
     PizzaIRVisitor(NASM nasm) {
         this.nasm = nasm;
@@ -99,7 +99,7 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
 
     @Override
     public void visit(FuncExtra func) {
-        allocator = new RegisterAllocator();
+        allocator = new StaticRegisterAllocator();
         allocator.simpleAllocate(nasm, func);
 
         int stackSize = allocator.getStackSize();
