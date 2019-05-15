@@ -2,22 +2,22 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class OperandMem extends Operand {
     OperandRegister reg;
-    int offset;
+    public Integer offset;
     String varName;
     int bits = 64;
 
-    public OperandMem(OperandRegister reg, int offset) {
+    public OperandMem(OperandRegister reg, Integer offset) {
         this.reg = reg;
         this.offset = offset;
     }
 
-    public OperandMem(OperandRegister reg, int offset, int bits) {
+    public OperandMem(OperandRegister reg, Integer offset, int bits) {
         this.reg = reg;
         this.offset = offset;
         this.bits = bits;
     }
 
-    public OperandMem(String varName, int offset) {
+    public OperandMem(String varName, Integer offset) {
         this.varName = varName;
         this.offset = offset;
     }

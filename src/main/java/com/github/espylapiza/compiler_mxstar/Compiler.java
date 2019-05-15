@@ -45,7 +45,7 @@ public class Compiler {
 
             LOGGER.info("optimize PizzaIR...");
             PizzaIROptimizer optimizer = new PizzaIROptimizer(ir);
-            // optimizer.optimize();
+            optimizer.optimize();
 
             // TODO: Printer
             if (irOstream != null) {
@@ -58,7 +58,7 @@ public class Compiler {
             NASM nasm = translator.getNASM();
 
             NASMOptimizer nasmOptimizer = new NASMOptimizer(nasm);
-            // nasmOptimizer.optimize();
+            nasmOptimizer.optimize();
 
             // TODO: Printer
             asmOstream.write(nasm.toString().getBytes());

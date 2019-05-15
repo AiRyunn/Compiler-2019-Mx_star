@@ -2,7 +2,6 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionSub extends Instruction {
     private static final String name = "sub";
-    public Operand dst;
     Operand src;
     public Integer imm;
 

@@ -2,7 +2,6 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionMovzx extends Instruction {
     private static final String name = "movzx";
-    Operand dst;
     Operand src;
 
     public InstructionMovzx(Operand dst, Operand src) {

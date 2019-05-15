@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionOr extends Instruction {
     private static final String name = "or";
-    Operand dst, src;
+    Operand src;
     int imm;
 
     public InstructionOr(Operand dst, int imm) {

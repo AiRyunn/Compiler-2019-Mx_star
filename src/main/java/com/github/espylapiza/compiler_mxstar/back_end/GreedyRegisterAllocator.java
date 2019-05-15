@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import com.github.espylapiza.compiler_mxstar.nasm.Instruction;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionBaseJump;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionDB;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionMov;
@@ -44,15 +45,17 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectPtr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 
-class GreedyRegisterAllocator extends RegisterAllocator {
+class GreedyRegisterAllocator {
     private final List<OperandRegister> regAvailable = Arrays.asList(RegisterSet.rax, RegisterSet.rcx, RegisterSet.rdx,
-            RegisterSet.rsi, RegisterSet.rdi, RegisterSet.r8, RegisterSet.r9, RegisterSet.r10, RegisterSet.r11);
+            RegisterSet.rsi, RegisterSet.rdi, RegisterSet.r8, RegisterSet.r9, RegisterSet.r10, RegisterSet.r11,
+            RegisterSet.r12, RegisterSet.r13, RegisterSet.r14, RegisterSet.r15);
     private final List<OperandRegister> regParams = Arrays.asList(RegisterSet.rdi, RegisterSet.rsi, RegisterSet.rdx,
             RegisterSet.rcx, RegisterSet.r8, RegisterSet.r9);
 
-    private Map<Object, OperandMem> objAddr = new HashMap<Object, OperandMem>();
+    private Map<Object, Operand> objAddr = new HashMap<Object, Operand>();
     private Map<Object, OperandRegister> objMap = new HashMap<Object, OperandRegister>();
     private Map<OperandRegister, Object> regObj = new HashMap<OperandRegister, Object>();
+    private Set<Object> dirty = new HashSet<Object>();
 
     private List<OperandRegister> freeRegs;
     private List<OperandRegister> activeRegs;
@@ -68,15 +71,12 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         freeRegs = new ArrayList<OperandRegister>();
         frozenRegs = new HashSet<OperandRegister>();
         for (OperandRegister reg : regAvailable) {
-            assert !freeRegs.contains(reg);
             freeRegs.add(reg);
         }
     }
 
-    @Override
     OperandRegister get(Object obj, OperandRegister prefer) {
-        System.out.println("get: " + obj);
-        OperandMem op = objAddr.get(obj);
+        Operand op = objAddr.get(obj);
         if (op == null) {
             if (obj.name != null) {
                 allocateStack(obj);
@@ -86,8 +86,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         // hit
         OperandRegister reg = objMap.get(obj);
         if (reg != null) {
-            System.out.println("hit!!!!!!!!!!!!!");
-            assert activeRegs.contains(reg);
             activeRegs.remove(reg);
             activeRegs.add(reg);
             return reg;
@@ -95,11 +93,9 @@ class GreedyRegisterAllocator extends RegisterAllocator {
 
         // miss
         if (op == null) {
-            System.out.println("miss!!!!!!!!!!!!!1111");
             allocateStack(obj);
             reg = allocate(prefer);
         } else {
-            System.out.println("miss!!!!!!!!!!!!!2222");
             reg = allocate(prefer);
             nasm.sectionText.addItem(new InstructionMov(reg, op));
         }
@@ -111,8 +107,7 @@ class GreedyRegisterAllocator extends RegisterAllocator {
     }
 
     private Operand allocateStack(Object obj) {
-        stackSize++;
-        OperandMem addr = new OperandMem(RegisterSet.rbp, -8 * stackSize);
+        OperandMem addr = new OperandMem(RegisterSet.rbp, null);
         objAddr.put(obj, addr);
         return addr;
     }
@@ -122,7 +117,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         if (result == null) {
             result = deallocate();
         }
-        System.out.println("success!");
         return result;
     }
 
@@ -145,7 +139,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
             }
         }
         if (result != null) {
-            System.out.println("try success: " + result);
             assert !frozenRegs.contains(result);
             freeRegs.remove(result);
             activeRegs.add(result);
@@ -158,7 +151,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
     }
 
     private OperandRegister deallocate() {
-        System.out.println("deallocate>>>>>>>>>>>>>>>>");
         OperandRegister reg = activeRegs.get(0);
 
         release_register(reg);
@@ -172,40 +164,41 @@ class GreedyRegisterAllocator extends RegisterAllocator {
 
     private void writeBack(OperandRegister reg, boolean globalOnly, boolean nameOnly) {
         Object obj = regObj.get(reg);
-        System.out.println("writeback(): " + obj);
         if (obj == null) {
             return;
         }
-        boolean write = true;
-        // if (globalOnly && !obj.isGlobal()) {
-        //     write = false;
-        // }
-        // if (nameOnly && obj.name == null) {
-        //     write = false;
-        // }
+        boolean write = dirty.contains(obj);
+        // boolean write = true;
 
         Operand addr = objAddr.get(obj);
         if (addr == null) {
             addr = allocateStack(obj);
         }
+        if (addr instanceof OperandMem) {
+            if (((OperandMem) addr).offset == null) {
+                ((OperandMem) addr).offset = -8 * (++stackSize);
+            }
+        }
         if (write) {
-            nasm.sectionText.addItem(new InstructionMov(addr, reg));
+            addInstruction(new InstructionMov(addr, reg));
             if (addr instanceof OperandRegister) {
                 objMap.put(obj, (OperandRegister) addr);
                 regObj.put((OperandRegister) addr, obj);
             }
+            dirty.remove(obj);
         }
         regObj.remove(reg);
         objMap.remove(obj);
     }
 
-    @Override
     void enterFunc(FuncExtra func) {
+        stackSize = 0;
         int cntParams = func.getParams().count(), index = 0;
         if (func.getOwnerClass() != null) {
             cntParams++;
             objMap.put(func.getVarList().get(0), regParams.get(index));
             regObj.put(regParams.get(index), func.getVarList().get(0));
+            dirty.add(func.getVarList().get(0));
             activeRegs.add(regParams.get(index));
             freeRegs.remove(regParams.get(index));
             index++;
@@ -215,6 +208,7 @@ class GreedyRegisterAllocator extends RegisterAllocator {
             if (index < 6) {
                 objMap.put(obj, regParams.get(index));
                 regObj.put(regParams.get(index), obj);
+                dirty.add(obj);
                 activeRegs.add(regParams.get(index));
                 freeRegs.remove(regParams.get(index));
             } else {
@@ -222,9 +216,25 @@ class GreedyRegisterAllocator extends RegisterAllocator {
             }
             index++;
         }
+
+        /*int opCnt = 0;
+        for (Object obj : func.getVarList()) {
+            if (!(obj instanceof ObjectConstant)) {
+                opCnt++;
+            }
+        }
+        if (opCnt <= 8) {
+            int i = 0;
+            for (Object obj : func.getVarList()) {
+                if (!(obj instanceof ObjectConstant)) {
+                    objAddr.put(obj, regAvailable.get(i + 2));
+                    freeRegs.remove(regAvailable.get(i + 2));
+                    i++;
+                }
+            }
+        }*/
     }
 
-    @Override
     void exitFunc() {
         int size = nasm.sectionText.items.size();
         for (int i = size - 1; i >= 0; i--) {
@@ -241,11 +251,9 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         regObj.clear();
     }
 
-    @Override
     void enterBlock(BasicBlock blk) {
     }
 
-    @Override
     void exitBlock(BasicBlock blk) {
         boolean isRet = false;
         Stack<SectionItem> stk = new Stack<SectionItem>();
@@ -266,8 +274,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         }
 
         Iterator<OperandRegister> it = activeRegs.iterator();
-        System.out.println(freeRegs.toString());
-        System.out.println(activeRegs.toString());
         while (it.hasNext()) {
             OperandRegister reg = it.next();
             writeBack(reg, isRet, true);
@@ -282,9 +288,10 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         }
         objMap.clear();
         regObj.clear();
+        assert dirty.isEmpty();
+        // dirty.clear();
     }
 
-    @Override
     void arrange_fixed_register(Inst inst) {
         if (inst instanceof InstAlloc) {
             freeze(RegisterSet.rdi);
@@ -319,30 +326,25 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         frozenRegs.clear();
     }
 
-    private void release_register(OperandRegister regRelease) {
-        for (OperandRegister reg : activeRegs) {
-            if (reg == regRelease) {
-                OperandRegister dst = tryAllocate();
-                if (dst != null) {
-                    System.out.println("move: " + dst);
-                    nasm.sectionText.addItem(new InstructionMov(dst, regRelease));
-                    Object obj = regObj.get(regRelease);
-                    objMap.put(obj, dst);
-                    regObj.put(dst, obj);
-                    regObj.remove(regRelease);
-                } else {
-                    System.out.println("writeback: " + reg);
-                    writeBack(reg, false, false);
-                }
-                assert activeRegs.contains(reg);
-                activeRegs.remove(reg);
-                freeRegs.add(reg);
-                break;
-            }
+    private void release_register(OperandRegister reg) {
+        if (!activeRegs.contains(reg)) {
+            return;
         }
+
+        OperandRegister dst = tryAllocate();
+        if (dst != null) {
+            addInstruction(new InstructionMov(dst, reg));
+            Object obj = regObj.get(reg);
+            objMap.put(obj, dst);
+            regObj.put(dst, obj);
+            regObj.remove(reg);
+        } else {
+            writeBack(reg, false, false);
+        }
+        activeRegs.remove(reg);
+        freeRegs.add(reg);
     }
 
-    @Override
     void allocateGlobal(FuncExtra initFunc) {
         for (Object obj : initFunc.getDefinedVariables()) {
             nasm.sectionBSS.addItem(new InstructionResq("$" + obj.name));
@@ -351,7 +353,6 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         }
     }
 
-    @Override
     void request(OperandRegister reg) {
         freeze(reg);
         release_register(reg);
@@ -375,7 +376,7 @@ class GreedyRegisterAllocator extends RegisterAllocator {
             now = null;
             assert false;
             // Operand op = getOperand(((ObjectPtr) obj).obj);
-            // nasm.sectionText.addItem(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
+            // addInstruction(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
             // now = new OperandMem((OperandRegister) op, 0);
         } else {
             now = get(obj, dst);
@@ -386,7 +387,7 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         }
         freeze(dst);
         release_register(dst);
-        nasm.sectionText.addItem(new InstructionMov(dst, now));
+        addInstruction(new InstructionMov(dst, now));
     }
 
     void requestMov(Object obj, OperandRegister src) {
@@ -395,21 +396,19 @@ class GreedyRegisterAllocator extends RegisterAllocator {
             dst = null;
             assert false;
             // Operand op = getOperand(((ObjectPtr) obj).obj);
-            // nasm.sectionText.addItem(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
+            // addInstruction(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
             // now = new OperandMem((OperandRegister) op, 0);
         } else {
-            System.out.println("requestMov");
             freeze(src);
             dst = get(obj, src);
             // now = objMap.get(obj);
             if (dst != src) {
-                nasm.sectionText.addItem(new InstructionMov(dst, src));
+                addInstruction(new InstructionMov(dst, src));
             }
             unfreeze(src);
         }
     }
 
-    @Override
     void freeze_all() {
         for (OperandRegister reg : regAvailable) {
             freeze(reg);
@@ -417,5 +416,20 @@ class GreedyRegisterAllocator extends RegisterAllocator {
         for (OperandRegister reg : regAvailable) {
             release_register(reg);
         }
+    }
+
+    public void write(Operand dst) {
+        Object obj = regObj.get(dst);
+        if (obj == null) {
+            return;
+        }
+        dirty.add(obj);
+    }
+
+    void addInstruction(SectionItem item) {
+        if (item instanceof Instruction) {
+            write(((Instruction) item).dst);
+        }
+        nasm.sectionText.addItem(item);
     }
 }

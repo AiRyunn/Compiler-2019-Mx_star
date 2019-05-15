@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionShl extends Instruction {
     private static final String name = "shl";
-    Operand dst, cl;
+    Operand cl;
     int imm8;
 
     public InstructionShl(Operand dst, int imm8) {

@@ -36,7 +36,7 @@ long long _MS_getInt() {
 uchar *_MS_toString(long long var_int) {
     uchar *str = (uchar *)malloc(16 * sizeof(uchar));
     // itoa(var_int, str, 10);
-    sprintf(str + 4, "%lld", var_int);
+    sprintf(str + 4, "%lld", (long long)(int)var_int);
     int len = strlen(str + 4);
     str[3] = len / 256 / 256 / 256;
     str[2] = len / 256 / 256 % 256;

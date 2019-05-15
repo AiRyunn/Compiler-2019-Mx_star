@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionXor extends Instruction {
     private static final String name = "xor";
-    Operand dst, src;
+    Operand src;
     int imm;
 
     public InstructionXor(Operand dst, int imm) {

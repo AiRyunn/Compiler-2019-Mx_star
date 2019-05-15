@@ -2,6 +2,8 @@ package com.github.espylapiza.compiler_mxstar.back_end;
 
 import java.util.Arrays;
 import java.util.List;
+
+import com.github.espylapiza.compiler_mxstar.nasm.Instruction;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionAdd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionAnd;
 import com.github.espylapiza.compiler_mxstar.nasm.InstructionCall;
@@ -263,7 +265,6 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     @Override
     public void visit(Inst inst) {
         if (inst instanceof Inst) {
-            System.out.println(inst.getClass());
             assert false;
         }
     }
@@ -424,6 +425,9 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             break;
         case "_MS_string.substring":
             allocator.request(RegisterSet.rax);
+            allocator.request(regParams.get(0));
+            allocator.request(regParams.get(1));
+            allocator.request(regParams.get(2));
             addInstruction(new InstructionMov(regParams.get(0), getOperand(opThis)));
             addInstruction(new InstructionMov(regParams.get(1), getOperand(lhs)));
             addInstruction(new InstructionMov(regParams.get(2), getOperand(rhs)));
@@ -431,7 +435,6 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionCall(new OperandFuncAddr("_string_substring")));
             allocator.unfreeze_all();
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__add__":
             allocator.request(RegisterSet.rax);
@@ -443,7 +446,6 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionCall(new OperandFuncAddr("_string___add__")));
             allocator.unfreeze_all();
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__eq__":
             allocator.request(RegisterSet.rax);
@@ -451,9 +453,10 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__ne__":
             allocator.request(RegisterSet.rax);
@@ -461,12 +464,14 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
+            allocator.request(RegisterSet.rax);
             addInstruction(new InstructionTest(RegisterSet.rax, RegisterSet.rax));
             addInstruction(new InstructionSetne(RegisterSet.al));
             addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__lt__":
             allocator.request(RegisterSet.rax);
@@ -474,12 +479,14 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
+            allocator.request(RegisterSet.rax);
             addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
             addInstruction(new InstructionSetl(RegisterSet.al));
             addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__gt__":
             allocator.request(RegisterSet.rax);
@@ -487,12 +494,14 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
+            allocator.request(RegisterSet.rax);
             addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
             addInstruction(new InstructionSetg(RegisterSet.al));
             addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__le__":
             allocator.request(RegisterSet.rax);
@@ -500,12 +509,14 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
+            allocator.request(RegisterSet.rax);
             addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
             addInstruction(new InstructionSetle(RegisterSet.al));
             addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_string.__ge__":
             allocator.request(RegisterSet.rax);
@@ -513,12 +524,14 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             allocator.request(RegisterSet.rsi);
             addInstruction(new InstructionMov(RegisterSet.rdi, getOperand(lhs)));
             addInstruction(new InstructionMov(RegisterSet.rsi, getOperand(rhs)));
+            allocator.freeze_all();
             addInstruction(new InstructionCall(new OperandFuncAddr("_strcmp")));
+            allocator.unfreeze_all();
+            allocator.request(RegisterSet.rax);
             addInstruction(new InstructionCmp(RegisterSet.rax, new OperandInt(0)));
             addInstruction(new InstructionSetge(RegisterSet.al));
             addInstruction(new InstructionMovzx(RegisterSet.rax, RegisterSet.al));
             allocator.requestMov(dst, RegisterSet.rax);
-            // addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
         case "_MS_bool.__lgcand__":
             addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
@@ -542,18 +555,37 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             addInstruction(new InstructionSetne(RegisterSet.al));
             addInstruction(new InstructionMov(getOperand(dst), RegisterSet.rax));
             break;
-        case "_MS_int.__add__":
-            addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
-            addInstruction(new InstructionAdd(getOperand(dst), getOperand(rhs)));
+        case "_MS_int.__add__": {
+            if (getOperand(dst) == getOperand(rhs)) {
+                addInstruction(new InstructionMov(getOperand(dst), getOperand(rhs)));
+                addInstruction(new InstructionAdd(getOperand(dst), getOperand(lhs)));
+            } else {
+                addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
+                addInstruction(new InstructionAdd(getOperand(dst), getOperand(rhs)));
+            }
             break;
-        case "_MS_int.__sub__":
-            addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
-            addInstruction(new InstructionSub(getOperand(dst), getOperand(rhs)));
+        }
+        case "_MS_int.__sub__": {
+            if (getOperand(dst) == getOperand(rhs)) {
+                allocator.request(RegisterSet.rax);
+                addInstruction(new InstructionMov(RegisterSet.rax, getOperand(lhs)));
+                addInstruction(new InstructionSub(RegisterSet.rax, getOperand(rhs)));
+            } else {
+                addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
+                addInstruction(new InstructionSub(getOperand(dst), getOperand(rhs)));
+            }
             break;
-        case "_MS_int.__mul__":
-            addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
-            addInstruction(new InstructionImul(getOperand(dst), getOperand(rhs)));
+        }
+        case "_MS_int.__mul__": {
+            if (getOperand(dst) == getOperand(rhs)) {
+                addInstruction(new InstructionMov(getOperand(dst), getOperand(rhs)));
+                addInstruction(new InstructionImul(getOperand(dst), getOperand(lhs)));
+            } else {
+                addInstruction(new InstructionMov(getOperand(dst), getOperand(lhs)));
+                addInstruction(new InstructionImul(getOperand(dst), getOperand(rhs)));
+            }
             break;
+        }
         case "_MS_int.__div__": {
             allocator.request(RegisterSet.rax);
             allocator.request(RegisterSet.rdx);
@@ -578,8 +610,6 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
                 addInstruction(new InstructionMov(RegisterSet.rcx, opRhs));
                 opRhs = RegisterSet.rcx;
             }
-            System.out.println("rhs: " + rhs);
-            System.out.println("opRhs: " + opRhs);
             addInstruction(new InstructionMov(RegisterSet.rax, getOperand(lhs)));
             addInstruction(new InstructionCqo());
             addInstruction(new InstructionIdiv(opRhs));
@@ -704,6 +734,11 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
     }
 
     void addInstruction(SectionItem item) {
+        if (item instanceof Instruction) {
+            if (((Instruction) item).dst instanceof OperandRegister) {
+                allocator.write(RegisterSet.to64((OperandRegister) ((Instruction) item).dst));
+            }
+        }
         nasm.sectionText.addItem(item);
     }
 
@@ -732,7 +767,6 @@ public class PizzaIRVisitor extends PizzaIRPartBaseVisitor {
             if (result == null) {
                 assert false;
             }
-            System.out.println("!!" + result);
             return result;
         }
     }

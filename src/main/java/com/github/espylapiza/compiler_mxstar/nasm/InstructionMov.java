@@ -2,7 +2,6 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionMov extends Instruction {
     private static final String name = "mov";
-    public Operand dst;
     public Operand src;
 
     public InstructionMov(Operand dst, Operand src) {

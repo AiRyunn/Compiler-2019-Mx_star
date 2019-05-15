@@ -79,4 +79,43 @@ public class RegisterSet {
             return null;
         }
     }
+
+    public static OperandRegister64Bit to64(OperandRegister operand) {
+        switch (operand.name) {
+        case "eax":
+            return rax;
+        case "ecx":
+            return rcx;
+        case "edx":
+            return rdx;
+        case "ebx":
+            return rbx;
+        case "esp":
+            return rsp;
+        case "ebp":
+            return rbp;
+        case "esi":
+            return rsi;
+        case "edi":
+            return rdi;
+        case "e8":
+            return r8;
+        case "e9":
+            return r9;
+        case "e10":
+            return r10;
+        case "e11":
+            return r11;
+        case "e12":
+            return r12;
+        case "e13":
+            return r13;
+        case "e14":
+            return r14;
+        case "e15":
+            return r15;
+        default:
+            return (OperandRegister64Bit) operand;
+        }
+    }
 }

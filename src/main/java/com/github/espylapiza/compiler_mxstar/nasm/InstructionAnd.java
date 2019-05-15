@@ -2,7 +2,7 @@ package com.github.espylapiza.compiler_mxstar.nasm;
 
 public class InstructionAnd extends Instruction {
     private static final String name = "and";
-    Operand dst, src;
+    Operand src;
     int imm;
 
     public InstructionAnd(Operand dst, int imm) {

@@ -296,7 +296,7 @@ public class PizzaIROptimizer {
 
         for (BasicBlock scp : func.getBlocks()) {
             for (Inst inst : scp.getInsts()) {
-                if (inst.dst != null && !used.contains(inst.dst)) {
+                if (inst.dst != null && !inst.dst.isGlobal() && !used.contains(inst.dst)) {
                     if (inst instanceof InstAlloc) {
                         inst.valid = false;
                     } else if (inst instanceof InstCall) {
