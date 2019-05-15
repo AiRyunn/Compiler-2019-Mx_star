@@ -46,6 +46,9 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectPtr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 
 class GreedyRegisterAllocator {
+    /**
+     * 
+     */
     private final List<OperandRegister> regAvailable = Arrays.asList(RegisterSet.rax, RegisterSet.rcx, RegisterSet.rdx,
             RegisterSet.rsi, RegisterSet.rdi, RegisterSet.r8, RegisterSet.r9, RegisterSet.r10, RegisterSet.r11,
             RegisterSet.r12, RegisterSet.r13, RegisterSet.r14, RegisterSet.r15);
@@ -168,7 +171,6 @@ class GreedyRegisterAllocator {
             return;
         }
         boolean write = dirty.contains(obj);
-        // boolean write = true;
 
         Operand addr = objAddr.get(obj);
         if (addr == null) {
@@ -289,7 +291,6 @@ class GreedyRegisterAllocator {
         objMap.clear();
         regObj.clear();
         assert dirty.isEmpty();
-        // dirty.clear();
     }
 
     void arrange_fixed_register(Inst inst) {
@@ -375,12 +376,8 @@ class GreedyRegisterAllocator {
         } else if (obj instanceof ObjectPtr) {
             now = null;
             assert false;
-            // Operand op = getOperand(((ObjectPtr) obj).obj);
-            // addInstruction(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
-            // now = new OperandMem((OperandRegister) op, 0);
         } else {
             now = get(obj, dst);
-            // now = objMap.get(obj);
             if (now == dst) {
                 return;
             }
@@ -395,13 +392,9 @@ class GreedyRegisterAllocator {
         if (obj instanceof ObjectPtr) {
             dst = null;
             assert false;
-            // Operand op = getOperand(((ObjectPtr) obj).obj);
-            // addInstruction(new InstructionMov(op, getOperand(((ObjectPtr) obj).obj)));
-            // now = new OperandMem((OperandRegister) op, 0);
         } else {
             freeze(src);
             dst = get(obj, src);
-            // now = objMap.get(obj);
             if (dst != src) {
                 addInstruction(new InstructionMov(dst, src));
             }
