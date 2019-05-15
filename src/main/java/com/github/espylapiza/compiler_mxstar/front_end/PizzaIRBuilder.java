@@ -16,8 +16,8 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.InstJump;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.DomainLoop;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Func;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BasicBlock;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BlockType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Object;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
@@ -210,11 +210,11 @@ class ScopeManager {
         funcStack.lastElement().jumpContinue();
     }
 
-    Scope newScope(ScopeType type) {
+    BasicBlock newScope(BlockType type) {
         return funcStack.lastElement().newScope(type);
     }
 
-    void pushScope(Scope scp) {
+    void pushScope(BasicBlock scp) {
         funcStack.lastElement().pushScope(scp);
     }
 
@@ -225,10 +225,10 @@ class ScopeManager {
 
 class FuncBuilder {
     private class ScopeWithStatus {
-        final Scope scope;
+        final BasicBlock scope;
         boolean dead;
 
-        ScopeWithStatus(Scope scope, boolean dead) {
+        ScopeWithStatus(BasicBlock scope, boolean dead) {
             this.scope = scope;
             this.dead = dead;
         }
@@ -262,7 +262,7 @@ class FuncBuilder {
         }
         for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
             ScopeWithStatus pre = it.previous();
-            if (pre.scope.getType() == ScopeType.ENDLOOP) {
+            if (pre.scope.getType() == BlockType.ENDLOOP) {
                 scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));
                 scpStack.lastElement().dead = true;
             }
@@ -275,22 +275,22 @@ class FuncBuilder {
         }
         for (ListIterator<ScopeWithStatus> it = scpStack.listIterator(scpStack.size()); it.hasPrevious();) {
             ScopeWithStatus pre = it.previous();
-            if (pre.scope.getType() == ScopeType.LOOPTAIL) {
+            if (pre.scope.getType() == BlockType.LOOPTAIL) {
                 scpStack.lastElement().scope.addInstruction(new InstJump(pre.scope));
                 scpStack.lastElement().dead = true;
             }
         }
     }
 
-    Scope newScope(ScopeType type) {
-        if (type == ScopeType.FUNC) {
-            return new Scope(type, func.getAddr().toString());
+    BasicBlock newScope(BlockType type) {
+        if (type == BlockType.FUNC_ENTRANCE) {
+            return new BasicBlock(type, func.getAddr().toString());
         } else {
-            return new Scope(type, func.getAddr() + "." + type.toString() + "_" + (counter++));
+            return new BasicBlock(type, func.getAddr() + "." + type.toString() + "_" + (counter++));
         }
     }
 
-    void pushScope(Scope scp) {
+    void pushScope(BasicBlock scp) {
         boolean dead = false;
         if (!scpStack.empty()) {
             dead = scpStack.lastElement().dead;
@@ -303,6 +303,6 @@ class FuncBuilder {
         if (!top.dead && !scpStack.empty()) {
             top.scope.addInstruction(new InstJump(scpStack.lastElement().scope));
         }
-        func.getScps().add(top.scope);
+        func.getBlocks().add(top.scope);
     }
 }

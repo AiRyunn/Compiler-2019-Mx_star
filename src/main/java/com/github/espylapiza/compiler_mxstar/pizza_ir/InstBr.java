@@ -5,20 +5,20 @@ import java.util.List;
 
 public final class InstBr extends Inst implements InstBaseJump {
     public Object obj;
-    public Scope scpIfTrue;
-    public Scope scpIfFalse;
+    public BasicBlock scpIfTrue;
+    public BasicBlock scpIfFalse;
 
     InstBr() {
         super();
     }
 
-    InstBr(ObjectID src, Scope scpIfTrue, Scope scpIfFalse) {
+    InstBr(ObjectID src, BasicBlock scpIfTrue, BasicBlock scpIfFalse) {
         super();
         this.scpIfTrue = scpIfTrue;
         this.scpIfFalse = scpIfFalse;
     }
 
-    public InstBr(Object obj, Scope scpIfTrue, Scope scpIfFalse) {
+    public InstBr(Object obj, BasicBlock scpIfTrue, BasicBlock scpIfFalse) {
         super();
         this.obj = obj;
         this.scpIfTrue = scpIfTrue;

@@ -25,9 +25,13 @@ public class Object extends ProgramFragment implements Cloneable {
         if (id == null) {
             return null;
         }
-        if (belong == null && name != null) {
+        if (isGlobal()) {
             return "$" + name;
         }
         return id.toString();
+    }
+
+    public boolean isGlobal() {
+        return belong == null && name != null;
     }
 }

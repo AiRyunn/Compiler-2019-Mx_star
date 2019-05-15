@@ -1,6 +1,6 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-public class InstructionRet extends Instruction {
+public class InstructionRet extends Instruction implements InstructionBaseJump {
     private static final String name = "ret";
 
     public InstructionRet() {

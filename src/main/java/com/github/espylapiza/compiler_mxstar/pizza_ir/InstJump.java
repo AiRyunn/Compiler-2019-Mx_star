@@ -4,13 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class InstJump extends Inst implements InstBaseJump {
-    public Scope scp;
+    public BasicBlock scp;
 
     InstJump() {
         super();
     }
 
-    public InstJump(Scope to) {
+    public InstJump(BasicBlock to) {
         super();
         this.scp = to;
     }

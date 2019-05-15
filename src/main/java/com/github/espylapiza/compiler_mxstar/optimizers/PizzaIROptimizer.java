@@ -23,7 +23,7 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectBool;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectPtr;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BasicBlock;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.VarList;
 
 public class PizzaIROptimizer {
@@ -45,7 +45,7 @@ public class PizzaIROptimizer {
     private void remove_useless_assignment() {
         for (Func func : ir.funcList) {
             if (func instanceof FuncExtra) {
-                for (Scope scp : ((FuncExtra) func).getScps()) {
+                for (BasicBlock scp : ((FuncExtra) func).getBlocks()) {
                     List<Inst> insts = scp.getInsts();
 
                     for (int i = 0; i < insts.size() - 1; i++) {
@@ -59,6 +59,7 @@ public class PizzaIROptimizer {
                         }
                     }
                 }
+                remove_useless_variables((FuncExtra) func);
             }
         }
     }
@@ -74,7 +75,7 @@ public class PizzaIROptimizer {
     private void do_function_constant_folding_and_propagation(FuncExtra func) {
         Map<Object, Object> alter = new HashMap<Object, Object>();
 
-        for (Scope scp : func.getScps()) {
+        for (BasicBlock scp : func.getBlocks()) {
             List<Inst> insts = scp.getInsts();
 
             for (int i = 0; i < insts.size(); i++) {
@@ -213,7 +214,7 @@ public class PizzaIROptimizer {
         return null;
     }
 
-    private void alter_variables(Scope scp, Map<Object, Object> alter) {
+    private void alter_variables(BasicBlock scp, Map<Object, Object> alter) {
         if (alter == null) {
             return;
         }
@@ -274,7 +275,7 @@ public class PizzaIROptimizer {
         if (alter == null) {
             return;
         }
-        for (Scope scp : func.getScps()) {
+        for (BasicBlock scp : func.getBlocks()) {
             alter_variables(scp, alter);
         }
     }
@@ -282,7 +283,7 @@ public class PizzaIROptimizer {
     private void remove_useless_variables(FuncExtra func) {
         Set<Object> used = new HashSet<Object>();
 
-        for (Scope scp : func.getScps()) {
+        for (BasicBlock scp : func.getBlocks()) {
             for (Inst inst : scp.getInsts()) {
                 for (Object obj : inst.getObjects()) {
                     if (obj instanceof ObjectPtr) {
@@ -293,7 +294,7 @@ public class PizzaIROptimizer {
             }
         }
 
-        for (Scope scp : func.getScps()) {
+        for (BasicBlock scp : func.getBlocks()) {
             for (Inst inst : scp.getInsts()) {
                 if (inst.dst != null && !used.contains(inst.dst)) {
                     if (inst instanceof InstAlloc) {
@@ -328,7 +329,7 @@ public class PizzaIROptimizer {
     private void update_variable_list(FuncExtra func) {
         Set<Object> used = new HashSet<Object>();
 
-        for (Scope scp : func.getScps()) {
+        for (BasicBlock scp : func.getBlocks()) {
             for (Inst inst : scp.getInsts()) {
                 if (inst.dst != null) {
                     used.add(inst.dst);

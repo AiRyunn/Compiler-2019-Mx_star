@@ -1,12 +1,12 @@
 package com.github.espylapiza.compiler_mxstar.nasm;
 
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BasicBlock;
 
-public class InstructionJz extends Instruction {
+public class InstructionJz extends Instruction implements InstructionBaseJump {
     private static final String name = "jz";
-    Scope scp;
+    BasicBlock scp;
 
-    public InstructionJz(Scope scp) {
+    public InstructionJz(BasicBlock scp) {
         this.scp = scp;
     }
 

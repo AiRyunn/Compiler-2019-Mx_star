@@ -5,7 +5,7 @@ import java.util.List;
 
 public class FuncExtra extends FuncDefinition implements PizzaIRPart {
     private VarList varList = new VarList();
-    private final List<Scope> scps = new ArrayList<Scope>();
+    private final List<BasicBlock> scps = new ArrayList<BasicBlock>();
 
     @Override
     public void accept(PizzaIRPartBaseVisitor visitor) {
@@ -49,7 +49,7 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
     /**
      * @return the scps
      */
-    public List<Scope> getScps() {
+    public List<BasicBlock> getBlocks() {
         return scps;
     }
 
@@ -102,7 +102,7 @@ public class FuncExtra extends FuncDefinition implements PizzaIRPart {
         }
         result += "\t)\n";
         boolean first = true;
-        for (Scope scp : scps) {
+        for (BasicBlock scp : scps) {
             if (first) {
                 first = false;
             } else {

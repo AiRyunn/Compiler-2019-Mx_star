@@ -24,299 +24,312 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectConstant;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectInt;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
-
-// (8 * (top + 1) + 15) / 16 * 16
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BasicBlock;
 
 abstract class RegisterAllocator {
-    abstract void cache(Object obj);
+    abstract Operand get(Object obj, OperandRegister prefer);
 
-    abstract Operand get(Object obj);
+    abstract void enterFunc(FuncExtra func);
+
+    abstract void enterBlock(BasicBlock blk);
+
+    abstract void exitBlock(BasicBlock blk);
+
+    abstract void arrange_fixed_register(Inst inst);
+
+    abstract void allocateGlobal(FuncExtra initFunc);
+
+    abstract void exitFunc();
+
+    abstract void request(OperandRegister operandRegister);
+
+    abstract void unfreeze_all();
+
+    abstract void freeze_all();
 }
 
-class StaticRegisterAllocator extends RegisterAllocator {
-    private Map<Object, Operand> maddr = new HashMap<Object, Operand>();
-    private int stackSize;
+// class StaticRegisterAllocator extends RegisterAllocator {
+//     private Map<Object, Operand> maddr = new HashMap<Object, Operand>();
+//     private int stackSize;
 
-    StaticRegisterAllocator() {
-    }
+//     StaticRegisterAllocator() {
+//     }
 
-    /**
-     * @return the stackSize
-     */
-    public int getStackSize() {
-        return stackSize;
-    }
+//     /**
+//      * @return the stackSize
+//      */
+//     public int getStackSize() {
+//         return stackSize;
+//     }
 
-    void noneAllocate(NASM nasm, FuncExtra func) {
-        int top = 0; // 1 base
+//     void noneAllocate(NASM nasm, FuncExtra func) {
+//         int top = 0; // 1 base
 
-        if (func.getOwnerClass() != null) {
-            if (!exists(func.getVarList().get(0))) {
-                Operand operand;
-                operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
-                put(func.getVarList().get(0), operand);
-            }
-        }
+//         if (func.getOwnerClass() != null) {
+//             if (!exists(func.getVarList().get(0))) {
+//                 Operand operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
+//                 put(func.getVarList().get(0), operand);
+//             }
+//         }
 
-        for (Object obj : func.getParams()) {
-            if (!exists(obj)) {
-                Operand operand;
-                operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
-                put(obj, operand);
-            }
-        }
+//         for (Object obj : func.getParams()) {
+//             if (!exists(obj)) {
+//                 Operand operand;
+//                 operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
+//                 put(obj, operand);
+//             }
+//         }
 
-        for (Object obj : func.getVarList()) {
-            if (!exists(obj)) {
-                Operand operand;
-                if (obj instanceof ObjectConstant) {
-                    if (obj instanceof ObjectBool) {
-                        operand = new OperandInt(((ObjectBool) obj).value);
-                    } else if (obj instanceof ObjectInt) {
-                        operand = new OperandInt(((ObjectInt) obj).value);
-                    } else if (obj instanceof ObjectString) {
-                        OperandString operandStr = new OperandString(((ObjectString) obj).value);
-                        Label label = Label.newDB();
-                        nasm.sectionData.addItem(label);
-                        nasm.sectionData.addItem(new InstructionDB(operandStr));
-                        operand = new OperandDBAddr(label);
-                    } else if (obj instanceof ObjectNull) {
-                        operand = new OperandInt(0);
-                    } else {
-                        assert false;
-                        operand = null;
-                    }
-                } else {
-                    operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
-                }
-                put(obj, operand);
-            }
-        }
+//         for (Object obj : func.getVarList()) {
+//             if (!exists(obj)) {
+//                 Operand operand;
+//                 if (obj instanceof ObjectConstant) {
+//                     if (obj instanceof ObjectBool) {
+//                         operand = new OperandInt(((ObjectBool) obj).value);
+//                     } else if (obj instanceof ObjectInt) {
+//                         operand = new OperandInt(((ObjectInt) obj).value);
+//                     } else if (obj instanceof ObjectString) {
+//                         OperandString operandStr = new OperandString(((ObjectString) obj).value);
+//                         Label label = Label.newDB();
+//                         nasm.sectionData.addItem(label);
+//                         nasm.sectionData.addItem(new InstructionDB(operandStr));
+//                         operand = new OperandDBAddr(label);
+//                     } else if (obj instanceof ObjectNull) {
+//                         operand = new OperandInt(0);
+//                     } else {
+//                         assert false;
+//                         operand = null;
+//                     }
+//                 } else {
+//                     operand = new OperandMem(RegisterSet.rbp, -8 * (++top));
+//                 }
+//                 put(obj, operand);
+//             }
+//         }
 
-        for (Object obj : func.getVarList()) {
-            if (get(obj) == null) {
-                assert false;
-            }
-        }
-        stackSize = (8 * top + 15) / 16 * 16;
-    }
+//         for (Object obj : func.getVarList()) {
+//             if (get(obj) == null) {
+//                 assert false;
+//             }
+//         }
+//         stackSize = (8 * top + 15) / 16 * 16;
+//     }
 
-    void linearScanningAllocate(NASM nasm, FuncExtra func) {
-        final List<OperandRegister> regTemp = Arrays.asList(/*RegisterSet.rdi, RegisterSet.rsi, RegisterSet.rax,*/
-                RegisterSet.r10, RegisterSet.r11);
-        final int cntRegTemp = 1;
+//     void linearScanningAllocate(NASM nasm, FuncExtra func) {
+//         final List<OperandRegister> regTemp = Arrays.asList(/*RegisterSet.rdi, RegisterSet.rsi, RegisterSet.rax,*/
+//                 RegisterSet.r10, RegisterSet.r11);
+//         final int cntRegTemp = 1;
 
-        Map<Object, Interval> intervals = new HashMap<Object, Interval>();
+//         List<LiveInterval> unhandledList = getLiveIntervals(func);
+//         LiveInterval[] active = new LiveInterval[cntRegTemp];
 
-        Integer lineNum = 0;
+//         for (LiveInterval interval : unhandledList) {
+//             Integer curl = interval.start;
 
-        if (func.getOwnerClass() != null) {
-            Object obj = func.getVarList().get(0);
-            if (!exists(obj)) {
-                intervals.put(obj, new Interval(lineNum, lineNum, obj));
-            }
-        }
+//             for (int i = 0; i < cntRegTemp; i++) {
+//                 if (active[i] != null && active[i].end < curl) {
+//                     active[i] = null;
+//                 }
+//             }
 
-        for (Object obj : func.getParams()) {
-            if (!exists(obj)) {
-                intervals.put(obj, new Interval(lineNum, lineNum, obj));
-            }
-        }
+//             boolean spill = true;
+//             for (int i = 0; i < cntRegTemp; i++) {
+//                 if (active[i] == null) {
+//                     active[i] = interval;
+//                     spill = false;
 
-        for (Scope scp : func.getScps()) {
-            for (Inst inst : scp.getInsts()) {
-                lineNum++;
+//                     maddr.put(interval.obj, regTemp.get(i));
+//                     break;
+//                 }
+//             }
 
-                List<Object> objs = new ArrayList<Object>();
-                for (Object obj : inst.getObjects()) {
-                    objs.add(obj);
-                }
-                if (inst.dst != null) {
-                    objs.add(inst.dst);
-                }
+//             if (spill) {
+//                 int maxpos = 0;
+//                 for (int i = 0; i < cntRegTemp; i++) {
+//                     if (active[i].start > active[maxpos].start) {
+//                         maxpos = i;
+//                     }
+//                 }
+//                 if (active[maxpos].end > interval.end) {
+//                     maddr.remove(active[maxpos].obj);
+//                     active[maxpos] = interval;
+//                     maddr.put(interval.obj, regTemp.get(maxpos));
+//                 }
+//             }
+//         }
 
-                for (Object obj : objs) {
-                    if (obj != null && obj.belong != null) {
-                        if (obj instanceof ObjectConstant) {
-                            continue;
-                        }
+//         System.out.println("****{");
+//         for (Map.Entry<Object, Operand> entry : maddr.entrySet()) {
+//             System.out.println("---");
+//             System.out.println(entry.getKey());
+//             System.out.println(entry.getValue());
+//         }
+//         System.out.println("}****");
+//         noneAllocate(nasm, func);
+//     }
 
-                        if (!intervals.containsKey(obj)) {
-                            intervals.put(obj, new Interval(lineNum, lineNum, obj));
-                        }
-                        intervals.get(obj).r = lineNum;
-                    }
-                }
-            }
-        }
+//     /**
+//      * Get liveness intervals.
+//      * @param func
+//      * @return liveness intervals sorted by liveStart.
+//      */
+//     private List<LiveInterval> getLiveIntervals(FuncExtra func) {
+//         Map<Object, LiveInterval> mIntervals = new HashMap<Object, LiveInterval>();
+//         Integer lineNum = 0;
+//         if (func.getOwnerClass() != null) {
+//             Object obj = func.getVarList().get(0);
+//             if (!exists(obj)) {
+//                 mIntervals.put(obj, new LiveInterval(lineNum, lineNum, obj));
+//             }
+//         }
 
-        List<Interval> unhandledList = new ArrayList<Interval>();
-        Interval[] active = new Interval[cntRegTemp];
+//         for (Object obj : func.getParams()) {
+//             if (!exists(obj)) {
+//                 mIntervals.put(obj, new LiveInterval(lineNum, lineNum, obj));
+//             }
+//         }
 
-        for (Map.Entry<Object, Interval> entry : intervals.entrySet()) {
-            Interval interval = entry.getValue();
-            System.out.println(interval.l + " " + interval.r + " " + interval.obj);
+//         for (BasicBlock scp : func.getBlocks()) {
+//             for (Inst inst : scp.getInsts()) {
+//                 lineNum++;
 
-            unhandledList.add(interval);
-        }
+//                 List<Object> objs = new ArrayList<Object>();
+//                 for (Object obj : inst.getObjects()) {
+//                     objs.add(obj);
+//                 }
+//                 if (inst.dst != null) {
+//                     objs.add(inst.dst);
+//                 }
 
-        unhandledList.sort((lhs, rhs) -> lhs.l.compareTo(rhs.l));
+//                 for (Object obj : objs) {
+//                     if (obj != null && obj.belong != null) {
+//                         if (obj instanceof ObjectConstant) {
+//                             continue;
+//                         }
 
-        for (Interval interval : unhandledList) {
-            Integer curl = interval.l;
+//                         if (!mIntervals.containsKey(obj)) {
+//                             mIntervals.put(obj, new LiveInterval(lineNum, lineNum, obj));
+//                         }
+//                         mIntervals.get(obj).end = lineNum;
+//                     }
+//                 }
+//             }
+//         }
 
-            for (int i = 0; i < cntRegTemp; i++) {
-                if (active[i] != null && active[i].r < curl) {
-                    active[i] = null;
-                }
-            }
+//         List<LiveInterval> intervals = new ArrayList<LiveInterval>();
+//         for (Map.Entry<Object, LiveInterval> entry : mIntervals.entrySet()) {
+//             intervals.add(entry.getValue());
+//         }
 
-            boolean spill = true;
-            for (int i = 0; i < cntRegTemp; i++) {
-                if (active[i] == null) {
-                    active[i] = interval;
-                    spill = false;
+//         intervals.sort((lhs, rhs) -> lhs.start.compareTo(rhs.start));
+//         return intervals;
+//     }
 
-                    maddr.put(interval.obj, regTemp.get(i));
-                    break;
-                }
-            }
+//     void allocate(NASM nasm, FuncExtra func) {
+//         Map<Object, LiveInterval> intervals = new HashMap<Object, LiveInterval>();
 
-            if (spill) {
-                int maxpos = 0;
-                for (int i = 0; i < cntRegTemp; i++) {
-                    if (active[i].l > active[maxpos].l) {
-                        maxpos = i;
-                    }
-                }
-                if (active[maxpos].r > interval.r) {
-                    maddr.remove(active[maxpos].obj);
-                    active[maxpos] = interval;
-                    maddr.put(interval.obj, regTemp.get(maxpos));
-                }
-            }
-        }
+//         Integer lineNum = 0;
 
-        System.out.println("****{");
-        for (Map.Entry<Object, Operand> entry : maddr.entrySet()) {
-            System.out.println("---");
-            System.out.println(entry.getKey());
-            System.out.println(entry.getValue());
-        }
-        System.out.println("}****");
-        noneAllocate(nasm, func);
-    }
+//         if (func.getOwnerClass() != null) {
+//             Object obj = func.getVarList().get(0);
+//             if (!exists(obj)) {
+//                 intervals.put(obj, new LiveInterval(-1, -1, obj));
+//             }
+//         }
 
-    void simpleAllocate(NASM nasm, FuncExtra func) {
-        Map<Object, Interval> intervals = new HashMap<Object, Interval>();
+//         for (Object obj : func.getParams()) {
+//             if (!exists(obj)) {
+//                 intervals.put(obj, new LiveInterval(-1, -1, obj));
+//             }
+//         }
 
-        Integer lineNum = 0;
+//         for (BasicBlock scp : func.getBlocks()) {
+//             for (Inst inst : scp.getInsts()) {
+//                 lineNum++;
 
-        if (func.getOwnerClass() != null) {
-            Object obj = func.getVarList().get(0);
-            if (!exists(obj)) {
-                intervals.put(obj, new Interval(-1, -1, obj));
-            }
-        }
+//                 List<Object> objs = new ArrayList<Object>();
+//                 for (Object obj : inst.getObjects()) {
+//                     objs.add(obj);
+//                 }
+//                 if (inst.dst != null) {
+//                     objs.add(inst.dst);
+//                 }
 
-        for (Object obj : func.getParams()) {
-            if (!exists(obj)) {
-                intervals.put(obj, new Interval(-1, -1, obj));
-            }
-        }
+//                 for (Object obj : objs) {
+//                     if (obj != null && obj.belong != null) {
+//                         if (obj instanceof ObjectConstant) {
+//                             continue;
+//                         }
 
-        for (Scope scp : func.getScps()) {
-            for (Inst inst : scp.getInsts()) {
-                lineNum++;
+//                         if (!intervals.containsKey(obj)) {
+//                             intervals.put(obj, new LiveInterval(lineNum, lineNum, obj));
+//                         }
+//                         intervals.get(obj).end = lineNum;
+//                     }
+//                 }
+//             }
+//         }
 
-                List<Object> objs = new ArrayList<Object>();
-                for (Object obj : inst.getObjects()) {
-                    objs.add(obj);
-                }
-                if (inst.dst != null) {
-                    objs.add(inst.dst);
-                }
+//         for (Map.Entry<Object, LiveInterval> entry : intervals.entrySet()) {
+//             LiveInterval interval = entry.getValue();
+//             if (interval.start + 1 == interval.end) {
+//                 maddr.put(interval.obj, RegisterSet.r10);
+//             }
+//         }
 
-                for (Object obj : objs) {
-                    if (obj != null && obj.belong != null) {
-                        if (obj instanceof ObjectConstant) {
-                            continue;
-                        }
+//         noneAllocate(nasm, func);
+//     }
 
-                        if (!intervals.containsKey(obj)) {
-                            intervals.put(obj, new Interval(lineNum, lineNum, obj));
-                        }
-                        intervals.get(obj).r = lineNum;
-                    }
-                }
-            }
-        }
+//     public void bssAllocate(NASM nasm, FuncExtra initFunc) {
+//         for (Object obj : initFunc.getDefinedVariables()) {
+//             nasm.sectionBSS.addItem(new InstructionResq("$" + obj.name));
+//             Operand operand = new OperandMem("$" + obj.name, 0);
+//             put(obj, operand);
+//         }
+//     }
 
-        for (Map.Entry<Object, Interval> entry : intervals.entrySet()) {
-            Interval interval = entry.getValue();
-            if (interval.l + 1 == interval.r) {
-                maddr.put(interval.obj, RegisterSet.r10);
-            }
-        }
+//     private void put(Object object, Operand operand) {
+//         maddr.put(object, operand);
+//     }
 
-        noneAllocate(nasm, func);
-    }
+//     private boolean exists(Object obj) {
+//         return maddr.containsKey(obj);
+//     }
 
-    public void bssAllocate(NASM nasm, FuncExtra initFunc) {
-        for (Object obj : initFunc.getDefinedVariables()) {
-            nasm.sectionBSS.addItem(new InstructionResq("$" + obj.name));
-            Operand operand = new OperandMem("$" + obj.name, 0);
-            put(obj, operand);
-        }
-    }
+//     @Override
+//     Operand get(Object obj) {
+//         Operand result = maddr.get(obj);
+//         return result;
+//     }
 
-    private void put(Object object, Operand operand) {
-        maddr.put(object, operand);
-    }
+//     @Override
+//     void cache(Object obj) {
 
-    private boolean exists(Object obj) {
-        return maddr.containsKey(obj);
-    }
+//     }
 
-    @Override
-    Operand get(Object obj) {
-        Operand result = maddr.get(obj);
-        return result;
-    }
+//     @Override
+//     void enterBlock(BasicBlock blk) {
 
-    @Override
-    void cache(Object obj) {
+//     }
 
-    }
-}
+//     @Override
+//     void exitBlock(BasicBlock blk) {
 
-class Interval {
-    Integer l, r;
-    Object obj;
+//     }
 
-    Interval(Integer l, Integer r, Object obj) {
-        this.l = l;
-        this.r = r;
-        this.obj = obj;
-    }
-}
+//     @Override
+//     void arrange_fixed_register(Inst inst) {
 
-class DynamicRegisterAllocator extends RegisterAllocator {
-    NASM nasm;
+//     }
+// }
 
-    DynamicRegisterAllocator(NASM nasm) {
-        this.nasm = nasm;
-    }
+// class LiveInterval {
+//     Integer start, end;
+//     Object obj;
 
-    @Override
-    void cache(Object obj) {
-        // nasm.sectionText.addItem(new InstructionPush())
-
-    }
-
-    @Override
-    Operand get(Object obj) {
-        return null;
-    }
-}
+//     LiveInterval(Integer l, Integer r, Object obj) {
+//         this.start = l;
+//         this.end = r;
+//         this.obj = obj;
+//     }
+// }

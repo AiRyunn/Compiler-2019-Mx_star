@@ -35,8 +35,8 @@ import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectNull;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.PizzaIR;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Pointer;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ProgramFragment;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.Scope;
-import com.github.espylapiza.compiler_mxstar.pizza_ir.ScopeType;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BasicBlock;
+import com.github.espylapiza.compiler_mxstar.pizza_ir.BlockType;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ObjectString;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.ParamList;
 import com.github.espylapiza.compiler_mxstar.pizza_ir.Type;
@@ -89,7 +89,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         }
 
         manager.enter(initFunc);
-        manager.pushScope(manager.newScope(ScopeType.FUNC));
+        manager.pushScope(manager.newScope(BlockType.FUNC_ENTRANCE));
 
         LOGGER.info("SEMANTIC_ANALYSIS");
         state = VisitState.SEMANTIC_ANALYSIS;
@@ -258,7 +258,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         func.setParams(params);
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             manager.enter(func);
-            manager.pushScope(manager.newScope(ScopeType.FUNC));
+            manager.pushScope(manager.newScope(BlockType.FUNC_ENTRANCE));
 
             if (ctx.statements() != null) {
                 visit(ctx.statements());
@@ -307,7 +307,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         func.setParams(params);
         if (state == VisitState.SEMANTIC_ANALYSIS) {
             manager.enter(func);
-            Scope scope = manager.newScope(ScopeType.FUNC);
+            BasicBlock scope = manager.newScope(BlockType.FUNC_ENTRANCE);
             manager.pushScope(scope);
 
             if (func == mainFunc) {
@@ -462,12 +462,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
     public ProgramFragment visitWhileLoop(Mx_starParser.WhileLoopContext ctx) {
         trace.enter(new DomainLoop());
 
-        Scope scpLoop, scpLoopBody, scpLoopTail, scpEndLoop;
+        BasicBlock scpLoop, scpLoopBody, scpLoopTail, scpEndLoop;
 
-        scpLoop = manager.newScope(ScopeType.LOOP);
-        scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
-        scpLoopTail = manager.newScope(ScopeType.LOOPTAIL);
-        scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
+        scpLoop = manager.newScope(BlockType.LOOP);
+        scpLoopBody = manager.newScope(BlockType.LOOPBODY);
+        scpLoopTail = manager.newScope(BlockType.LOOPTAIL);
+        scpEndLoop = manager.newScope(BlockType.ENDLOOP);
 
         manager.addInstruction(new InstJump(scpLoop));
         manager.popScope();
@@ -505,12 +505,12 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             visit(ctx.forCondition().forCondition1());
         }
 
-        Scope scpLoop, scpLoopBody, scpLoopTail, scpEndLoop;
+        BasicBlock scpLoop, scpLoopBody, scpLoopTail, scpEndLoop;
 
-        scpLoop = manager.newScope(ScopeType.LOOP);
-        scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
-        scpLoopTail = manager.newScope(ScopeType.LOOPTAIL);
-        scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
+        scpLoop = manager.newScope(BlockType.LOOP);
+        scpLoopBody = manager.newScope(BlockType.LOOPBODY);
+        scpLoopTail = manager.newScope(BlockType.LOOPTAIL);
+        scpEndLoop = manager.newScope(BlockType.ENDLOOP);
 
         manager.addInstruction(new InstJump(scpLoop));
         manager.popScope();
@@ -585,13 +585,13 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             assert false;
         }
 
-        Scope scpIfTrue, scpIfFalse, scpEndIf;
+        BasicBlock scpIfTrue, scpIfFalse, scpEndIf;
 
-        scpIfTrue = manager.newScope(ScopeType.IF);
-        scpEndIf = manager.newScope(ScopeType.ENDIF);
+        scpIfTrue = manager.newScope(BlockType.IF);
+        scpEndIf = manager.newScope(BlockType.ENDIF);
 
         if (ctx.else_stmt != null) {
-            scpIfFalse = manager.newScope(ScopeType.ELSE);
+            scpIfFalse = manager.newScope(BlockType.ELSE);
         } else {
             scpIfFalse = scpEndIf;
         }
@@ -910,7 +910,7 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
             manager.addInstruction(new InstStore(dst, subscripts.get(0)));
 
             Object[] subs = new Object[subscripts.size() - 1];
-            Scope[] scpLoops = new Scope[subscripts.size() - 1];
+            BasicBlock[] scpLoops = new BasicBlock[subscripts.size() - 1];
 
             Object last = dst;
             for (int i = 0; i < subscripts.size() - 1; i++) {
@@ -918,11 +918,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
                 manager.addInstruction(
                         new InstMov(subs[i], new ObjectInt(currentFunc, null, (TypeInt) getTypeByName("int"), 1)));
 
-                Scope scpLoopBody, scpEndLoop;
+                BasicBlock scpLoopBody, scpEndLoop;
 
-                scpLoops[i] = manager.newScope(ScopeType.LOOP);
-                scpLoopBody = manager.newScope(ScopeType.LOOPBODY);
-                scpEndLoop = manager.newScope(ScopeType.ENDLOOP);
+                scpLoops[i] = manager.newScope(BlockType.LOOP);
+                scpLoopBody = manager.newScope(BlockType.LOOPBODY);
+                scpEndLoop = manager.newScope(BlockType.ENDLOOP);
 
                 manager.addInstruction(new InstJump(scpLoops[i]));
                 manager.popScope();
@@ -1235,11 +1235,11 @@ class Mx_starParseTreeVisitor extends Mx_starBaseVisitor<ProgramFragment> {
         String op = ctx.op.getText();
         Object lhs, rhs;
         if (op.equals("&&") || op.equals("||")) {
-            Scope scpIfTrue, scpIfFalse, scpEndIf;
+            BasicBlock scpIfTrue, scpIfFalse, scpEndIf;
 
-            scpIfTrue = manager.newScope(ScopeType.IF);
-            scpIfFalse = manager.newScope(ScopeType.ELSE);
-            scpEndIf = manager.newScope(ScopeType.ENDIF);
+            scpIfTrue = manager.newScope(BlockType.IF);
+            scpIfFalse = manager.newScope(BlockType.ELSE);
+            scpEndIf = manager.newScope(BlockType.ENDIF);
 
             Object dst = allocateVariable(new Object(trace.getCurrentFunc(), null, getTypeByName("bool")));
 

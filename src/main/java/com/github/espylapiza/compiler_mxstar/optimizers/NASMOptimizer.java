@@ -49,7 +49,7 @@ public class NASMOptimizer {
                 }
             } else if (item0 instanceof InstructionSub) {
                 InstructionSub itemSub = (InstructionSub) item0;
-                if (itemSub.imm != null && itemSub.imm == 1) {
+                if (itemSub.imm != null) {
                     if (itemSub.imm == -1) {
                         items.set(i, new InstructionInc(itemSub.dst));
                     } else if (itemSub.imm == 0) {

@@ -9,7 +9,7 @@ public abstract class PizzaIRPartBaseVisitor {
 
     public abstract void visit(FuncExtra func);
 
-    public abstract void visit(Scope scope);
+    public abstract void visit(BasicBlock scope);
 
     public abstract void visit(Inst inst);
 

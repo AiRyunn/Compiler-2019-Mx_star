@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Scope implements Iterable<Inst> {
-    private ScopeType type;
+public class BasicBlock implements Iterable<Inst> {
+    private BlockType type;
     private String label;
     private List<Inst> insts = new ArrayList<Inst>();
 
-    public Scope(ScopeType type, String label) {
+    public BasicBlock(BlockType type, String label) {
         this.type = type;
         this.label = label;
     }
@@ -28,7 +28,7 @@ public class Scope implements Iterable<Inst> {
         this.insts = insts;
     }
 
-    public ScopeType getType() {
+    public BlockType getType() {
         return type;
     }
 
